@@ -1,0 +1,8 @@
+{
+  "name": "flixel-ux",
+  "version": "1.0.0",
+  "description": "A library providing utilities for HaxeFlixel.",
+  "dependencies": {},
+  "license": "MIT",
+  "tags": ["haxelib", "haxeflixel"]
+}
