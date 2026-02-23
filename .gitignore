@@ -1,3 +1,21 @@
-.haxelib/
-.haxelsp/recording/
-dump/
+# Haxe / OpenFL / Lime / HaxeFlixel
+export/
+build/
+bin/
+obj/
+out/
+
+# Haxe compilation
+*.n
+*.hash
+*.hxproj
+*.hxml~
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
