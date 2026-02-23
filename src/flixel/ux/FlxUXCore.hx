@@ -22,6 +22,13 @@ class FlxUXCore
 
 	public static var navCapturePolicy:FlxUXNavCapturePolicy = FlxUXNavCapturePolicy.AUTO;
 
+	public static var keyboardArrows:Bool = true;
+	public static var keyboardWASD:Bool = true;
+	public static var gamepadDpad:Bool = true;
+	public static var gamepadLeftStick:Bool = true;
+	public static var gamepadRightStick:Bool = false;
+	public static var gamepadFaceStyle:FlxUXGamepadFaceStyle = FlxUXGamepadFaceStyle.NINTENDO;
+
 	public static var mode:FlxUXInputMode = FlxUXInputMode.POINTER;
 	public static var navStyle:FlxUXNavStyle = FlxUXNavStyle.LINEAR;
 
@@ -41,7 +48,13 @@ class FlxUXCore
 		if (_initialized) return;
 		_initialized = true;
 
-		actions = new FlxUXActions();
+		actions = new FlxUXActions(
+			keyboardArrows,
+			keyboardWASD,
+			gamepadDpad,
+			gamepadLeftStick,
+			gamepadRightStick,
+			gamepadFaceStyle);
 
 		mouse = new FlxUXMouse();
 		mouse.init();
@@ -51,6 +64,19 @@ class FlxUXCore
 		FlxG.signals.preStateSwitch.add(_onStateTransition);
 		FlxG.signals.preStateReset.add(_onStateTransition);
 		FlxG.signals.preStateCreate.add(_onStateTransition);
+	}
+
+	public static function rebindInputs():Void
+	{
+		if (!_initialized) init();
+
+		actions.rebind(
+			keyboardArrows,
+			keyboardWASD,
+			gamepadDpad,
+			gamepadLeftStick,
+			gamepadRightStick,
+			gamepadFaceStyle);
 	}
 
 	public static function clearGroups():Void

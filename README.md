@@ -22,6 +22,25 @@ Mode switching:
 - Pointer movement / pointer press => POINTER mode
 - Nav input (up/down/left/right/confirm/cancel) => NAV mode
 
+### NAV input defaults (configurable)
+- Keyboard navigation: Arrow keys + WASD (default both enabled)
+- Gamepad navigation: D-pad + left stick (right stick optional, default off)
+- Gamepad confirm/cancel style:
+	- `NINTENDO` (default): right-face confirm, bottom-face cancel
+	- `PSX`: bottom-face confirm, right-face cancel
+
+Set these before `FlxUXCore.init()` via:
+- `FlxUXCore.keyboardArrows`
+- `FlxUXCore.keyboardWASD`
+- `FlxUXCore.gamepadDpad`
+- `FlxUXCore.gamepadLeftStick`
+- `FlxUXCore.gamepadRightStick`
+- `FlxUXCore.gamepadFaceStyle`
+
+Runtime changes are supported too:
+- Update any of the fields above.
+- Call `FlxUXCore.rebindInputs()` to apply immediately.
+
 ### Navigation (LINEAR)
 - `Right` or `Down` => focus **next**
 - `Left` or `Up` => focus **previous**
