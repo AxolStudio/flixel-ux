@@ -1,8 +1,24 @@
 {
   "name": "flixel-ux",
-  "version": "1.0.0",
-  "description": "A library providing utilities for HaxeFlixel.",
-  "dependencies": {},
+  "url": "https://github.com/axolstudio/flixel-ux",
   "license": "MIT",
-  "tags": ["haxelib", "haxeflixel"]
+  "tags": [
+    "haxelib",
+    "haxeflixel",
+    "ux",
+    "ui",
+    "interface",
+    "buttons"
+  ],
+  "description": "A library providing UX utilities for HaxeFlixel.",
+  "version": "0.0.1",
+  "classPath": "src/",
+  "contributors": [
+    "AxolStudio",
+    "SeiferTim"
+  ],
+  "dependencies": {
+    "flixel": "6.1.2"
+  },
+  "releasenote": "Initial release of Flixel-UX with basic UI components and utilities."
 }

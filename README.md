@@ -1,98 +1,159 @@
-# FlxUX (flixel.ux)
+# flixel-ux (FlxUX)
 
-FlxUX is a lightweight UX layer for HaxeFlixel focused on one thing: **making buttons work smoothly across mouse/touch/keyboard/gamepad with minimal overhead**.
+A small UX layer for **HaxeFlixel** focused on improving `FlxButton` usability across **mouse**, **touch**, **keyboard**, and **gamepad**.
 
-## v1.0 Scope
-- `FlxUXButton` (extends `FlxButton`)
-- `FlxUXGroup` (registry of buttons, local ordering)
-- `FlxUXCore` (global input + global chained navigation across groups)
-- **Plugin-based update hook** (no per-state `update()` boilerplate)
+FlxUX is focused on **interaction**. You create and add buttons as you normally would; FlxUX handles input mode switching and navigation (focus + confirm/cancel).
 
-## Core Behavior (locked rules)
-### Input modes
-- **POINTER**: mouse/touch input. Focus does not matter. Click activates the clicked button.
-- **NAV**: keyboard/gamepad navigation. Focus matters. Confirm activates focused button.
+## What FlxUX does (why you’d use it)
 
-Pointer nuance:
-- Mouse and touch both switch to `POINTER` mode.
-- Only mouse input shows a cursor.
-- Touch input keeps cursor hidden.
+When you add `FlxUXButton`s to one or more `FlxUXGroup`s in a state (or substate), FlxUX handles switching between common input styles and provides consistent button navigation.
 
-Mode switching:
-- Pointer movement / pointer press => POINTER mode
-- Nav input (up/down/left/right/confirm/cancel) => NAV mode
+In practice, this means:
 
-### NAV input defaults (configurable)
-- Keyboard navigation: Arrow keys + WASD (default both enabled)
-- Gamepad navigation: D-pad + left stick (right stick optional, default off)
-- Gamepad confirm/cancel style:
-	- `NINTENDO` (default): right-face confirm, bottom-face cancel
-	- `PSX`: bottom-face confirm, right-face cancel
+- **Mouse**: hover/click works like a normal `FlxButton`.
+- **Touch**: tap behaves like pointer UX (no mouse cursor required).
+- **Keyboard**: directional input moves focus; confirm activates the focused button.
+- **Gamepad**: same as keyboard navigation, with configurable face-button confirm/cancel.
 
-Set these before `FlxUXCore.init()` via:
-- `FlxUXCore.keyboardArrows`
-- `FlxUXCore.keyboardWASD`
-- `FlxUXCore.gamepadDpad`
-- `FlxUXCore.gamepadLeftStick`
-- `FlxUXCore.gamepadRightStick`
-- `FlxUXCore.gamepadFaceStyle`
+This is intended to reduce UI glue code: you don’t need separate “mouse menu code” and “controller menu code”, and you don’t need to manually track which button is focused.
 
-Runtime changes are supported too:
-- Update any of the fields above.
-- Call `FlxUXCore.rebindInputs()` to apply immediately.
+## Key concepts
 
-### Navigation (LINEAR)
-- `Right` or `Down` => focus **next**
-- `Left` or `Up` => focus **previous**
-- Wraps around
-- Skips ineligible buttons (invisible/disabled/etc.)
-- Jumps across groups by default (global chaining)
+- **`FlxUXButton`**: the button you add to the state (renders like a normal Flixel button).
+- **`FlxUXGroup`**: a registry of buttons you want FlxUX to include in navigation.
+- **`FlxUXCore`**: the global manager that reads inputs and moves focus between eligible buttons.
 
-### Ordering rules
-All ordering is **0-based** and **dense (no gaps)**:
-- Groups in `FlxUXCore` have a dense order.
-- Buttons in each `FlxUXGroup` have a dense order.
-- Setting an order performs an "insert at index" with shifting, clamped to valid range.
+## Installation
 
-### Active flags
-- `FlxUXCore.active`: master enable/disable all UX input handling (UI can still render).
-- `FlxUXCore.navEnabled`: master enable/disable NAV processing only.
-- `FlxUXCore.cursorEnabled`: master enable/disable cursor service only.
-- `FlxUXCore.navCapturePolicy`:
-	- `AUTO` (default): NAV only runs when there is at least one eligible NAV target.
-	- `ALWAYS`: NAV always runs when `navEnabled` is true.
-	- `NEVER`: NAV never runs.
-- `FlxUXGroup.active`: enable/disable interaction for just that group.
-- `FlxUXGroup.capturesNav` (default `true`): whether the group participates in NAV focus traversal.
+Install via haxelib git:
 
-This separation prevents gameplay interference:
-- No navigable UI targets + `AUTO` policy => FlxUX does not consume NAV behavior.
-- Mouse-only HUD buttons => set `capturesNav = false`.
-- Pause/menu UI => keep `capturesNav = true`.
+```bash
+haxelib git flixel-ux https://github.com/AxolStudio/flixel-ux
+```
 
-Gamepad/keyboard-first UX expectation:
-- Cursor visibility does not gate interaction.
-- As long as buttons are registered in active groups that capture NAV, they are reachable/activatable via keyboard/gamepad without needing a mouse.
+Then add to your project:
 
-## Automatic cleanup on state switches
-FlxUX automatically removes all registered groups when a state is switched/reset/created (via `FlxG.signals.*` hooks).
-- Groups are **not destroyed** unless you call `group.destroy()` yourself.
-- You should re-register groups in each state's `create()` (or whenever you want them active).
+- In `Project.xml`:
+  - `<haxelib name="flixel-ux" />`
 
-Substates:
-- Flixel does not provide the same global signals for substate open/close.
-- If you want substate-specific cleanup, call `FlxUXCore.clearGroups()` manually when opening/closing substates.
+Or in your `.hxml`:
 
-## Minimal usage
+- `-lib flixel-ux`
+
+## Quick start
+
+### 1) Initialize once
+
+Call `FlxUXCore.init()` once early (for example, in `Main` or the first state that runs):
+
 ```haxe
-// early in game boot (Main, first State create, etc.)
+import flixel.ux.FlxUXCore;
+
 FlxUXCore.init();
+```
 
-// in a State create():
-var groupA = new FlxUXGroup();
-FlxUXCore.addGroup(groupA);
+### 2) Create one or more groups (basic menu example)
 
-var play = groupA.addButton("Play", 100, 100, () -> startGame());
-add(play);
+FlxUX clears registered groups on **Flixel state transitions**. Typically you create and register groups in each state’s `create()`.
 
-// no need to call FlxUXCore.update() in State.update()
+> This is only a basic example. You can have multiple groups per state (for example: a menu group + a footer group).
+
+```haxe
+import flixel.FlxState;
+import flixel.ux.FlxUXCore;
+import flixel.ux.FlxUXGroup;
+
+class MenuState extends FlxState
+{
+	override public function create():Void
+	{
+		super.create();
+
+		var group = new FlxUXGroup();
+		FlxUXCore.addGroup(group);
+
+		var play = group.addButton("Play", 100, 100, startGame);
+		add(play);
+	}
+
+	function startGame():Void
+	{
+		// TODO: switch to your game state
+	}
+}
+```
+
+## Creating multiple buttons
+
+For simple menus, `FlxUXGroup.addButtons()` creates and registers multiple buttons at once:
+
+```haxe
+var buttons = group.addButtons([
+	{ label: "Play",    x: 100, y: 100, action: startGame },
+	{ label: "Options", x: 100, y: 140, action: openOptions },
+	{ label: "Quit",    x: 100, y: 180, action: quitGame }
+]);
+
+for (b in buttons)
+	add(b);
+```
+
+## Input modes
+
+FlxUX automatically switches between:
+
+- **POINTER**: mouse/touch input (click/tap activates the clicked button)
+- **NAV**: keyboard/gamepad navigation (confirm activates the focused button)
+
+Default NAV bindings:
+- Keyboard: arrows + WASD
+- Gamepad: D-pad + left stick
+
+## Configurations (common)
+
+This section covers the most commonly used configuration points. Full reference docs can live in the wiki.
+
+### Core
+
+- Disable all FlxUX logic temporarily (for transitions, pauses, etc.):
+	- `FlxUXCore.active = false`
+- Disable NAV input but keep pointer behavior:
+	- `FlxUXCore.navEnabled = false`
+- Gate input during fades/tweens:
+	- FlxUX sets `FlxUXCore.ready = false` automatically on state transitions.
+	- If `FlxUXCore.autoReady = true` (default), FlxUX will re-enable input automatically once the new state starts updating.
+	- Set `FlxUXCore.autoReady = false` if you want to set `FlxUXCore.ready = true` yourself at the end of a fade.
+
+### Groups
+
+- Exclude a group from NAV focus traversal (mouse/touch only):
+	- `group.capturesNav = false`
+- Disable a group without destroying it:
+	- `group.active = false`
+
+## Theming / styling (planned)
+
+FlxUX includes a `FlxUXCore.theme` object intended for widget/theme values (focus highlighting, disabled alpha, etc.).
+
+The theme system is not fully implemented yet. For now:
+
+- Expect the theme API to expand as styling support is added.
+- Hover docs on `FlxUXTheme` / `FlxUXCore.theme` describe currently available fields.
+
+## Troubleshooting
+
+### Buttons render, but keyboard/gamepad navigation doesn’t work
+
+Check:
+- `FlxUXCore.init()` was called.
+- Your group was registered via `FlxUXCore.addGroup(group)`.
+- `group.capturesNav` is `true`.
+- Buttons are eligible (`visible`, `active`, and `enabled`).
+- NAV is allowed:
+  - `FlxUXCore.navEnabled == true`
+  - `FlxUXCore.navCapturePolicy != NEVER`
+
+### UI stops responding after switching states
+
+This is expected: FlxUX clears registered groups on state transitions.
+Recreate and re-register groups in each state’s `create()`.

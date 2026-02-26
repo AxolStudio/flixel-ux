@@ -7,14 +7,22 @@ import openfl.events.Event;
 
 class FlxUXMouse
 {
+	/** Whether the cursor helper is active. */
 	public var enabled:Bool = true;
+	/** If true, FlxUX will call `FlxG.mouse.load()` to override the hardware cursor scale. */
 	public var overrideHardwareCursor:Bool = true;
 
 	private var _loaded:Bool = false;
 	private var _cursorSprite:FlxSprite;
 
+	/** Creates a new cursor helper. Call `init()` to install hooks and apply scaling. */
 	public function new() {}
 
+	/**
+	 * Initializes the cursor helper.
+	 *
+	 * Installs stage resize/fullscreen hooks (when available) and applies cursor scaling.
+	 */
 	public function init():Void
 	{
 		if (!overrideHardwareCursor)
@@ -32,6 +40,9 @@ class FlxUXMouse
 		reloadCursorScale();
 	}
 
+	/**
+	 * Recalculates and reapplies cursor scaling based on the current stage size.
+	 */
 	public function reloadCursorScale():Void
 	{
 		if (!overrideHardwareCursor || !_loaded || FlxG.stage == null)
@@ -44,6 +55,11 @@ class FlxUXMouse
 		FlxG.mouse.cursor.pixelSnapping = PixelSnapping.ALWAYS;
 	}
 
+	/**
+	 * Updates the cursor helper.
+	 *
+	 * Called automatically from FlxUXCore's plugin.
+	 */
 	public function update(elapsed:Float, pressed:Bool):Void
 	{
 		if (!enabled || !overrideHardwareCursor || !_loaded || !FlxG.mouse.visible)
