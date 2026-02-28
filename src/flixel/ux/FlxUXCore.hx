@@ -734,6 +734,23 @@ class FlxUXCore
 	}
 }
 
+/**
+ * Which focus highlight strategy to use in NAV mode.
+ */
+enum FlxUXFocusMode
+{
+	/** 9-slice focus frame around the focused widget. */
+	FRAME;
+	/** A sprite drawn next to the focused widget (optionally mirrored). */
+	NEXT_TO;
+	/** A sprite drawn over the focused widget (typically bottom-right half-hang). */
+	OVERLAY;
+	/** Pointer hover only: no NAV focus visuals (still allows pointer clicks). */
+	HOVER_ONLY;
+	/** Dim non-focused widgets (future; no group-level sprite). */
+	DIM_UNFOCUSED;
+}
+
 // -------------------------------------------------------------------------------------------------
 // Enums (kept here so FlxUXCore is the one-stop shop for configuration types)
 // -------------------------------------------------------------------------------------------------

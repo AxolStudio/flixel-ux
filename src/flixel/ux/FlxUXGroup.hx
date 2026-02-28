@@ -9,7 +9,6 @@ import flixel.graphics.FlxGraphic;
 import openfl.display.BitmapData;
 import openfl.geom.Point;
 import openfl.geom.Rectangle;
-import flixel.ux.FlxUXFocusMode;
 import flixel.ux.FlxUXCore.FlxUXNavStyle;
 
 /**
