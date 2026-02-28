@@ -1,6 +1,7 @@
 package flixel.ux;
 
 import flixel.FlxG;
+import flixel.math.FlxPoint;
 
 /**
  * Global input mode used by FlxUX.
@@ -8,38 +9,56 @@ import flixel.FlxG;
  * - `POINTER`: mouse/touch input. Focus does not matter; clicking activates the clicked button.
  * - `NAV`: keyboard/gamepad navigation. Focus matters; confirm activates the focused button.
  */
-enum FlxUXInputMode
-{
-	/** Pointer-centric UX (mouse/touch). */
-	POINTER;
-	/** Navigation-centric UX (keyboard/gamepad). */
-	NAV;
-}
-
-/**
- * Selects the navigation algorithm used for focus traversal.
- */
-enum FlxUXNavStyle
-{
-	/** Linear ordering navigation (next/previous). */
-	LINEAR;
-	/** Spatial navigation (planned, not implemented yet). */
-	SPATIAL;
-}
-
-/**
- * Determines how confirm/cancel are mapped on a gamepad.
- */
-enum FlxUXGamepadFaceStyle
-{
-	/** Nintendo-style: right-face confirm, bottom-face cancel. */
-	NINTENDO;
-	/** PlayStation-style: bottom-face confirm, right-face cancel. */
-	PSX;
-}
-
 class FlxUXCore
 {
+	// --- Built-in defaults (so users can override and easily restore) ---
+	public static inline var DEFAULT_MOUSE_GRAPHIC:String = "flixel-ux/mouse_cursor.png";
+	public static inline var DEFAULT_FOCUS_FRAME_FPS:Int = 6;
+	public static inline var DEFAULT_FOCUS_FRAME_GRAPHIC:FlxUX9Slice =
+		new FlxUX9Slice("flixel-ux/highlight_frame_9s_anim.png", 40, 40, 14, 17, 15, 18);
+	public static inline var DEFAULT_FOCUS_NEXT_TO_GRAPHIC:String = "flixel-ux/highlight_next_to.png";
+	public static inline var DEFAULT_FOCUS_OVERLAY_GRAPHIC:String = "flixel-ux/highlight_on.png";
+
+	// --- Button look (null => use built-in default procedural skin) ---
+	/**
+	 * Default button skin graphic input.
+	 *
+	 * Accepts: String, FlxGraphic, FlxSprite, BitmapData, FlxUX9Slice.
+	 * If null, FlxUXButton uses its procedural `makeGraphic` default.
+	 */
+	public static var buttonGraphic:Dynamic = null;
+	// --- Focus highlight configuration (null => core/group fallback => built-in default) ---
+	/** Current focus highlight mode (defaults to FRAME). */
+	public static var focusMode:FlxUXFocusMode = FlxUXFocusMode.FRAME;
+	/** Frames per second for animated focus frame (when focusFrameGraphic is a spritesheet 9-slice). */
+	public static var focusFrameFps:Int = DEFAULT_FOCUS_FRAME_FPS;
+
+	/**
+	 * Focus frame graphic input.
+	 *
+	 * Accepts: String, FlxGraphic, FlxSprite, BitmapData, FlxUX9Slice.
+	 */
+	public static var focusFrameGraphic:Dynamic = DEFAULT_FOCUS_FRAME_GRAPHIC;
+
+	/** Focus next-to graphic input. */
+	public static var focusNextToGraphic:Dynamic = null;
+	/** If true, also show next-to graphic on right side. */
+	public static var focusNextToMirrored:Bool = false;
+	/** Optional right-side graphic input for mirrored next-to. If null, uses focusNextToGraphic (optionally flipped). */
+	public static var focusNextToGraphicRight:Dynamic = null;
+	/** If true, flips the right-side next-to graphic horizontally. */
+	public static var focusNextToFlipRight:Bool = true;
+	/** Gap between button and next-to graphic (pixels). */
+	public static var focusNextToGap:Float = 6;
+	/** Y offset applied to next-to sprites (pixels). */
+	public static var focusNextToOffsetY:Float = 0;
+
+	/** Focus overlay (on-top) graphic input. */
+	public static var focusOverlayGraphic:Dynamic = null;
+	/** Overlay placement: x = buttonRight + offsetX, y = buttonBottom + offsetY (defaults give half-hang). */
+	public static var focusOverlayOffsetX:Float = -8;
+	public static var focusOverlayOffsetY:Float = -8;
+
 	/**
 	 * When `false`, FlxUX will not process user input (NAV or pointer-triggered mode switching).
 	 *
@@ -76,6 +95,26 @@ class FlxUXCore
 	 * Controls whether FlxUX mouse service runs (hardware cursor override / pressed state).
 	 */
 	public static var cursorEnabled:Bool = true;
+	/** Hardware cursor graphic input (optional). Accepts: String, FlxGraphic, FlxSprite, BitmapData. */
+	public static var mouseCursorGraphic:Dynamic = DEFAULT_MOUSE_GRAPHIC;
+
+	/** Restores built-in defaults (graphics + common focus settings). */
+	public static function resetDefaults():Void
+	{
+		mouseCursorGraphic = DEFAULT_MOUSE_GRAPHIC;
+		focusMode = FlxUXFocusMode.FRAME;
+		focusFrameFps = DEFAULT_FOCUS_FRAME_FPS;
+		focusFrameGraphic = DEFAULT_FOCUS_FRAME_GRAPHIC;
+		focusNextToGraphic = null;
+		focusNextToMirrored = false;
+		focusNextToGraphicRight = null;
+		focusNextToFlipRight = true;
+		focusNextToGap = 6;
+		focusNextToOffsetY = 0;
+		focusOverlayGraphic = null;
+		focusOverlayOffsetX = -8;
+		focusOverlayOffsetY = -8;
+	}
 
 	/**
 	 * Determines when FlxUX should process NAV input (keyboard/gamepad focus + confirm/cancel).
@@ -111,13 +150,11 @@ class FlxUXCore
 
 	/** Current global input mode (POINTER or NAV). Updated automatically each frame. */
 	public static var mode:FlxUXCore.FlxUXInputMode = FlxUXCore.FlxUXInputMode.POINTER;
-	/** Current navigation style. Only `LINEAR` is implemented at the moment. */
-	public static var navStyle:FlxUXCore.FlxUXNavStyle = FlxUXCore.FlxUXNavStyle.LINEAR;
+	/** Current navigation style. */
+	public static var navStyle:FlxUXNavStyle = FlxUXNavStyle.LINEAR;
 
-	/** Global theme values used by FlxUX widgets. */
+	/** Global theme values used by FlxUX widgets (planned). */
 	public static var theme:FlxUXTheme = new FlxUXTheme();
-	/** Global assets/styles used by FlxUX widgets (can be overridden per group/button). */
-	public static var assets:FlxUXAssets = new FlxUXAssets();
 
 	/**
 	 * Action bindings used by FlxUX.
@@ -148,6 +185,10 @@ class FlxUXCore
 	public static function init():Void
 	{
 		if (_initialized) return;
+		// FlxUX must not initialize until FlxGame has been constructed.
+		// In some setups FlxUXGroup may be created very early; safely no-op until FlxG.inputs exists.
+		if (flixel.FlxG.inputs == null)
+			return;
 		_initialized = true;
 
 		actions = new FlxUXActions(
@@ -328,7 +369,7 @@ class FlxUXCore
 				case FlxUXNavCapturePolicy.AUTO: hasTargets;
 			};
 
-			if (shouldProcessNav && navStyle == FlxUXCore.FlxUXNavStyle.LINEAR)
+			if (shouldProcessNav && _effectiveNavStyle() == FlxUXNavStyle.LINEAR)
 			{
 				// Sync focused button visuals with confirm pressed state.
 				var confirmHeldNow = actions.confirmDown;
@@ -351,7 +392,171 @@ class FlxUXCore
 				if (actions.cancel.triggered)
 					cancel();
 			}
+			else if (shouldProcessNav)
+			{
+				// SPATIAL (or future): directionally pick the nearest neighbor.
+				var dirX = 0;
+				var dirY = 0;
+				if (actions.left.triggered) dirX = -1;
+				else if (actions.right.triggered) dirX = 1;
+				else if (actions.up.triggered) dirY = -1;
+				else if (actions.down.triggered) dirY = 1;
+
+				if (dirX != 0 || dirY != 0)
+					focusSpatial(navTargets, dirX, dirY);
+
+				// Activate on release (button-up) so holding confirm shows pressed state.
+				if (actions.confirmReleased)
+				{
+					if (focused != null) focused.setNavPressed(false);
+					activateFocused();
+				}
+
+				if (actions.cancel.triggered)
+					cancel();
+			}
 		}
+	}
+
+	private static function _effectiveNavStyle():FlxUXNavStyle
+	{
+		if (focused != null)
+		{
+			var g = focused._getUXGroup();
+			if (g != null && g.navStyle != null)
+				return g.navStyle;
+		}
+		return navStyle;
+	}
+
+	private static function focusSpatial(list:Array<FlxUXButton>, dirX:Int, dirY:Int):Void
+	{
+		if (focused == null) return;
+		if (list == null || list.length == 0) return;
+
+		// If the focused group requests LINEAR (override), honor it.
+		if (_effectiveNavStyle() != FlxUXNavStyle.SPATIAL)
+		{
+			if (dirX > 0 || dirY > 0) focusNext(list);
+			else focusPrev(list);
+			return;
+		}
+
+		var origin = FlxPoint.get(focused.x + focused.width * 0.5, focused.y + focused.height * 0.5);
+		var focusedGroup = focused._getUXGroup();
+
+		inline function scoreCandidate(b:FlxUXButton):Float
+		{
+			var cx = b.x + b.width * 0.5;
+			var cy = b.y + b.height * 0.5;
+			var dx = cx - origin.x;
+			var dy = cy - origin.y;
+
+			// Direction filter
+			if (dirX < 0 && dx >= 0) return Math.POSITIVE_INFINITY;
+			if (dirX > 0 && dx <= 0) return Math.POSITIVE_INFINITY;
+			if (dirY < 0 && dy >= 0) return Math.POSITIVE_INFINITY;
+			if (dirY > 0 && dy <= 0) return Math.POSITIVE_INFINITY;
+
+			var primary = (dirX != 0) ? Math.abs(dx) : Math.abs(dy);
+			var secondary = (dirX != 0) ? Math.abs(dy) : Math.abs(dx);
+			return primary * 1000 + secondary;
+		}
+
+		// Pass 1: try within current group.
+		var best:FlxUXButton = null;
+		var bestScore = Math.POSITIVE_INFINITY;
+		for (b in list)
+		{
+			if (b == null || b == focused) continue;
+			if (focusedGroup != null && b._getUXGroup() != focusedGroup) continue;
+			var s = scoreCandidate(b);
+			if (s < bestScore)
+			{
+				bestScore = s;
+				best = b;
+			}
+		}
+
+		// Pass 2: if no neighbor in-group, allow moving to another group.
+		// We do this in two steps:
+		//  1) choose the best *group* in the intended direction using group bounds
+		//  2) choose the best button within that group using the same scoring
+		if (best == null)
+		{
+			var bestGroup:FlxUXGroup = null;
+			var bestGroupScore = Math.POSITIVE_INFINITY;
+
+			// Find candidate groups (excluding the current one)
+			for (g in _groups)
+			{
+				if (g == null || !g.active || !g.capturesNav || !g.uxActive) continue;
+				if (focusedGroup != null && g == focusedGroup) continue;
+				var elig = g.getEligibleButtonsOrdered();
+				if (elig == null || elig.length == 0) continue;
+
+				// Use group button-bounds as a representative rectangle
+				var gx0 = g.boundsX;
+				var gy0 = g.boundsY;
+				var gx1 = gx0 + g.width;
+				var gy1 = gy0 + g.height;
+				var gcx = (gx0 + gx1) * 0.5;
+				var gcy = (gy0 + gy1) * 0.5;
+
+				// Determine if the group is actually in the requested direction.
+				// For LEFT, the group's right edge must be <= origin.x (so it's not above/below-only).
+				// For UP, the group's bottom edge must be <= origin.y, etc.
+				if (dirX < 0 && gx1 > origin.x) continue;
+				if (dirX > 0 && gx0 < origin.x) continue;
+				if (dirY < 0 && gy1 > origin.y) continue;
+				if (dirY > 0 && gy0 < origin.y) continue;
+
+				var dx = gcx - origin.x;
+				var dy = gcy - origin.y;
+				var primary = (dirX != 0) ? Math.abs(dx) : Math.abs(dy);
+				var secondary = (dirX != 0) ? Math.abs(dy) : Math.abs(dx);
+				var score = primary * 1000 + secondary;
+				if (score < bestGroupScore)
+				{
+					bestGroupScore = score;
+					bestGroup = g;
+				}
+			}
+
+			if (bestGroup != null)
+			{
+				bestScore = Math.POSITIVE_INFINITY;
+				var elig = bestGroup.getEligibleButtonsOrdered();
+				for (b in elig)
+				{
+					if (b == null) continue;
+					var s = scoreCandidate(b);
+					if (s < bestScore)
+					{
+						bestScore = s;
+						best = b;
+					}
+				}
+			}
+			else
+			{
+				// Fallback to any button if no group qualifies (should be rare).
+				bestScore = Math.POSITIVE_INFINITY;
+				for (b in list)
+				{
+					if (b == null || b == focused) continue;
+					var s = scoreCandidate(b);
+					if (s < bestScore)
+					{
+						bestScore = s;
+						best = b;
+					}
+				}
+			}
+		}
+
+		origin.put();
+		if (best != null) setFocused(best);
 	}
 
 	/**
@@ -433,6 +638,7 @@ class FlxUXCore
 	 */
 	public static function setFocused(button:FlxUXButton):Void
 	{
+		var prev = focused;
 		if (button == focused)
 			return;
 
@@ -450,6 +656,18 @@ class FlxUXCore
 			// If confirm is already held while focus changes, keep pressed visuals in sync.
 			focused.setNavPressed(_navConfirmHeld);
 		}
+
+		// Update per-group highlighter visuals.
+		if (prev != null)
+		{
+			var gPrev = prev._getUXGroup();
+			if (gPrev != null) gPrev.updateFocusGraphics();
+		}
+		if (focused != null)
+		{
+			var gNow = focused._getUXGroup();
+			if (gNow != null) gNow.updateFocusGraphics();
+		}
 	}
 
 	/**
@@ -460,7 +678,7 @@ class FlxUXCore
 		var out:Array<FlxUXButton> = [];
 		for (g in _groups)
 		{
-			if (g == null || !g.active || !g.capturesNav) continue;
+			if (g == null || !g.uxActive || !g.capturesNav) continue;
 			var buttons = g.getEligibleButtonsOrdered();
 			for (b in buttons)
 				out.push(b);
@@ -515,3 +733,64 @@ class FlxUXCore
 		#end
 	}
 }
+
+// -------------------------------------------------------------------------------------------------
+// Enums (kept here so FlxUXCore is the one-stop shop for configuration types)
+// -------------------------------------------------------------------------------------------------
+
+/**
+ * Global input mode used by FlxUX.
+ *
+ * - `POINTER`: mouse/touch input. Focus does not matter; clicking activates the clicked button.
+ * - `NAV`: keyboard/gamepad navigation. Focus matters; confirm activates the focused button.
+ */
+enum FlxUXInputMode
+{
+	/** Pointer-centric UX (mouse/touch). */
+	POINTER;
+	/** Navigation-centric UX (keyboard/gamepad). */
+	NAV;
+}
+
+/** Determines how confirm/cancel are mapped on a gamepad. */
+enum FlxUXGamepadFaceStyle
+{
+	/** Nintendo-style: right-face confirm, bottom-face cancel. */
+	NINTENDO;
+	/** PlayStation-style: bottom-face confirm, right-face cancel. */
+	PSX;
+}
+
+/** Simple alignment enum for FlxUX layout helpers. */
+enum FlxUXAlign
+{
+	LEFT;
+	CENTER;
+	RIGHT;
+}
+
+/** Selects the navigation algorithm used for focus traversal. */
+enum FlxUXNavStyle
+{
+	/** Linear ordering navigation (next/previous). */
+	LINEAR;
+	/** Spatial navigation (direction-based nearest neighbor). */
+	SPATIAL;
+}
+
+/**
+ * Determines when FlxUX should process NAV input (keyboard/gamepad focus + confirm/cancel).
+ *
+ * POINTER behavior (mouse clicks) remains normal Flixel behavior through FlxButton callbacks.
+ */
+enum FlxUXNavCapturePolicy
+{
+	/** Default: only process NAV when there is at least one eligible NAV target. */
+	AUTO;
+	/** Always process NAV when FlxUXCore.navEnabled is true. */
+	ALWAYS;
+	/** Never process NAV (mouse/touch-only UX). */
+	NEVER;
+}
+
+// FlxUXFocusMode is declared in `FlxUXFocusMode.hx`.

@@ -40,6 +40,7 @@ class FlxUXActions
 	 */
 	public var moveMouse:FlxActionAnalog;
 	public var pointerPress:FlxActionDigital;
+	public var pointerPressHeld:FlxActionDigital;
 
 	/** Whether confirm is currently held (computed from action triggers). */
 	public var confirmDown(default, null):Bool = false;
@@ -84,7 +85,7 @@ class FlxUXActions
 		}
 
 		manager = FlxG.inputs.addInput(new FlxActionManager());
-		manager.resetOnStateSwitch = ResetPolicy.NONE;
+		// Keep default reset behavior for broad Flixel version compatibility.
 
 		up = new FlxActionDigital();
 		down = new FlxActionDigital();
@@ -97,8 +98,9 @@ class FlxUXActions
 
 		moveMouse = new FlxActionAnalog();
 		pointerPress = new FlxActionDigital();
+		pointerPressHeld = new FlxActionDigital();
 
-		manager.addActions([up, down, left, right, confirm, confirmHeld, confirmUp, cancel, moveMouse, pointerPress]);
+		manager.addActions([up, down, left, right, confirm, confirmHeld, confirmUp, cancel, moveMouse, pointerPress, pointerPressHeld]);
 
 		#if !FLX_NO_KEYBOARD
 		if (keyboardArrows)
@@ -169,6 +171,7 @@ class FlxUXActions
 
 		#if !FLX_NO_MOUSE
 		pointerPress.addMouse(FlxMouseButtonID.LEFT, FlxInputState.JUST_PRESSED);
+		pointerPressHeld.addMouse(FlxMouseButtonID.LEFT, FlxInputState.PRESSED);
 		moveMouse.addMouseMotion(FlxAnalogState.MOVED);
 		#end
 
@@ -190,6 +193,6 @@ class FlxUXActions
 		// We just combine per-frame triggers into the semantics FlxUXCore wants.
 		confirmDown = confirmHeld.triggered;
 		confirmReleased = confirmUp.triggered;
-		pointerPressDown = pointerPress.triggered;
+		pointerPressDown = pointerPressHeld.triggered;
 	}
 }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+	<source path="src" />
+    <section unless="unit-test">
+		<assets path="assets/ux/highlight_frame_9s_anim.png" rename="flixel-ux/highlight_frame_9s_anim.png" embed="true" />
+		<assets path="assets/ux/highlight_next_to.png" rename="flixel-ux/highlight_next_to.png" embed="true" />
+		<assets path="assets/ux/highlight_on.png" rename="flixel-ux/highlight_on.png" embed="true" />
+		<assets path="assets/ux/mouse_cursor.png" rename="flixel-ux/mouse_cursor.png" embed="true" />
+    </section>
+</project>

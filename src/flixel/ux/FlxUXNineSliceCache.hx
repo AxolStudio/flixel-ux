@@ -1,6 +1,5 @@
 package flixel.ux;
 
-import flixel.FlxG;
 import flixel.graphics.FlxGraphic;
 import openfl.display.BitmapData;
 import openfl.geom.Matrix;
@@ -23,63 +22,66 @@ class FlxUXNineSliceCache
 		_cache = new Map();
 	}
 
-	public static function get(spec:FlxUXGraphicSpec, targetW:Int, targetH:Int, ?frameIndex:Int = 0):FlxGraphic
+	public static function get(nine:FlxUX9Slice, targetW:Int, targetH:Int, ?frameIndex:Int = 0):FlxGraphic
 	{
-		if (spec == null) return null;
+		if (nine == null) return null;
 		if (targetW < 1) targetW = 1;
 		if (targetH < 1) targetH = 1;
 
-		var ns = spec.nineSlice;
-		if (ns == null)
-		{
-			// Not a nine-slice: just return a distinct graphic for consistency.
-			return _getScaled(spec, targetW, targetH);
-		}
-
-		var key = _makeKey(spec, targetW, targetH, frameIndex);
+		var key = _makeKey(nine, targetW, targetH, frameIndex);
 		if (_cache.exists(key))
 			return _cache.get(key);
 
-		var src = _resolveBitmapData(spec);
+		var src = _resolveBitmapData(nine.source);
 		if (src == null) return null;
 
-		var frameW = spec.width != null && spec.width > 0 ? spec.width : src.width;
-		var frameH = spec.height != null && spec.height > 0 ? spec.height : src.height;
+		var frameW = (nine.frameWidth > 0) ? nine.frameWidth : src.width;
+		var frameH = (nine.frameHeight > 0) ? nine.frameHeight : src.height;
 
 		// For now, frameIndex is ignored unless user provides a spritesheet and frame size.
 		// We'll slice the requested cell from the spritesheet.
 		var srcRect = _frameRect(src, frameW, frameH, frameIndex);
 		var out = new BitmapData(targetW, targetH, true, 0x00000000);
 
-		_drawNineSlice(out, src, srcRect, ns.left, ns.top, ns.right, ns.bottom);
+		_drawNineSlice(out, src, srcRect, nine.left, nine.top, nine.right, nine.bottom);
 
 		var gfx = FlxGraphic.fromBitmapData(out, false, key);
 		_cache.set(key, gfx);
 		return gfx;
 	}
 
-	static function _makeKey(spec:FlxUXGraphicSpec, w:Int, h:Int, frameIndex:Int):String
+	static function _makeKey(nine:FlxUX9Slice, w:Int, h:Int, frameIndex:Int):String
 	{
-		var ns = spec.nineSlice;
-		var assetKey = Std.string(spec.asset);
-		var fw = spec.width;
-		var fh = spec.height;
-		var l = ns != null ? ns.left : 0;
-		var t = ns != null ? ns.top : 0;
-		var r = ns != null ? ns.right : 0;
-		var b = ns != null ? ns.bottom : 0;
+		var assetKey = Std.string(nine.source);
+		var fw = nine.frameWidth;
+		var fh = nine.frameHeight;
+		var l = nine.left;
+		var t = nine.top;
+		var r = nine.right;
+		var b = nine.bottom;
 		return 'ux9|' + assetKey + '|' + fw + 'x' + fh + '|f' + frameIndex + '|to' + w + 'x' + h + '|ns' + l + ',' + t + ',' + r + ',' + b;
 	}
 
-	static function _resolveBitmapData(spec:FlxUXGraphicSpec):BitmapData
+	@:allow(flixel.ux.FlxUXGroup)
+	static function _resolveBitmapData(source:Dynamic):BitmapData
 	{
 		// Best effort resolution: accept BitmapData directly; otherwise try Flixel asset system.
-		if (spec.asset == null) return null;
-		if (Std.isOfType(spec.asset, BitmapData))
-			return cast spec.asset;
+		if (source == null) return null;
+		if (Std.isOfType(source, BitmapData))
+			return cast source;
+		if (Std.isOfType(source, FlxGraphic))
+		{
+			var fg:FlxGraphic = cast source;
+			return fg.bitmap;
+		}
+		if (Std.isOfType(source, flixel.FlxSprite))
+		{
+			var s:flixel.FlxSprite = cast source;
+			return (s.graphic != null) ? s.graphic.bitmap : null;
+		}
 
 		// FlxG.bitmap can resolve string asset ids to BitmapData.
-		var g = FlxG.bitmap.add(spec.asset, false);
+		var g = flixel.FlxG.bitmap.add(source, false);
 		return (g != null) ? g.bitmap : null;
 	}
 
@@ -157,11 +159,11 @@ class FlxUXNineSliceCache
 		blit(left, top, centerSrcW, centerSrcH, left, top, centerDstW, centerDstH);
 	}
 
-	static function _getScaled(spec:FlxUXGraphicSpec, w:Int, h:Int):FlxGraphic
+	public static function getScaled(source:Dynamic, w:Int, h:Int):FlxGraphic
 	{
-		var key = 'uxscale|' + Std.string(spec.asset) + '|to' + w + 'x' + h;
+		var key = 'uxscale|' + Std.string(source) + '|to' + w + 'x' + h;
 		if (_cache.exists(key)) return _cache.get(key);
-		var src = _resolveBitmapData(spec);
+		var src = _resolveBitmapData(source);
 		if (src == null) return null;
 		var out = new BitmapData(w, h, true, 0x00000000);
 		var m = new Matrix();

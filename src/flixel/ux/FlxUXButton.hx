@@ -7,6 +7,12 @@ import flixel.ui.FlxButton.FlxButtonState;
 
 class FlxUXButton extends FlxButton
 {
+	private static inline var DEFAULT_UP:FlxColor = 0xFF3A3E4A;
+	private static inline var DEFAULT_HOVER:FlxColor = 0xFF4A5060;
+	private static inline var DEFAULT_DOWN:FlxColor = 0xFF2C2F38;
+	private static inline var DEFAULT_DISABLED:FlxColor = 0xFF232531;
+
+	private var _usingDefaultSkin:Bool = false;
 	/** Padding around the label used when auto-sizing. */
 	public var marginX:Float = 10;
 	public var marginY:Float = 6;
@@ -18,12 +24,17 @@ class FlxUXButton extends FlxButton
 	public var uxFocused(default, null):Bool = false;
 	/** Whether this button is currently showing a NAV "pressed" state. */
 	public var uxPressed(default, null):Bool = false;
-	/** Optional per-button assets/style override. */
-	public var assets:FlxUXAssets = null;
 
 	/** Optional back-reference used for asset precedence (button -> group -> core). */
 	@:allow(flixel.ux.FlxUXGroup)
 	private var _uxGroup:FlxUXGroup = null;
+
+	@:allow(flixel.ux.FlxUXCore)
+	@:allow(flixel.ux.FlxUXGroup)
+	private inline function _getUXGroup():FlxUXGroup
+	{
+		return _uxGroup;
+	}
 
 	// FRAME focus style support: we re-generate the button's background graphic with a border.
 	// (This avoids relying on DisplayObject parenting, which FlxSprite/FlxButton don't expose.)
@@ -69,6 +80,21 @@ class FlxUXButton extends FlxButton
 		centerLabel();
 	}
 
+	/**
+	 * Resizes the button to an explicit size.
+	 *
+	 * This keeps the label centered and (if using the default procedural skin) regenerates the graphic.
+	 */
+	public function resize(w:Int, h:Int):Void
+	{
+		if (w < 1) w = 1;
+		if (h < 1) h = 1;
+		autoSizeToLabel = false;
+		makeGraphic(w, h, _frameBaseColor, true);
+		_applyDefaultSkin();
+		centerLabel();
+	}
+
 	/** Centers the label within the current button size (does not resize). */
 	public function centerLabel():Void
 	{
@@ -77,42 +103,76 @@ class FlxUXButton extends FlxButton
 		this.label.y = y + (height - this.label.height) * 0.5;
 	}
 
-	/** Applies assets/theme rules (called automatically when added/created via FlxUXGroup). */
-	public function applyAssets():Void
+	/** Applies this button's skin based on FlxUXCore/group settings (called by FlxUXGroup). */
+	@:allow(flixel.ux.FlxUXGroup)
+	private function applySkin():Void
 	{
-		var a = resolveAssets();
-		if (a == null) return;
+		var input:Dynamic = null;
+		if (_uxGroup != null && _uxGroup.buttonGraphic != null)
+			input = _uxGroup.buttonGraphic;
+		else
+			input = FlxUXCore.buttonGraphic;
 
-		if (a.buttonSkin != null)
+		if (input == null)
 		{
-			// If nine-slice is specified, render once (cached) to the current size.
-			if (a.buttonSkin.nineSlice != null)
-			{
-				var w = Std.int(Math.max(1, width));
-				var h = Std.int(Math.max(1, height));
-				var gfx = FlxUXNineSliceCache.get(a.buttonSkin, w, h, 0);
-				if (gfx != null)
-					loadGraphic(gfx);
-			}
-			else
-			{
-				// Keep it compatible with a wide range of Flixel versions.
-				var w = a.buttonSkin.width;
-				var h = a.buttonSkin.height;
-				if (w == null) w = 0;
-				if (h == null) h = 0;
-				loadGraphic(a.buttonSkin.asset, a.buttonSkin.animated == true, w, h);
-			}
+			_applyDefaultSkin();
+			return;
 		}
 
-		_applyFocusVisual(false);
+		_usingDefaultSkin = false;
+		var w = Std.int(Math.max(1, width));
+		var h = Std.int(Math.max(1, height));
+
+		// 9-slice convenience
+		if (Std.isOfType(input, flixel.ux.FlxUX9Slice))
+		{
+			var ns:flixel.ux.FlxUX9Slice = cast input;
+			var gfx = FlxUXNineSliceCache.get(ns, w, h, 0);
+			if (gfx != null)
+				loadGraphic(gfx);
+		}
+		else
+		{
+			var g = flixel.ux.FlxUXGraphics.toGraphic(input);
+			if (g != null)
+				loadGraphic(g);
+		}
+
+		antialiasing = false;
+		centerLabel();
 	}
 
-	private inline function resolveAssets():FlxUXAssets
+	private function _applyDefaultSkin():Void
 	{
-		if (assets != null) return assets;
-		if (_uxGroup != null && _uxGroup.assets != null) return _uxGroup.assets;
-		return FlxUXCore.assets;
+		_usingDefaultSkin = true;
+		var w = Std.int(Math.max(1, width));
+		var h = Std.int(Math.max(1, height));
+
+		// 4-frame vertical strip: UP, HOVER, DOWN, DISABLED.
+		makeGraphic(w, h * 4, 0x00000000, true);
+		pixels.fillRect(new openfl.geom.Rectangle(0, 0, w, h), DEFAULT_UP);
+		pixels.fillRect(new openfl.geom.Rectangle(0, h, w, h), DEFAULT_HOVER);
+		pixels.fillRect(new openfl.geom.Rectangle(0, h * 2, w, h), DEFAULT_DOWN);
+		pixels.fillRect(new openfl.geom.Rectangle(0, h * 3, w, h), DEFAULT_DISABLED);
+		dirty = true;
+		loadGraphic(pixels, true, w, h);
+		centerLabel();
+		_updateFrameFromStatus();
+	}
+
+	private function _updateFrameFromStatus():Void
+	{
+		if (!_usingDefaultSkin) return;
+
+		switch (status)
+		{
+			case FlxButtonState.HIGHLIGHT:
+				animation.frameIndex = 1;
+			case FlxButtonState.PRESSED:
+				animation.frameIndex = 2;
+			default:
+				animation.frameIndex = 0;
+		}
 	}
 
 	/**
@@ -128,71 +188,11 @@ class FlxUXButton extends FlxButton
 
 	private function _applyFocusVisual(focused:Bool):Void
 	{
-		var a = resolveAssets();
-		if (a == null)
-			return;
-
-		switch (a.focusStyle)
-		{
-			case HOVER_ONLY:
-				// Do nothing: mouse hover visuals come from FlxButton.
-				alpha = 1.0;
-				_applyFrame(false, a.focusColor, a.focusFrameThickness);
-
-			case DIM_UNFOCUSED:
-				alpha = focused ? 1.0 : a.unfocusedAlpha;
-				_applyFrame(false, a.focusColor, a.focusFrameThickness);
-
-			case FRAME:
-				alpha = 1.0;
-				_applyFrame(focused, a.focusColor, a.focusFrameThickness);
-				_applyFocusFrameOverlay(focused, a);
-
-			case SPRITE_ON_BUTTON:
-				// TODO (placeholder): for now behave like HOVER_ONLY.
-				alpha = 1.0;
-				_applyFrame(false, a.focusColor, a.focusFrameThickness);
-
-			case SPRITE_NEXT_TO_BUTTON:
-				// TODO (placeholder): for now behave like HOVER_ONLY.
-				alpha = 1.0;
-				_applyFrame(false, a.focusColor, a.focusFrameThickness);
-		}
-	}
-
-	private function _applyFocusFrameOverlay(focused:Bool, a:FlxUXAssets):Void
-	{
-		// Only engage overlay mode when a graphic is provided.
-		if (a == null || a.focusFrame == null)
-		{
-			if (_focusFrameSprite != null)
-				_focusFrameSprite.visible = false;
-			return;
-		}
-
-		if (_focusFrameSprite == null)
-		{
-			_focusFrameSprite = new FlxSprite();
-			_focusFrameSprite.moves = false;
+		// Simple: focus visuals are drawn by the group (frame / next-to / overlay).
+		// Keep button visuals stable and FlxButton-like.
+		alpha = 1.0;
+		if (_focusFrameSprite != null)
 			_focusFrameSprite.visible = false;
-		}
-
-		_focusFrameSprite.visible = focused;
-		if (!focused) return;
-
-		// Size the overlay to button size (for now). Users can bake padding into the art.
-		var w = Std.int(Math.max(1, width));
-		var h = Std.int(Math.max(1, height));
-		var gfx = (a.focusFrame.nineSlice != null) ? FlxUXNineSliceCache.get(a.focusFrame, w, h, 0) : null;
-		if (gfx != null)
-			_focusFrameSprite.loadGraphic(gfx);
-		else
-			_focusFrameSprite.loadGraphic(a.focusFrame.asset, a.focusFrame.animated == true, a.focusFrame.width != null ? a.focusFrame.width : 0,
-				a.focusFrame.height != null ? a.focusFrame.height : 0);
-
-		_focusFrameSprite.x = x;
-		_focusFrameSprite.y = y;
-		_focusFrameSprite.scrollFactor.set(scrollFactor.x, scrollFactor.y);
 	}
 
 	private function _applyFrame(enabled:Bool, color:FlxColor, thickness:Int):Void
@@ -235,6 +235,21 @@ class FlxUXButton extends FlxButton
 		// Keep it simple: drive FlxButton's status so default skins/graphics react.
 		// Pointer clicks continue to work normally through FlxButton's own input handling.
 		status = uxPressed ? FlxButtonState.PRESSED : FlxButtonState.NORMAL;
+		_updateFrameFromStatus();
+	}
+
+	override public function update(elapsed:Float):Void
+	{
+		super.update(elapsed);
+
+		// Pointer UX: treat hover as focus so the group's highlighter follows the mouse.
+		if (FlxUXCore.mode == flixel.ux.FlxUXCore.FlxUXInputMode.POINTER)
+		{
+			if (status == FlxButtonState.HIGHLIGHT && FlxUXCore.focused != this)
+				FlxUXCore.setFocused(this);
+		}
+
+		_updateFrameFromStatus();
 	}
 
 	/**
