@@ -12,7 +12,7 @@ class FlxUXButton extends FlxButton
 	private static inline var DEFAULT_DOWN:FlxColor = 0xFF2C2F38;
 	private static inline var DEFAULT_DISABLED:FlxColor = 0xFF232531;
 
-	private var _usingDefaultSkin:Bool = false;
+	private var usingDefaultSkin:Bool = false;
 	/** Padding around the label used when auto-sizing. */
 	public var marginX:Float = 10;
 	public var marginY:Float = 6;
@@ -27,19 +27,17 @@ class FlxUXButton extends FlxButton
 
 	/** Optional back-reference used for asset precedence (button -> group -> core). */
 	@:allow(flixel.ux.FlxUXGroup)
-	private var _uxGroup:FlxUXGroup = null;
+	private var uxGroup:FlxUXGroup = null;
 
 	@:allow(flixel.ux.FlxUXCore)
 	@:allow(flixel.ux.FlxUXGroup)
 	private inline function _getUXGroup():FlxUXGroup
 	{
-		return _uxGroup;
+		return uxGroup;
 	}
 
-	// FRAME focus style support: we re-generate the button's background graphic with a border.
-	// (This avoids relying on DisplayObject parenting, which FlxSprite/FlxButton don't expose.)
-	private var _frameBaseColor:FlxColor = 0xFF3A3E4A;
-	private var _focusFrameSprite:FlxSprite = null;
+	private var frameBaseColor:FlxColor = 0xFF3A3E4A;
+	private var focusFrameSprite:FlxSprite = null;
 
 	/**
 	 * Creates a UX button.
@@ -51,8 +49,6 @@ class FlxUXButton extends FlxButton
 	 */
 	public function new(x:Float = 0, y:Float = 0, label:String = "", ?action:Void->Void)
 	{
-		// Let FlxButton build its internal label by providing the text up-front.
-		// Otherwise `this.label` can be null, depending on Flixel version/setup.
 		super(x, y, label);
 		this.action = action;
 
@@ -75,7 +71,7 @@ class FlxUXButton extends FlxButton
 
 		// Only change if needed.
 		if (Std.int(width) != w || Std.int(height) != h)
-			makeGraphic(w, h, _frameBaseColor, true);
+			makeGraphic(w, h, frameBaseColor, true);
 
 		centerLabel();
 	}
@@ -90,7 +86,7 @@ class FlxUXButton extends FlxButton
 		if (w < 1) w = 1;
 		if (h < 1) h = 1;
 		autoSizeToLabel = false;
-		makeGraphic(w, h, _frameBaseColor, true);
+		makeGraphic(w, h, frameBaseColor, true);
 		_applyDefaultSkin();
 		centerLabel();
 	}
@@ -107,9 +103,9 @@ class FlxUXButton extends FlxButton
 	@:allow(flixel.ux.FlxUXGroup)
 	private function applySkin():Void
 	{
-		var input:Dynamic = null;
-		if (_uxGroup != null && _uxGroup.buttonGraphic != null)
-			input = _uxGroup.buttonGraphic;
+		var input:Null<FlxUXCore.GraphicInput> = null;
+		if (uxGroup != null && uxGroup.buttonGraphic != null)
+			input = uxGroup.buttonGraphic;
 		else
 			input = FlxUXCore.buttonGraphic;
 
@@ -119,11 +115,10 @@ class FlxUXButton extends FlxButton
 			return;
 		}
 
-		_usingDefaultSkin = false;
+		usingDefaultSkin = false;
 		var w = Std.int(Math.max(1, width));
 		var h = Std.int(Math.max(1, height));
 
-		// 9-slice convenience
 		if (Std.isOfType(input, flixel.ux.FlxUX9Slice))
 		{
 			var ns:flixel.ux.FlxUX9Slice = cast input;
@@ -146,11 +141,10 @@ class FlxUXButton extends FlxButton
 
 	private function _applyDefaultSkin():Void
 	{
-		_usingDefaultSkin = true;
+		usingDefaultSkin = true;
 		var w = Std.int(Math.max(1, width));
 		var h = Std.int(Math.max(1, height));
 
-		// 4-frame vertical strip: UP, HOVER, DOWN, DISABLED.
 		makeGraphic(w, h * 4, 0x00000000, true);
 		pixels.fillRect(new openfl.geom.Rectangle(0, 0, w, h), DEFAULT_UP);
 		pixels.fillRect(new openfl.geom.Rectangle(0, h, w, h), DEFAULT_HOVER);
@@ -164,7 +158,7 @@ class FlxUXButton extends FlxButton
 
 	private function _updateFrameFromStatus():Void
 	{
-		if (!_usingDefaultSkin) return;
+		if (!usingDefaultSkin) return;
 
 		switch (status)
 		{
@@ -190,11 +184,9 @@ class FlxUXButton extends FlxButton
 
 	private function _applyFocusVisual(focused:Bool):Void
 	{
-		// Simple: focus visuals are drawn by the group (frame / next-to / overlay).
-		// Keep button visuals stable and FlxButton-like.
 		alpha = 1.0;
-		if (_focusFrameSprite != null)
-			_focusFrameSprite.visible = false;
+		if (focusFrameSprite != null)
+			focusFrameSprite.visible = false;
 	}
 
 	private function _applyFrame(enabled:Bool, color:FlxColor, thickness:Int):Void
@@ -204,7 +196,7 @@ class FlxUXButton extends FlxButton
 
 		var w = Std.int(Math.max(1, width));
 		var h = Std.int(Math.max(1, height));
-		var base = _frameBaseColor;
+		var base = frameBaseColor;
 
 		if (!enabled)
 		{
@@ -214,7 +206,6 @@ class FlxUXButton extends FlxButton
 		}
 
 		makeGraphic(w, h, base, true);
-		// Draw border into this sprite's pixels.
 		pixels.fillRect(new openfl.geom.Rectangle(0, 0, w, t), color);
 		pixels.fillRect(new openfl.geom.Rectangle(0, h - t, w, t), color);
 		pixels.fillRect(new openfl.geom.Rectangle(0, 0, t, h), color);

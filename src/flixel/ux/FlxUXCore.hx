@@ -11,6 +11,19 @@ import flixel.math.FlxPoint;
  */
 class FlxUXCore
 {
+	/**
+	 * Accepts common Flixel-friendly graphic inputs:
+	 * - `String` (asset id)
+	 * - `FlxGraphic`
+	 * - `FlxSprite`
+	 * - `BitmapData`
+	 * - `FlxUX9Slice`
+	 */
+	public static final GraphicInput = haxe.extern.EitherType<String,
+		haxe.extern.EitherType<flixel.graphics.FlxGraphic,
+			haxe.extern.EitherType<flixel.FlxSprite,
+				haxe.extern.EitherType<openfl.display.BitmapData, flixel.ux.FlxUX9Slice>>>>;
+
 	// --- Built-in defaults (so users can override and easily restore) ---
 	public static inline var DEFAULT_MOUSE_GRAPHIC:String = "flixel-ux/mouse_cursor.png";
 	public static inline var DEFAULT_FOCUS_FRAME_FPS:Int = 6;
@@ -26,7 +39,7 @@ class FlxUXCore
 	 * Accepts: String, FlxGraphic, FlxSprite, BitmapData, FlxUX9Slice.
 	 * If null, FlxUXButton uses its procedural `makeGraphic` default.
 	 */
-	public static var buttonGraphic:Dynamic = null;
+	public static var buttonGraphic:Null<GraphicInput> = null;
 	// --- Focus highlight configuration (null => core/group fallback => built-in default) ---
 	/** Current focus highlight mode (defaults to FRAME). */
 	public static var focusMode:FlxUXFocusMode = FlxUXFocusMode.FRAME;
@@ -38,14 +51,14 @@ class FlxUXCore
 	 *
 	 * Accepts: String, FlxGraphic, FlxSprite, BitmapData, FlxUX9Slice.
 	 */
-	public static var focusFrameGraphic:Dynamic = DEFAULT_FOCUS_FRAME_GRAPHIC;
+	public static var focusFrameGraphic:GraphicInput = DEFAULT_FOCUS_FRAME_GRAPHIC;
 
 	/** Focus next-to graphic input. */
-	public static var focusNextToGraphic:Dynamic = null;
+	public static var focusNextToGraphic:Null<GraphicInput> = null;
 	/** If true, also show next-to graphic on right side. */
 	public static var focusNextToMirrored:Bool = false;
 	/** Optional right-side graphic input for mirrored next-to. If null, uses focusNextToGraphic (optionally flipped). */
-	public static var focusNextToGraphicRight:Dynamic = null;
+	public static var focusNextToGraphicRight:Null<GraphicInput> = null;
 	/** If true, flips the right-side next-to graphic horizontally. */
 	public static var focusNextToFlipRight:Bool = true;
 	/** Gap between button and next-to graphic (pixels). */
@@ -54,7 +67,7 @@ class FlxUXCore
 	public static var focusNextToOffsetY:Float = 0;
 
 	/** Focus overlay (on-top) graphic input. */
-	public static var focusOverlayGraphic:Dynamic = null;
+	public static var focusOverlayGraphic:Null<GraphicInput> = null;
 	/** Overlay placement: x = buttonRight + offsetX, y = buttonBottom + offsetY (defaults give half-hang). */
 	public static var focusOverlayOffsetX:Float = -8;
 	public static var focusOverlayOffsetY:Float = -8;
@@ -96,7 +109,13 @@ class FlxUXCore
 	 */
 	public static var cursorEnabled:Bool = true;
 	/** Hardware cursor graphic input (optional). Accepts: String, FlxGraphic, FlxSprite, BitmapData. */
-	public static var mouseCursorGraphic:Dynamic = DEFAULT_MOUSE_GRAPHIC;
+	public static var mouseCursorGraphic:GraphicInput = DEFAULT_MOUSE_GRAPHIC;
+
+	private static var groups:Array<FlxUXGroup> = [];
+	private static var initialized:Bool = false;
+	private static var navConfirmHeld:Bool = false;
+	private static var pendingAutoReady:Bool = false;
+	private static var pointerPreferred:Bool = true;
 
 	/** Restores built-in defaults (graphics + common focus settings). */
 	public static function resetDefaults():Void
@@ -165,14 +184,14 @@ class FlxUXCore
 	/** Mouse/cursor helper used by FlxUX. Created by `init()`. */
 	public static var mouse:FlxUXMouse;
 
-	private static var _groups:Array<FlxUXGroup> = [];
+	private static var groups:Array<FlxUXGroup> = [];
 	/** Currently focused button for NAV mode, or `null` if nothing is focused. */
 	public static var focused:FlxUXButton = null;
-	private static var _navConfirmHeld:Bool = false;
-	private static var _pointerPreferred:Bool = false;
+	private static var navConfirmHeld:Bool = false;
+	private static var pointerPreferred:Bool = false;
 
-	private static var _initialized:Bool = false;
-	private static var _pendingAutoReady:Bool = false;
+	private static var initialized:Bool = false;
+	private static var pendingAutoReady:Bool = false;
 
 	/**
 	 * Initializes FlxUX.
@@ -184,12 +203,12 @@ class FlxUXCore
 	 */
 	public static function init():Void
 	{
-		if (_initialized) return;
+		if (initialized) return;
+		initialized = true;
 		// FlxUX must not initialize until FlxGame has been constructed.
 		// In some setups FlxUXGroup may be created very early; safely no-op until FlxG.inputs exists.
 		if (flixel.FlxG.inputs == null)
 			return;
-		_initialized = true;
 
 		actions = new FlxUXActions(
 			keyboardArrows,
@@ -215,7 +234,7 @@ class FlxUXCore
 	 */
 	public static function rebindInputs():Void
 	{
-		if (!_initialized) init();
+		if (!initialized) init();
 
 		actions.rebind(
 			keyboardArrows,
@@ -233,16 +252,16 @@ class FlxUXCore
 	 */
 	public static function clearGroups():Void
 	{
-		_groups = [];
+		groups = [];
 		setFocused(null);
-		_navConfirmHeld = false;
+		navConfirmHeld = false;
 	}
 
 	private static function _onStateTransition():Void
 	{
 		clearGroups();
 		ready = false;
-		_pendingAutoReady = autoReady;
+		pendingAutoReady = autoReady;
 	}
 
 	private static function set_ready(value:Bool):Bool
@@ -267,8 +286,8 @@ class FlxUXCore
 	 */
 	public static function addGroup(group:FlxUXGroup, ?order:Int):Void
 	{
-		if (!_initialized) init();
-		_insertDense(_groups, group, order);
+		if (!initialized) init();
+		insertDense(groups, group, order);
 	}
 
 	/**
@@ -280,13 +299,12 @@ class FlxUXCore
 	 */
 	public static function removeGroup(group:FlxUXGroup):Bool
 	{
-		var i = _groups.indexOf(group);
+		var i = groups.indexOf(group);
 		if (i >= 0)
 		{
 			if (focused != null && group.containsButton(focused))
 				setFocused(null);
-
-			_groups.splice(i, 1);
+			groups.splice(i, 1);
 			return true;
 		}
 		return false;
@@ -299,21 +317,20 @@ class FlxUXCore
 	 */
 	public static function setGroupOrder(group:FlxUXGroup, order:Int):Void
 	{
-		var i = _groups.indexOf(group);
+		var i = groups.indexOf(group);
 		if (i < 0) return;
-		_groups.splice(i, 1);
-		_insertDense(_groups, group, order);
+		groups.splice(i, 1);
+		insertDense(groups, group, order);
 	}
 
 	@:allow(flixel.ux.FlxUXPlugin)
 	private static function internalUpdate(elapsed:Float):Void
 	{
-		if (!_initialized) init();
-
-		// If autoReady is enabled, allow input again once we're updating inside the new state.
-		if (_pendingAutoReady)
+		if (!initialized) init();
+		if (pendingAutoReady)
 		{
-			_pendingAutoReady = false;
+			// If autoReady is enabled, allow input again once we're updating inside the new state.
+			pendingAutoReady = false;
 			ready = true;
 		}
 
@@ -330,19 +347,19 @@ class FlxUXCore
 		{
 			mode = FlxUXCore.FlxUXInputMode.POINTER;
 			// Touch behaves like pointer UX but should not show a mouse cursor.
-			_pointerPreferred = mouseInput;
+			pointerPreferred = mouseInput;
 		}
 		else if (actions.up.triggered || actions.down.triggered || actions.left.triggered || actions.right.triggered
 			|| actions.confirm.triggered || actions.cancel.triggered)
 		{
 			mode = FlxUXCore.FlxUXInputMode.NAV;
-			_pointerPreferred = false;
+			pointerPreferred = false;
 		}
 
 		if (cursorEnabled)
 		{
 			mouse.enabled = true;
-			FlxG.mouse.visible = _pointerPreferred;
+			FlxG.mouse.visible = pointerPreferred;
 			mouse.update(elapsed, actions.pointerPressDown);
 		}
 		else
@@ -375,7 +392,7 @@ class FlxUXCore
 				var confirmHeldNow = actions.confirmDown;
 				if (focused != null)
 					focused.setNavPressed(confirmHeldNow);
-				_navConfirmHeld = confirmHeldNow;
+				navConfirmHeld = confirmHeldNow;
 
 				if (actions.right.triggered || actions.down.triggered)
 					focusNext(navTargets);
@@ -488,7 +505,7 @@ class FlxUXCore
 			var bestGroupScore = Math.POSITIVE_INFINITY;
 
 			// Find candidate groups (excluding the current one)
-			for (g in _groups)
+			for (g in groups)
 			{
 				if (g == null || !g.active || !g.capturesNav || !g.uxActive) continue;
 				if (focusedGroup != null && g == focusedGroup) continue;
@@ -568,7 +585,7 @@ class FlxUXCore
 	{
 		if (focused != null)
 		{
-			for (g in _groups)
+			for (g in groups)
 			{
 				if (g == null || !g.active || !g.capturesNav) continue;
 				var elig = g.getEligibleButtonsOrdered();
@@ -654,7 +671,7 @@ class FlxUXCore
 		{
 			focused.setFocused(true);
 			// If confirm is already held while focus changes, keep pressed visuals in sync.
-			focused.setNavPressed(_navConfirmHeld);
+			focused.setNavPressed(navConfirmHeld);
 		}
 
 		// Update per-group highlighter visuals.
@@ -676,7 +693,7 @@ class FlxUXCore
 	private static function getFlattenedEligibleNavButtons():Array<FlxUXButton>
 	{
 		var out:Array<FlxUXButton> = [];
-		for (g in _groups)
+		for (g in groups)
 		{
 			if (g == null || !g.uxActive || !g.capturesNav) continue;
 			var buttons = g.getEligibleButtonsOrdered();

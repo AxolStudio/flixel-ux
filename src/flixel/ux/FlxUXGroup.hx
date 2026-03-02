@@ -49,15 +49,15 @@ class FlxUXGroup extends FlxGroup
 	// Focus highlight settings (null => fall back to FlxUXCore, then built-in defaults)
 	public var focusMode:Null<FlxUXFocusMode> = null;
 	/** Default button skin graphic input for buttons in this group (null => FlxUXCore.buttonGraphic). */
-	public var buttonGraphic:Dynamic = null;
-	public var focusFrameGraphic:Dynamic = null;
-	public var focusNextToGraphic:Dynamic = null;
+	public var buttonGraphic:Null<FlxUXCore.GraphicInput> = null;
+	public var focusFrameGraphic:Null<FlxUXCore.GraphicInput> = null;
+	public var focusNextToGraphic:Null<FlxUXCore.GraphicInput> = null;
 	public var focusNextToMirrored:Null<Bool> = null;
-	public var focusNextToGraphicRight:Dynamic = null;
+	public var focusNextToGraphicRight:Null<FlxUXCore.GraphicInput> = null;
 	public var focusNextToFlipRight:Null<Bool> = null;
 	public var focusNextToGap:Null<Float> = null;
 	public var focusNextToOffsetY:Null<Float> = null;
-	public var focusOverlayGraphic:Dynamic = null;
+	public var focusOverlayGraphic:Null<FlxUXCore.GraphicInput> = null;
 	public var focusOverlayOffsetX:Null<Float> = null;
 	public var focusOverlayOffsetY:Null<Float> = null;
 
@@ -104,10 +104,10 @@ class FlxUXGroup extends FlxGroup
 	// Internals
 	// ---------------------------------------------------------------------------------------------
 
-	private var _ordered:Array<FlxUXButton> = [];
-	private var _buttonBasePos:Map<FlxUXButton, FlxPoint> = new Map();
-	private var _spriteBasePos:Map<FlxSprite, FlxPoint> = new Map();
-	private var _lastHighlightKey:String = null;
+	private var orderedButtons:Array<FlxUXButton> = [];
+	private var buttonBasePos:Map<FlxUXButton, FlxPoint> = new Map();
+	private var spriteBasePos:Map<FlxSprite, FlxPoint> = new Map();
+	private var lastHighlightKey:String = null;
 
 	/** Per-group focus highlighter (optional). */
 	public var focusHighlighter:FlxSprite = null;
@@ -120,12 +120,9 @@ class FlxUXGroup extends FlxGroup
 
 	public function new(maxSize:Int = 0)
 	{
-		// Lazy-init FlxUX the first time a group is created.
-		// Important: this must happen after FlxGame exists (so FlxG.inputs/gamepads are valid).
 		FlxUXCore.init();
 
 		super(maxSize);
-		// Auto-register for navigation so the simplest possible code works.
 		FlxUXCore.addGroup(this);
 		buttons = new FlxTypedGroup<FlxUXButton>();
 		sprites = new FlxTypedGroup<FlxSprite>();
@@ -133,12 +130,10 @@ class FlxUXGroup extends FlxGroup
 		add(sprites);
 
 		onCancel = null;
-		_ordered = [];
-		_buttonBasePos = new Map();
-		_spriteBasePos = new Map();
+		orderedButtons = [];
+		buttonBasePos = new Map();
+		spriteBasePos = new Map();
 
-		// Create the shared focus sprites. They are added to the sprite layer, but remain invisible
-		// unless enabled by the current focusMode (FRAME/NEXT_TO/OVERLAY).
 		focusHighlighter = new FlxSprite();
 		focusHighlighter.moves = false;
 		focusHighlighter.visible = false;
@@ -157,10 +152,10 @@ class FlxUXGroup extends FlxGroup
 		sprites.add(focusSideRight);
 		sprites.add(focusOverlay);
 
-		_trackSprite(focusHighlighter);
-		_trackSprite(focusSideLeft);
-		_trackSprite(focusSideRight);
-		_trackSprite(focusOverlay);
+		trackSprite(focusHighlighter);
+		trackSprite(focusSideLeft);
+		trackSprite(focusSideRight);
+		trackSprite(focusOverlay);
 	}
 
 	/**
@@ -178,12 +173,12 @@ class FlxUXGroup extends FlxGroup
 	{
 		if (button != null)
 		{
-			button._uxGroup = this;
+			button.uxGroup = this;
 			button.applySkin();
 			buttons.add(button);
-			_trackButton(button);
+			trackButton(button);
 		}
-		_insertDense(_ordered, button, order);
+		insertDense(orderedButtons, button, order);
 		return button;
 	}
 
@@ -199,7 +194,7 @@ class FlxUXGroup extends FlxGroup
 	public function addButton(label:String, action:Void->Void, ?x:Float = 0, ?y:Float = 0, ?order:Int):FlxUXButton
 	{
 		var b = new FlxUXButton(x, y, label, action);
-		b._uxGroup = this;
+		b.uxGroup = this;
 		return addUXButton(b, order);
 	}
 
@@ -222,7 +217,7 @@ class FlxUXGroup extends FlxGroup
 			var it = items[i];
 			if (it == null) continue;
 			var b = new FlxUXButton(it.x, it.y, it.label, it.action);
-			b._uxGroup = this;
+			b.uxGroup = this;
 			out.push(addUXButton(b, insertAt));
 			if (insertAt != null) insertAt++;
 		}
@@ -236,12 +231,12 @@ class FlxUXGroup extends FlxGroup
 	 */
 	public function removeButton(button:FlxUXButton):Bool
 	{
-		var idx = _ordered.indexOf(button);
+		var idx = orderedButtons.indexOf(button);
 		if (idx >= 0)
 		{
-			_ordered.splice(idx, 1);
+			orderedButtons.splice(idx, 1);
 			if (buttons != null) buttons.remove(button, true);
-			_untrackButton(button);
+			untrackButton(button);
 			return true;
 		}
 		return false;
@@ -250,7 +245,7 @@ class FlxUXGroup extends FlxGroup
 	/** Returns true if the given button is currently registered in this group. */
 	public inline function containsButton(button:FlxUXButton):Bool
 	{
-		return _ordered.indexOf(button) >= 0;
+		return orderedButtons.indexOf(button) >= 0;
 	}
 
 	/**
@@ -260,11 +255,11 @@ class FlxUXGroup extends FlxGroup
 	 */
 	public function setButtonOrder(button:FlxUXButton, newOrder:Int):Void
 	{
-		var idx = _ordered.indexOf(button);
+		var idx = orderedButtons.indexOf(button);
 		if (idx < 0) return;
 
-		_ordered.splice(idx, 1);
-		_insertDense(_ordered, button, newOrder);
+		orderedButtons.splice(idx, 1);
+		insertDense(orderedButtons, button, newOrder);
 	}
 
 	/**
@@ -277,7 +272,7 @@ class FlxUXGroup extends FlxGroup
 		if (!uxActive) return [];
 
 		var out:Array<FlxUXButton> = [];
-		for (b in _ordered)
+		for (b in orderedButtons)
 		{
 			if (b != null && b.isUXEligible())
 				out.push(b);
@@ -285,7 +280,7 @@ class FlxUXGroup extends FlxGroup
 		return out;
 	}
 
-	private static function _insertDense<T>(arr:Array<T>, item:T, ?order:Int):Void
+	private static function insertDense<T>(arr:Array<T>, item:T, ?order:Int):Void
 	{
 		var maxIndex = arr.length;
 		var pos = order;
@@ -301,27 +296,27 @@ class FlxUXGroup extends FlxGroup
 		arr.insert(pos, item);
 	}
 
-	private function _trackButton(child:FlxUXButton):Void
+	private function trackButton(child:FlxUXButton):Void
 	{
 		if (child == null) return;
-		_buttonBasePos.set(child, FlxPoint.get(child.x, child.y));
-		child.x = x + _buttonBasePos.get(child).x;
-		child.y = y + _buttonBasePos.get(child).y;
+		buttonBasePos.set(child, FlxPoint.get(child.x, child.y));
+		child.x = x + buttonBasePos.get(child).x;
+		child.y = y + buttonBasePos.get(child).y;
 	}
 
-	private function _untrackButton(child:FlxUXButton):Void
+	private function untrackButton(child:FlxUXButton):Void
 	{
 		if (child == null) return;
-		var p = _buttonBasePos.get(child);
+		var p = buttonBasePos.get(child);
 		if (p != null) p.put();
-		_buttonBasePos.remove(child);
+		buttonBasePos.remove(child);
 	}
 
 	private function set_x(v:Float):Float
 	{
 		if (x == v) return v;
 		x = v;
-		_applyContainerOffset();
+		applyContainerOffset();
 		return v;
 	}
 
@@ -329,19 +324,19 @@ class FlxUXGroup extends FlxGroup
 	{
 		if (y == v) return v;
 		y = v;
-		_applyContainerOffset();
+		applyContainerOffset();
 		return v;
 	}
 
-	private function _applyContainerOffset():Void
+	private function applyContainerOffset():Void
 	{
-		for (child => base in _buttonBasePos)
+		for (child => base in buttonBasePos)
 		{
 			if (child == null || base == null) continue;
 			child.x = x + base.x;
 			child.y = y + base.y;
 		}
-		for (child => base in _spriteBasePos)
+		for (child => base in spriteBasePos)
 		{
 			if (child == null || base == null) continue;
 			child.x = x + base.x;
@@ -474,11 +469,11 @@ class FlxUXGroup extends FlxGroup
 	private function _setChildBaseX(child:FlxUXButton, baseX:Float):Void
 	{
 		if (child == null) return;
-		var p = _buttonBasePos.get(child);
+		var p = buttonBasePos.get(child);
 		if (p == null)
 		{
-			_trackButton(child);
-			p = _buttonBasePos.get(child);
+			trackButton(child);
+			p = buttonBasePos.get(child);
 		}
 		p.x = baseX;
 	}
@@ -486,11 +481,11 @@ class FlxUXGroup extends FlxGroup
 	private function _setChildBaseY(child:FlxUXButton, baseY:Float):Void
 	{
 		if (child == null) return;
-		var p = _buttonBasePos.get(child);
+		var p = buttonBasePos.get(child);
 		if (p == null)
 		{
-			_trackButton(child);
-			p = _buttonBasePos.get(child);
+			trackButton(child);
+			p = buttonBasePos.get(child);
 		}
 		p.y = baseY;
 	}
@@ -498,21 +493,21 @@ class FlxUXGroup extends FlxGroup
 	private function _setChildBasePos(child:FlxUXButton, baseX:Float, baseY:Float):Void
 	{
 		if (child == null) return;
-		var p = _buttonBasePos.get(child);
+		var p = buttonBasePos.get(child);
 		if (p == null)
 		{
-			_trackButton(child);
-			p = _buttonBasePos.get(child);
+			trackButton(child);
+			p = buttonBasePos.get(child);
 		}
 		p.x = baseX;
 		p.y = baseY;
 	}
 
-	private function _trackSprite(child:FlxSprite):Void
+	private function trackSprite(child:FlxSprite):Void
 	{
 		if (child == null) return;
-		if (!_spriteBasePos.exists(child))
-			_spriteBasePos.set(child, FlxPoint.get(child.x - x, child.y - y));
+		if (!spriteBasePos.exists(child))
+			spriteBasePos.set(child, FlxPoint.get(child.x - x, child.y - y));
 	}
 
 	override public function update(elapsed:Float):Void
@@ -556,14 +551,14 @@ class FlxUXGroup extends FlxGroup
 		}
 
 		var mode:FlxUXFocusMode = (focusMode != null) ? focusMode : FlxUXCore.focusMode;
-		var frameInput:Dynamic = (focusFrameGraphic != null) ? focusFrameGraphic : FlxUXCore.focusFrameGraphic;
-		var nextToInput:Dynamic = (focusNextToGraphic != null) ? focusNextToGraphic : FlxUXCore.focusNextToGraphic;
+		var frameInput:FlxUXCore.GraphicInput = (focusFrameGraphic != null) ? focusFrameGraphic : FlxUXCore.focusFrameGraphic;
+		var nextToInput:FlxUXCore.GraphicInput = (focusNextToGraphic != null) ? focusNextToGraphic : FlxUXCore.focusNextToGraphic;
 		var nextToMirrored:Bool = (focusNextToMirrored != null) ? focusNextToMirrored : FlxUXCore.focusNextToMirrored;
-		var nextToRightInput:Dynamic = (focusNextToGraphicRight != null) ? focusNextToGraphicRight : FlxUXCore.focusNextToGraphicRight;
+		var nextToRightInput:FlxUXCore.GraphicInput = (focusNextToGraphicRight != null) ? focusNextToGraphicRight : FlxUXCore.focusNextToGraphicRight;
 		var nextToFlipRight:Bool = (focusNextToFlipRight != null) ? focusNextToFlipRight : FlxUXCore.focusNextToFlipRight;
 		var nextToGap:Float = (focusNextToGap != null) ? focusNextToGap : FlxUXCore.focusNextToGap;
 		var nextToOffY:Float = (focusNextToOffsetY != null) ? focusNextToOffsetY : FlxUXCore.focusNextToOffsetY;
-		var overlayInput:Dynamic = (focusOverlayGraphic != null) ? focusOverlayGraphic : FlxUXCore.focusOverlayGraphic;
+		var overlayInput:FlxUXCore.GraphicInput = (focusOverlayGraphic != null) ? focusOverlayGraphic : FlxUXCore.focusOverlayGraphic;
 		var overlayOffX:Float = (focusOverlayOffsetX != null) ? focusOverlayOffsetX : FlxUXCore.focusOverlayOffsetX;
 		var overlayOffY:Float = (focusOverlayOffsetY != null) ? focusOverlayOffsetY : FlxUXCore.focusOverlayOffsetY;
 
@@ -584,7 +579,7 @@ class FlxUXGroup extends FlxGroup
 			case FRAME:
 				focusHighlighter.visible = (frameInput != null);
 				if (focusHighlighter.visible)
-				_applyFocusFrameGraphic(frameInput, tw, th);
+				applyFocusFrameGraphic(frameInput, tw, th);
 				if (focusSideLeft != null) focusSideLeft.visible = false;
 				if (focusSideRight != null) focusSideRight.visible = false;
 				if (focusOverlay != null) focusOverlay.visible = false;
@@ -592,13 +587,13 @@ class FlxUXGroup extends FlxGroup
 			case NEXT_TO:
 				focusHighlighter.visible = false;
 				if (focusOverlay != null) focusOverlay.visible = false;
-				_applyFocusNextTo(nextToInput, nextToRightInput, nextToMirrored, nextToFlipRight, nextToGap, nextToOffY, focused);
+				applyFocusNextTo(nextToInput, nextToRightInput, nextToMirrored, nextToFlipRight, nextToGap, nextToOffY, focused);
 
 			case OVERLAY:
 				focusHighlighter.visible = false;
 				if (focusSideLeft != null) focusSideLeft.visible = false;
 				if (focusSideRight != null) focusSideRight.visible = false;
-				_applyFocusOverlay(overlayInput, overlayOffX, overlayOffY, focused);
+				applyFocusOverlay(overlayInput, overlayOffX, overlayOffY, focused);
 
 			default:
 				// HOVER_ONLY / DIM_UNFOCUSED: no group-level sprite.
@@ -618,7 +613,7 @@ class FlxUXGroup extends FlxGroup
 		{
 			focusHighlighter.x = tx;
 			focusHighlighter.y = ty;
-			var bpH = _spriteBasePos.get(focusHighlighter);
+			var bpH = spriteBasePos.get(focusHighlighter);
 			if (bpH != null)
 			{
 				bpH.x = tx - x;
@@ -630,7 +625,7 @@ class FlxUXGroup extends FlxGroup
 	}
 
 
-	private function _applyFocusFrameGraphic(input:Dynamic, tw:Int, th:Int):Void
+	private function applyFocusFrameGraphic(input:FlxUXCore.GraphicInput, tw:Int, th:Int):Void
 	{
 		if (input == null || focusHighlighter == null)
 			return;
@@ -654,7 +649,7 @@ class FlxUXGroup extends FlxGroup
 			var frames = 1;
 			if (ns.frameWidth > 0 && ns.frameHeight > 0)
 			{
-				var bd = FlxUX9Slice._resolveBitmapData(ns.source);
+				var bd = FlxUX9Slice.resolveBitmapData(ns.source);
 				if (bd != null)
 				{
 					var cols = Std.int(bd.width / ns.frameWidth);
@@ -709,7 +704,7 @@ class FlxUXGroup extends FlxGroup
 		focusHighlighter.antialiasing = false;
 	}
 
-	private function _applyFocusNextTo(leftInput:Dynamic, rightInput:Dynamic, mirrored:Bool, flipRight:Bool, gap:Float, offY:Float, focused:FlxUXButton):Void
+	private function applyFocusNextTo(leftInput:FlxUXCore.GraphicInput, rightInput:FlxUXCore.GraphicInput, mirrored:Bool, flipRight:Bool, gap:Float, offY:Float, focused:FlxUXButton):Void
 	{
 		if (focusSideLeft == null || focusSideRight == null) return;
 		if (focused == null || leftInput == null)
@@ -745,7 +740,7 @@ class FlxUXGroup extends FlxGroup
 		}
 	}
 
-	private function _applyFocusOverlay(input:Dynamic, offX:Float, offY:Float, focused:FlxUXButton):Void
+	private function applyFocusOverlay(input:FlxUXCore.GraphicInput, offX:Float, offY:Float, focused:FlxUXButton):Void
 	{
 		if (focusOverlay == null) return;
 		if (focused == null || input == null)

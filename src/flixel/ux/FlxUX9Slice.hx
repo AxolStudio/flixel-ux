@@ -1,10 +1,5 @@
 package flixel.ux;
 
-// This module intentionally combines:
-// - FlxUX9Slice (the data)
-// - FlxUX9SliceRender (9-slice renderer/cache + graphic input resolver)
-// so there are fewer files.
-
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.graphics.FlxGraphic;
@@ -20,15 +15,24 @@ import openfl.geom.Rectangle;
  */
 class FlxUX9Slice
 {
-	// ---------------------------------------------------------------------------------------------
-	// Cache + helpers (KISS: single type to remember)
-	// ---------------------------------------------------------------------------------------------
-	static var _cache:Map<String, FlxGraphic> = new Map();
+	/** Source graphic input (String asset id/path, FlxGraphic, FlxSprite, BitmapData, etc). */
+	public var source:FlxUXCore.GraphicInput;
+
+	/** Optional frame size if source is a spritesheet. */
+	public var frameWidth:Int;
+	public var frameHeight:Int;
+
+	/** 9-slice borders. */
+	public var left:Int;
+	public var top:Int;
+	public var right:Int;
+	public var bottom:Int;
+	private static var cache:Map<String, FlxGraphic> = new Map();
 
 	/** Clears the internal 9-slice cache. */
 	public static function clearCache():Void
 	{
-		_cache = new Map();
+		cache = new Map();
 	}
 
 	/**
@@ -40,30 +44,29 @@ class FlxUX9Slice
 		if (targetW < 1) targetW = 1;
 		if (targetH < 1) targetH = 1;
 
-		var key = _makeKey(nine, targetW, targetH, frameIndex);
-		if (_cache.exists(key))
-			return _cache.get(key);
+		var key:String = makeKey(nine, targetW, targetH, frameIndex);
+		if (cache.exists(key))
+			return cache.get(key);
 
-		var src = _resolveBitmapData(nine.source);
+		var src:BitmapData = resolveBitmapData(nine.source);
 		if (src == null) return null;
 
-		var frameW = (nine.frameWidth > 0) ? nine.frameWidth : src.width;
-		var frameH = (nine.frameHeight > 0) ? nine.frameHeight : src.height;
+		var frameW:Int = (nine.frameWidth > 0) ? nine.frameWidth : src.width;
+		var frameH:Int = (nine.frameHeight > 0) ? nine.frameHeight : src.height;
 
-		var srcRect = _frameRect(src, frameW, frameH, frameIndex);
-		var out = new BitmapData(targetW, targetH, true, 0x00000000);
+		var srcRect:Rectangle = frameRect(src, frameW, frameH, frameIndex);
+		var out:BitmapData = new BitmapData(targetW, targetH, true, 0x00000000);
 
-		_drawNineSlice(out, src, srcRect, nine.left, nine.top, nine.right, nine.bottom);
-
-		var gfx = FlxGraphic.fromBitmapData(out, false, key);
-		_cache.set(key, gfx);
+		drawNineSlice(out, src, srcRect, nine.left, nine.top, nine.right, nine.bottom);
+		var gfx:FlxGraphic = FlxGraphic.fromBitmapData(out);
+		cache.set(key, gfx);
 		return gfx;
 	}
 
 	/**
 	 * Converts Flixel-style "graphic input" to `FlxGraphic`.
 	 */
-	public static function toGraphic(input:Dynamic):FlxGraphic
+	public static function toGraphic(input:FlxUXCore.GraphicInput):FlxGraphic
 	{
 		if (input == null) return null;
 		if (Std.isOfType(input, FlxGraphic)) return cast input;
@@ -80,20 +83,20 @@ class FlxUX9Slice
 		return FlxG.bitmap.add(input, false);
 	}
 
-	static function _makeKey(nine:FlxUX9Slice, w:Int, h:Int, frameIndex:Int):String
+	private static function makeKey(nine:FlxUX9Slice, w:Int, h:Int, frameIndex:Int):String
 	{
-		var assetKey = Std.string(nine.source);
-		var fw = nine.frameWidth;
-		var fh = nine.frameHeight;
-		var l = nine.left;
-		var t = nine.top;
-		var r = nine.right;
-		var b = nine.bottom;
+		var assetKey:String = Std.string(nine.source);
+		var fw:Int = nine.frameWidth;
+		var fh:Int = nine.frameHeight;
+		var l:Int = nine.left;
+		var t:Int = nine.top;
+		var r:Int = nine.right;
+		var b:Int = nine.bottom;
 		return 'ux9|' + assetKey + '|' + fw + 'x' + fh + '|f' + frameIndex + '|to' + w + 'x' + h + '|ns' + l + ',' + t + ',' + r + ',' + b;
 	}
 
 	@:allow(flixel.ux.FlxUXGroup)
-	static function _resolveBitmapData(source:Dynamic):BitmapData
+	private static function resolveBitmapData(source:FlxUXCore.GraphicInput):BitmapData
 	{
 		if (source == null) return null;
 		if (Std.isOfType(source, BitmapData))
@@ -112,46 +115,46 @@ class FlxUX9Slice
 		return (g != null) ? g.bitmap : null;
 	}
 
-	static function _frameRect(src:BitmapData, frameW:Int, frameH:Int, frameIndex:Int):Rectangle
+	private static function frameRect(src:BitmapData, frameW:Int, frameH:Int, frameIndex:Int):Rectangle
 	{
 		if (frameW <= 0) frameW = src.width;
 		if (frameH <= 0) frameH = src.height;
-		var cols = Std.int(src.width / frameW);
+		var cols:Int = Std.int(src.width / frameW);
 		if (cols < 1) cols = 1;
-		var x = (frameIndex % cols) * frameW;
-		var y = Std.int(frameIndex / cols) * frameH;
+		var x:Int = (frameIndex % cols) * frameW;
+		var y:Int = Std.int(frameIndex / cols) * frameH;
 		if (x + frameW > src.width) x = 0;
 		if (y + frameH > src.height) y = 0;
 		return new Rectangle(x, y, frameW, frameH);
 	}
 
-	static function _drawNineSlice(out:BitmapData, src:BitmapData, srcRect:Rectangle, left:Int, top:Int, right:Int, bottom:Int):Void
+	private static function drawNineSlice(out:BitmapData, src:BitmapData, srcRect:Rectangle, left:Int, top:Int, right:Int, bottom:Int):Void
 	{
 		if (left < 0) left = 0;
 		if (top < 0) top = 0;
 		if (right < 0) right = 0;
 		if (bottom < 0) bottom = 0;
 
-		var sw = Std.int(srcRect.width);
-		var sh = Std.int(srcRect.height);
+		var sw:Int = Std.int(srcRect.width);
+		var sh:Int = Std.int(srcRect.height);
 		left = Std.int(Math.min(left, sw));
 		right = Std.int(Math.min(right, sw - left));
 		top = Std.int(Math.min(top, sh));
 		bottom = Std.int(Math.min(bottom, sh - top));
 
-		var dw = out.width;
-		var dh = out.height;
+		var dw:Int = out.width;
+		var dh:Int = out.height;
 
-		var centerSrcW = sw - left - right;
-		var centerSrcH = sh - top - bottom;
-		var centerDstW = Std.int(Math.max(0, dw - left - right));
-		var centerDstH = Std.int(Math.max(0, dh - top - bottom));
+		var centerSrcW:Int = sw - left - right;
+		var centerSrcH:Int = sh - top - bottom;
+		var centerDstW:Int = Std.int(Math.max(0, dw - left - right));
+		var centerDstH:Int = Std.int(Math.max(0, dh - top - bottom));
 
 		function blit(sx:Int, sy:Int, sW:Int, sH:Int, dx:Int, dy:Int, dW:Int, dH:Int):Void
 		{
 			if (sW <= 0 || sH <= 0 || dW <= 0 || dH <= 0) return;
-			var rect = new Rectangle(srcRect.x + sx, srcRect.y + sy, sW, sH);
-			var tmp = new BitmapData(sW, sH, true, 0x00000000);
+			var rect:Rectangle = new Rectangle(srcRect.x + sx, srcRect.y + sy, sW, sH);
+			var tmp:BitmapData = new BitmapData(sW, sH, true, 0x00000000);
 			tmp.copyPixels(src, rect, new Point(0, 0));
 			if (sW == dW && sH == dH)
 			{
@@ -159,7 +162,7 @@ class FlxUX9Slice
 			}
 			else
 			{
-				var m = new Matrix();
+				var m:Matrix = new Matrix();
 				m.scale(dW / sW, dH / sH);
 				m.translate(dx, dy);
 				out.draw(tmp, m, null, null, null, true);
@@ -180,20 +183,7 @@ class FlxUX9Slice
 		blit(left, top, centerSrcW, centerSrcH, left, top, centerDstW, centerDstH);
 	}
 
-	/** Source graphic input (String asset id/path, FlxGraphic, FlxSprite, BitmapData, etc). */
-	public var source:Dynamic;
-
-	/** Optional frame size if source is a spritesheet. */
-	public var frameWidth:Int;
-	public var frameHeight:Int;
-
-	/** 9-slice borders. */
-	public var left:Int;
-	public var top:Int;
-	public var right:Int;
-	public var bottom:Int;
-
-	public function new(source:Dynamic, frameWidth:Int, frameHeight:Int, left:Int, top:Int, right:Int, bottom:Int)
+	public function new(source:FlxUXCore.GraphicInput, frameWidth:Int, frameHeight:Int, left:Int, top:Int, right:Int, bottom:Int)
 	{
 		this.source = source;
 		this.frameWidth = frameWidth;
