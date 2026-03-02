@@ -810,4 +810,4 @@ enum FlxUXNavCapturePolicy
 	NEVER;
 }
 
-// FlxUXFocusMode is declared in `FlxUXFocusMode.hx`.
+// FlxUXFocusMode is declared at the bottom of this file.

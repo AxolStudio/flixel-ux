@@ -654,7 +654,7 @@ class FlxUXGroup extends FlxGroup
 			var frames = 1;
 			if (ns.frameWidth > 0 && ns.frameHeight > 0)
 			{
-				var bd = FlxUXNineSliceCache._resolveBitmapData(ns.source);
+				var bd = FlxUX9Slice._resolveBitmapData(ns.source);
 				if (bd != null)
 				{
 					var cols = Std.int(bd.width / ns.frameWidth);
@@ -670,7 +670,7 @@ class FlxUXGroup extends FlxGroup
 				var k = 'ux9frame|' + Std.string(ns.source) + '|' + ns.frameWidth + 'x' + ns.frameHeight + '|to' + tw + 'x' + th;
 				if (!setKey(k))
 					return;
-				var gfx = FlxUXNineSliceCache.get(ns, tw, th, 0);
+				var gfx = FlxUX9Slice.get(ns, tw, th, 0);
 				if (gfx != null)
 					focusHighlighter.loadGraphic(gfx);
 			}
@@ -682,7 +682,7 @@ class FlxUXGroup extends FlxGroup
 				var out = new BitmapData(tw, th * frames, true, 0x00000000);
 				for (i in 0...frames)
 				{
-					var g = FlxUXNineSliceCache.get(ns, tw, th, i);
+					var g = FlxUX9Slice.get(ns, tw, th, i);
 					if (g == null || g.bitmap == null) continue;
 					out.copyPixels(g.bitmap, new Rectangle(0, 0, tw, th), new Point(0, i * th), null, null, true);
 				}
@@ -698,7 +698,7 @@ class FlxUXGroup extends FlxGroup
 		}
 
 		// Anything else: treat as a standard Flixel graphic input.
-		var g = flixel.ux.FlxUXGraphics.toGraphic(input);
+		var g = flixel.ux.FlxUX9Slice.toGraphic(input);
 		if (g != null)
 		{
 			var k = 'uxframe|' + Std.string(input) + '|to' + tw + 'x' + th;
@@ -721,7 +721,7 @@ class FlxUXGroup extends FlxGroup
 
 		// Left
 		focusSideLeft.visible = true;
-		var gL = flixel.ux.FlxUXGraphics.toGraphic(leftInput);
+		var gL = flixel.ux.FlxUX9Slice.toGraphic(leftInput);
 		if (gL != null) focusSideLeft.loadGraphic(gL);
 		focusSideLeft.antialiasing = false;
 		focusSideLeft.x = focused.x - focusSideLeft.width - gap;
@@ -732,7 +732,7 @@ class FlxUXGroup extends FlxGroup
 		{
 			focusSideRight.visible = true;
 			var rIn = (rightInput != null) ? rightInput : leftInput;
-			var gR = flixel.ux.FlxUXGraphics.toGraphic(rIn);
+			var gR = flixel.ux.FlxUX9Slice.toGraphic(rIn);
 			if (gR != null) focusSideRight.loadGraphic(gR);
 			focusSideRight.antialiasing = false;
 			focusSideRight.x = focused.x + focused.width + gap;
@@ -755,7 +755,7 @@ class FlxUXGroup extends FlxGroup
 		}
 
 		focusOverlay.visible = true;
-		var g = flixel.ux.FlxUXGraphics.toGraphic(input);
+		var g = flixel.ux.FlxUX9Slice.toGraphic(input);
 		if (g != null) focusOverlay.loadGraphic(g);
 		focusOverlay.antialiasing = false;
 		focusOverlay.x = focused.x + focused.width + offX;

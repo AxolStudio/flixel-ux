@@ -116,7 +116,7 @@ class FlxUXMouse
 			}
 			else
 			{
-				var g = FlxUXGraphics.toGraphic(input);
+				var g = FlxUX9Slice.toGraphic(input);
 				if (g == null)
 					return;
 				_cursorSprite.loadGraphic(g);

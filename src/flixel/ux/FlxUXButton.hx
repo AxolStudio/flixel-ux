@@ -127,13 +127,13 @@ class FlxUXButton extends FlxButton
 		if (Std.isOfType(input, flixel.ux.FlxUX9Slice))
 		{
 			var ns:flixel.ux.FlxUX9Slice = cast input;
-			var gfx = FlxUXNineSliceCache.get(ns, w, h, 0);
+			var gfx = FlxUX9Slice.get(ns, w, h, 0);
 			if (gfx != null)
 				loadGraphic(gfx);
 		}
 		else
 		{
-			var g = flixel.ux.FlxUXGraphics.toGraphic(input);
+			var g = flixel.ux.FlxUX9Slice.toGraphic(input);
 			if (g != null)
 				loadGraphic(g);
 		}
@@ -141,6 +141,8 @@ class FlxUXButton extends FlxButton
 		antialiasing = false;
 		centerLabel();
 	}
+
+
 
 	private function _applyDefaultSkin():Void
 	{
