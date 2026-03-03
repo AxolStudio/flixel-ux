@@ -3,6 +3,7 @@ package flixel.ux;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.graphics.FlxGraphic;
+import flixel.ux.FlxUXCore.FlxUXGraphicInput;
 import openfl.display.PixelSnapping;
 import openfl.display.BitmapData;
 import openfl.events.Event;
@@ -68,7 +69,7 @@ class FlxUXMouse
 		if (!enabled || !overrideHardwareCursor || !loaded || !FlxG.mouse.visible)
 			return;
 
-		var input:FlxUXCore.GraphicInput = FlxUXCore.mouseCursorGraphic;
+		var input:FlxUXGraphicInput = FlxUXCore.mouseCursorGraphic;
 		if (input == null)
 			return;
 

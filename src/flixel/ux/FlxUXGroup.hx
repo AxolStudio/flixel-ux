@@ -10,6 +10,10 @@ import openfl.display.BitmapData;
 import openfl.geom.Point;
 import openfl.geom.Rectangle;
 import flixel.ux.FlxUXCore.FlxUXNavStyle;
+import flixel.ux.FlxUXCore.FlxUXFocusMode;
+import flixel.ux.FlxUXCore.FlxUXGraphicInput;
+import flixel.ux.FlxUXCore.FlxUXFocusMode;
+import flixel.ux.FlxUXCore.FlxUXGraphicInput;
 
 /**
  * UX Group: a lightweight container that is both:
@@ -49,15 +53,96 @@ class FlxUXGroup extends FlxGroup
 	// Focus highlight settings (null => fall back to FlxUXCore, then built-in defaults)
 	public var focusMode:Null<FlxUXFocusMode> = null;
 	/** Default button skin graphic input for buttons in this group (null => FlxUXCore.buttonGraphic). */
-	public var buttonGraphic:Null<FlxUXCore.GraphicInput> = null;
-	public var focusFrameGraphic:Null<FlxUXCore.GraphicInput> = null;
-	public var focusNextToGraphic:Null<FlxUXCore.GraphicInput> = null;
+	public var buttonGraphic:Null<FlxUXGraphicInput> = null;
+	/** Optional animated skin FPS for buttons in this group (<= 0 => FlxUXCore.buttonSkinFps). */
+	public var buttonSkinFps:Int = 0;
+	/** Optional override for whether buttons in this group use the animated default sheet when no custom graphic is set. */
+	public var buttonUseAnim:Null<Bool> = null;
+	/** Optional per-state sequences when using the animated default sheet. */
+	public var buttonAnimUp:Null<Array<Int>> = null;
+	public var buttonAnimOver:Null<Array<Int>> = null;
+	public var buttonAnimDown:Null<Array<Int>> = null;
+	public var buttonAnimDisabled:Null<Array<Int>> = null;
+
+	/** Clears group-level button skin overrides (buttons fall back to FlxUXCore defaults). */
+	public function resetButtonSkin():Void
+	{
+		buttonGraphic = null;
+		buttonSkinFps = 0;
+		buttonUseAnim = null;
+		buttonAnimUp = null;
+		buttonAnimOver = null;
+		buttonAnimDown = null;
+		buttonAnimDisabled = null;
+	}
+
+	/** Forces the built-in static default sheet for this group (no per-state animation playback). */
+	public function useDefaultButtonSkinStatic():Void
+	{
+		buttonGraphic = null;
+		buttonUseAnim = false;
+		buttonSkinFps = 0;
+	}
+
+	/** Forces the built-in animated default sheet for this group. */
+	public function useDefaultButtonSkinAnim(fps:Int = 0):Void
+	{
+		buttonGraphic = null;
+		buttonUseAnim = true;
+		buttonSkinFps = (fps > 0) ? fps : 0;
+	}
+
+	/** Sets a custom skin for all buttons in this group. */
+	public function setButtonSkin(graphic:FlxUXGraphicInput, fps:Int = 0):Void
+	{
+		buttonGraphic = graphic;
+		buttonSkinFps = (fps > 0) ? fps : 0;
+	}
+
+	/** Overrides per-state animation sequences for buttons in this group. */
+	public function setButtonAnimSequences(up:Array<Int>, over:Array<Int>, down:Array<Int>, disabled:Array<Int>):Void
+	{
+		buttonAnimUp = up;
+		buttonAnimOver = over;
+		buttonAnimDown = down;
+		buttonAnimDisabled = disabled;
+	}
+
+	/**
+	 * Re-applies theme defaults to this group and re-skins existing buttons.
+	 *
+	 * This intentionally keeps explicit per-group/per-button overrides intact.
+	 */
+	public function refreshTheme():Void
+	{
+		// Update highlight padding if this group hasn't customized it.
+		// Heuristic: if still at the built-in default (12), follow theme.
+		if (highlightPadX == 12 && FlxUXCore.theme != null)
+			highlightPadX = FlxUXCore.theme.highlightPadX;
+		if (highlightPadY == 12 && FlxUXCore.theme != null)
+			highlightPadY = FlxUXCore.theme.highlightPadY;
+
+		if (buttons != null)
+		{
+			for (b in buttons)
+			{
+				if (b == null) continue;
+				b.uxGroup = this;
+				b.applySkin();
+			}
+		}
+
+		// Force highlight visuals to update using the new focus settings.
+		updateFocusGraphics();
+	}
+	public var focusFrameGraphic:Null<FlxUXGraphicInput> = null;
+	public var focusNextToGraphic:Null<FlxUXGraphicInput> = null;
 	public var focusNextToMirrored:Null<Bool> = null;
-	public var focusNextToGraphicRight:Null<FlxUXCore.GraphicInput> = null;
+	public var focusNextToGraphicRight:Null<FlxUXGraphicInput> = null;
 	public var focusNextToFlipRight:Null<Bool> = null;
 	public var focusNextToGap:Null<Float> = null;
 	public var focusNextToOffsetY:Null<Float> = null;
-	public var focusOverlayGraphic:Null<FlxUXCore.GraphicInput> = null;
+	public var focusOverlayGraphic:Null<FlxUXGraphicInput> = null;
 	public var focusOverlayOffsetX:Null<Float> = null;
 	public var focusOverlayOffsetY:Null<Float> = null;
 
@@ -348,7 +433,7 @@ class FlxUXGroup extends FlxGroup
 	public function get_boundsX():Float
 	{
 		var minX:Float = Math.POSITIVE_INFINITY;
-		for (b in _ordered)
+			for (b in orderedButtons)
 		{
 			if (b == null) continue;
 			minX = Math.min(minX, b.x);
@@ -360,7 +445,7 @@ class FlxUXGroup extends FlxGroup
 	public function get_boundsY():Float
 	{
 		var minY:Float = Math.POSITIVE_INFINITY;
-		for (b in _ordered)
+			for (b in orderedButtons)
 		{
 			if (b == null) continue;
 			minY = Math.min(minY, b.y);
@@ -373,7 +458,7 @@ class FlxUXGroup extends FlxGroup
 	{
 		var minX:Float = Math.POSITIVE_INFINITY;
 		var maxX:Float = Math.NEGATIVE_INFINITY;
-		for (b in _ordered)
+			for (b in orderedButtons)
 		{
 			if (b == null) continue;
 			minX = Math.min(minX, b.x);
@@ -388,7 +473,7 @@ class FlxUXGroup extends FlxGroup
 	{
 		var minY:Float = Math.POSITIVE_INFINITY;
 		var maxY:Float = Math.NEGATIVE_INFINITY;
-		for (b in _ordered)
+			for (b in orderedButtons)
 		{
 			if (b == null) continue;
 			minY = Math.min(minY, b.y);
@@ -402,14 +487,12 @@ class FlxUXGroup extends FlxGroup
 	public function matchWidth():Void
 	{
 		var maxW:Float = 0;
-		for (b in _ordered)
+			for (b in orderedButtons)
 			if (b != null) maxW = Math.max(maxW, b.width);
-		for (b in _ordered)
+			for (b in orderedButtons)
 			if (b != null)
 			{
-				b.setGraphicSize(Std.int(maxW), Std.int(b.height));
-				b.updateHitbox();
-				b.centerLabel();
+				b.resize(Std.int(maxW), Std.int(b.height));
 			}
 	}
 
@@ -417,14 +500,12 @@ class FlxUXGroup extends FlxGroup
 	public function matchHeight():Void
 	{
 		var maxH:Float = 0;
-		for (b in _ordered)
+			for (b in orderedButtons)
 			if (b != null) maxH = Math.max(maxH, b.height);
-		for (b in _ordered)
+			for (b in orderedButtons)
 			if (b != null)
 			{
-				b.setGraphicSize(Std.int(b.width), Std.int(maxH));
-				b.updateHitbox();
-				b.centerLabel();
+				b.resize(Std.int(b.width), Std.int(maxH));
 			}
 	}
 
@@ -446,23 +527,136 @@ class FlxUXGroup extends FlxGroup
 		var targetY = (flixel.FlxG.height - h) * 0.5;
 		this.x += targetX - gx;
 		this.y += targetY - gy;
+		if (FlxUXCore.snapUiToPixels)
+		{
+			this.x = Std.int(this.x);
+			this.y = Std.int(this.y);
+		}
 	}
 
 	/**
 	 * Layout buttons vertically.
 	 *
+	 * This is the preferred name for vertical stacking.
+	 *
 	 * @param gap Space between buttons.
 	 */
-	public function stackVertical(gap:Float):Void
+	public function stack(gap:Float):Void
 	{
 		var yCursor:Float = 0;
-		for (b in _ordered)
+			for (b in orderedButtons)
 		{
 			if (b == null) continue;
 			_setChildBasePos(b, 0, yCursor);
 			b.x = x + 0;
 			b.y = y + yCursor;
+			if (FlxUXCore.snapUiToPixels)
+			{
+				b.x = Std.int(b.x);
+				b.y = Std.int(b.y);
+			}
 			yCursor += b.height + gap;
+		}
+	}
+
+	/**
+	 * Backward compatible alias for `stack()`.
+	 */
+	public inline function stackVertical(gap:Float):Void
+	{
+		stack(gap);
+	}
+
+	/**
+	 * Layout buttons horizontally.
+	 *
+	 * @param gap Space between buttons.
+	 */
+	public function spread(gap:Float):Void
+	{
+		var xCursor:Float = 0;
+		for (b in orderedButtons)
+		{
+			if (b == null) continue;
+			_setChildBasePos(b, xCursor, 0);
+			b.x = x + xCursor;
+			b.y = y + 0;
+			if (FlxUXCore.snapUiToPixels)
+			{
+				b.x = Std.int(b.x);
+				b.y = Std.int(b.y);
+			}
+			xCursor += b.width + gap;
+		}
+	}
+
+	/**
+	 * Layout buttons into a grid.
+	 *
+	 * Buttons are placed in order, filling rows left-to-right.
+	 *
+	 * @param columns Number of columns. Must be >= 1.
+	 * @param gapX Horizontal gap between cells.
+	 * @param gapY Vertical gap between cells.
+	 * @param lastRowAlign Alignment for the final row when it is not full.
+	 */
+	public function grid(columns:Int, gapX:Float, gapY:Float, lastRowAlign:flixel.ux.FlxUXCore.FlxUXGridLastRowAlign = LEFT):Void
+	{
+		if (columns < 1) columns = 1;
+		var cellW:Float = 0;
+		var cellH:Float = 0;
+		for (b in orderedButtons)
+		{
+			if (b == null) continue;
+			cellW = Math.max(cellW, b.width);
+			cellH = Math.max(cellH, b.height);
+		}
+
+		// Count buttons (orderedButtons can contain nulls).
+		var count:Int = 0;
+		for (b in orderedButtons)
+			if (b != null) count++;
+		if (count <= 0) return;
+
+		var rows:Int = Std.int(Math.ceil(count / columns));
+		var fullRows:Int = Std.int(count / columns);
+		var lastRowCount:Int = count - fullRows * columns;
+		if (lastRowCount <= 0) lastRowCount = columns;
+
+		var lastRowOffsetX:Float = 0;
+		if (lastRowCount < columns)
+		{
+			var rowW:Float = lastRowCount * cellW + (lastRowCount - 1) * gapX;
+			var fullW:Float = columns * cellW + (columns - 1) * gapX;
+			switch (lastRowAlign)
+			{
+				case CENTER: lastRowOffsetX = (fullW - rowW) * 0.5;
+				case RIGHT: lastRowOffsetX = (fullW - rowW);
+				case LEFT: lastRowOffsetX = 0;
+			}
+		}
+
+		var i:Int = 0;
+		var logicalIndex:Int = 0;
+		for (b in orderedButtons)
+		{
+			if (b == null) continue;
+			var col:Int = logicalIndex % columns;
+			var row:Int = Std.int(logicalIndex / columns);
+			var bx:Float = col * (cellW + gapX);
+			var by:Float = row * (cellH + gapY);
+			if (row == rows - 1 && lastRowCount < columns)
+				bx += lastRowOffsetX;
+			_setChildBasePos(b, bx, by);
+			b.x = x + bx;
+			b.y = y + by;
+			if (FlxUXCore.snapUiToPixels)
+			{
+				b.x = Std.int(b.x);
+				b.y = Std.int(b.y);
+			}
+			logicalIndex++;
+			i++;
 		}
 	}
 
@@ -535,7 +729,7 @@ class FlxUXGroup extends FlxGroup
 			if (focusSideLeft != null) focusSideLeft.visible = false;
 			if (focusSideRight != null) focusSideRight.visible = false;
 			if (focusOverlay != null) focusOverlay.visible = false;
-			_lastHighlightKey = null;
+				lastHighlightKey = null;
 			return;
 		}
 
@@ -546,26 +740,28 @@ class FlxUXGroup extends FlxGroup
 			if (focusSideLeft != null) focusSideLeft.visible = false;
 			if (focusSideRight != null) focusSideRight.visible = false;
 			if (focusOverlay != null) focusOverlay.visible = false;
-			_lastHighlightKey = null;
+				lastHighlightKey = null;
 			return;
 		}
 
 		var mode:FlxUXFocusMode = (focusMode != null) ? focusMode : FlxUXCore.focusMode;
-		var frameInput:FlxUXCore.GraphicInput = (focusFrameGraphic != null) ? focusFrameGraphic : FlxUXCore.focusFrameGraphic;
-		var nextToInput:FlxUXCore.GraphicInput = (focusNextToGraphic != null) ? focusNextToGraphic : FlxUXCore.focusNextToGraphic;
+		var frameInput:FlxUXGraphicInput = (focusFrameGraphic != null) ? focusFrameGraphic : FlxUXCore.focusFrameGraphic;
+		var nextToInput:FlxUXGraphicInput = (focusNextToGraphic != null) ? focusNextToGraphic : FlxUXCore.focusNextToGraphic;
 		var nextToMirrored:Bool = (focusNextToMirrored != null) ? focusNextToMirrored : FlxUXCore.focusNextToMirrored;
-		var nextToRightInput:FlxUXCore.GraphicInput = (focusNextToGraphicRight != null) ? focusNextToGraphicRight : FlxUXCore.focusNextToGraphicRight;
+		var nextToRightInput:FlxUXGraphicInput = (focusNextToGraphicRight != null) ? focusNextToGraphicRight : FlxUXCore.focusNextToGraphicRight;
 		var nextToFlipRight:Bool = (focusNextToFlipRight != null) ? focusNextToFlipRight : FlxUXCore.focusNextToFlipRight;
 		var nextToGap:Float = (focusNextToGap != null) ? focusNextToGap : FlxUXCore.focusNextToGap;
 		var nextToOffY:Float = (focusNextToOffsetY != null) ? focusNextToOffsetY : FlxUXCore.focusNextToOffsetY;
-		var overlayInput:FlxUXCore.GraphicInput = (focusOverlayGraphic != null) ? focusOverlayGraphic : FlxUXCore.focusOverlayGraphic;
+		var overlayInput:FlxUXGraphicInput = (focusOverlayGraphic != null) ? focusOverlayGraphic : FlxUXCore.focusOverlayGraphic;
 		var overlayOffX:Float = (focusOverlayOffsetX != null) ? focusOverlayOffsetX : FlxUXCore.focusOverlayOffsetX;
 		var overlayOffY:Float = (focusOverlayOffsetY != null) ? focusOverlayOffsetY : FlxUXCore.focusOverlayOffsetY;
 
 		// "Buffer" semantics: pad is extra space OUTSIDE the button.
 		// Example pad=12 => highlight is 24px larger in both directions and positioned -12,-12.
-		var padX = highlightPadX;
-		var padY = highlightPadY;
+		var themePadX:Float = (FlxUXCore.theme != null) ? FlxUXCore.theme.highlightPadX : 12;
+		var themePadY:Float = (FlxUXCore.theme != null) ? FlxUXCore.theme.highlightPadY : 12;
+		var padX = (highlightPadX != 12) ? highlightPadX : themePadX;
+		var padY = (highlightPadY != 12) ? highlightPadY : themePadY;
 		var tx = focused.x - padX;
 		var ty = focused.y - padY;
 		var tw = Std.int(Math.ceil(focused.width + padX * 2));
@@ -601,7 +797,7 @@ class FlxUXGroup extends FlxGroup
 				if (focusSideLeft != null) focusSideLeft.visible = false;
 				if (focusSideRight != null) focusSideRight.visible = false;
 				if (focusOverlay != null) focusOverlay.visible = false;
-			_lastHighlightKey = null;
+				lastHighlightKey = null;
 			return;
 		}
 
@@ -625,7 +821,7 @@ class FlxUXGroup extends FlxGroup
 	}
 
 
-	private function applyFocusFrameGraphic(input:FlxUXCore.GraphicInput, tw:Int, th:Int):Void
+	private function applyFocusFrameGraphic(input:FlxUXGraphicInput, tw:Int, th:Int):Void
 	{
 		if (input == null || focusHighlighter == null)
 			return;
@@ -634,9 +830,9 @@ class FlxUXGroup extends FlxGroup
 		// This key is about *rendered output*, not the focused button.
 		inline function setKey(k:String):Bool
 		{
-			if (_lastHighlightKey == k)
+				if (lastHighlightKey == k)
 				return false;
-			_lastHighlightKey = k;
+				lastHighlightKey = k;
 			return true;
 		}
 
@@ -704,7 +900,7 @@ class FlxUXGroup extends FlxGroup
 		focusHighlighter.antialiasing = false;
 	}
 
-	private function applyFocusNextTo(leftInput:FlxUXCore.GraphicInput, rightInput:FlxUXCore.GraphicInput, mirrored:Bool, flipRight:Bool, gap:Float, offY:Float, focused:FlxUXButton):Void
+	private function applyFocusNextTo(leftInput:FlxUXGraphicInput, rightInput:FlxUXGraphicInput, mirrored:Bool, flipRight:Bool, gap:Float, offY:Float, focused:FlxUXButton):Void
 	{
 		if (focusSideLeft == null || focusSideRight == null) return;
 		if (focused == null || leftInput == null)
@@ -740,7 +936,7 @@ class FlxUXGroup extends FlxGroup
 		}
 	}
 
-	private function applyFocusOverlay(input:FlxUXCore.GraphicInput, offX:Float, offY:Float, focused:FlxUXButton):Void
+	private function applyFocusOverlay(input:FlxUXGraphicInput, offX:Float, offY:Float, focused:FlxUXButton):Void
 	{
 		if (focusOverlay == null) return;
 		if (focused == null || input == null)

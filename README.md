@@ -1,50 +1,40 @@
 # flixel-ux (FlxUX)
 
-A small UX layer for **HaxeFlixel** focused on improving `FlxButton` usability across **mouse**, **touch**, **keyboard**, and **gamepad**.
+FlxUX is a small UX layer for HaxeFlixel that makes menus and button-based UI work well across mouse, touch, keyboard, and gamepad.
 
-FlxUX is focused on **interaction**. You create and add buttons as you normally would; FlxUX handles input mode switching and navigation (focus + confirm/cancel).
+You keep using buttons like normal. FlxUX adds:
 
-## What FlxUX does (why you’d use it)
-
-When you add `FlxUXButton`s to one or more `FlxUXGroup`s in a state (or substate), FlxUX handles switching between common input styles and provides consistent button navigation.
-
-In practice, this means:
-
-- **Mouse**: hover/click works like a normal `FlxButton`.
-- **Touch**: tap behaves like pointer UX (no mouse cursor required).
-- **Keyboard**: directional input moves focus; confirm activates the focused button.
-- **Gamepad**: same as keyboard navigation, with configurable face-button confirm/cancel.
-
-This is intended to reduce UI glue code: you don’t need separate “mouse menu code” and “controller menu code”, and you don’t need to manually track which button is focused.
+- Automatic switching between pointer input and keyboard or gamepad navigation
+- Focus management (which button is selected)
+- Consistent confirm and cancel handling
+- Default UI assets that work out of the box, with simple ways to override them with your own assets
 
 ## Key concepts
 
-- **`FlxUXButton`**: the button you add to the state (renders like a normal Flixel button).
-- **`FlxUXGroup`**: a registry of buttons you want FlxUX to include in navigation.
-- **`FlxUXCore`**: the global manager that reads inputs and moves focus between eligible buttons.
+- `FlxUXCore` is the global manager. It reads input and keeps track of focus.
+- `FlxUXGroup` is a container for UI buttons that should participate in navigation.
+- `FlxUXButton` is a button that supports FlxUX focus and skins.
+
+In most games you create one or more `FlxUXGroup`s per state, add buttons to those groups, and add the buttons to the state for rendering.
 
 ## Installation
 
-Install via haxelib git:
+Install with haxelib git:
 
 ```bash
 haxelib git flixel-ux https://github.com/AxolStudio/flixel-ux
 ```
 
-Then add to your project:
+Then add the library to your project:
 
-- In `Project.xml`:
-  - `<haxelib name="flixel-ux" />`
-
-Or in your `.hxml`:
-
-- `-lib flixel-ux`
+- `Project.xml`: `<haxelib name="flixel-ux" />`
+- `.hxml`: `-lib flixel-ux`
 
 ## Quick start
 
-### 1) Initialize once
+### 1) Initialize FlxUX
 
-Call `FlxUXCore.init()` once early (for example, in `Main` or the first state that runs):
+Call `FlxUXCore.init()` once. A good place is your first state, or wherever you set up global systems.
 
 ```haxe
 import flixel.ux.FlxUXCore;
@@ -52,15 +42,14 @@ import flixel.ux.FlxUXCore;
 FlxUXCore.init();
 ```
 
-### 2) Create one or more groups (basic menu example)
+`init()` is safe to call more than once. If Flixel inputs are not ready yet, it will no-op and succeed later.
 
-FlxUX clears registered groups on **Flixel state transitions**. Typically you create and register groups in each state’s `create()`.
+### 2) Create a group and add buttons
 
-> This is only a basic example. You can have multiple groups per state (for example: a menu group + a footer group).
+Create a `FlxUXGroup`, add buttons to it, and add the button sprites to your state.
 
 ```haxe
 import flixel.FlxState;
-import flixel.ux.FlxUXCore;
 import flixel.ux.FlxUXGroup;
 
 class MenuState extends FlxState
@@ -70,90 +59,225 @@ class MenuState extends FlxState
 		super.create();
 
 		var group = new FlxUXGroup();
-		FlxUXCore.addGroup(group);
+		add(group);
 
-		var play = group.addButton("Play", 100, 100, startGame);
+		var play = group.addButton("Play", startGame, 100, 100);
+		var options = group.addButton("Options", openOptions, 100, 140);
+
 		add(play);
+		add(options);
 	}
 
-	function startGame():Void
-	{
-		// TODO: switch to your game state
-	}
+	function startGame():Void {}
+	function openOptions():Void {}
 }
 ```
 
-## Creating multiple buttons
+Notes:
 
-For simple menus, `FlxUXGroup.addButtons()` creates and registers multiple buttons at once:
-
-```haxe
-var buttons = group.addButtons([
-	{ label: "Play",    x: 100, y: 100, action: startGame },
-	{ label: "Options", x: 100, y: 140, action: openOptions },
-	{ label: "Quit",    x: 100, y: 180, action: quitGame }
-]);
-
-for (b in buttons)
-	add(b);
-```
+- `FlxUXGroup` automatically registers itself with `FlxUXCore` in its constructor.
+- FlxUX clears registered groups on state transitions. Create groups in each state’s `create()`.
 
 ## Input modes
 
-FlxUX automatically switches between:
+FlxUX switches between two modes automatically:
 
-- **POINTER**: mouse/touch input (click/tap activates the clicked button)
-- **NAV**: keyboard/gamepad navigation (confirm activates the focused button)
+- POINTER mode for mouse and touch
+- NAV mode for keyboard and gamepad
 
-Default NAV bindings:
-- Keyboard: arrows + WASD
-- Gamepad: D-pad + left stick
+Default navigation bindings:
 
-## Configurations (common)
+- Keyboard: arrows and WASD
+- Gamepad: D-pad and left stick
 
-This section covers the most commonly used configuration points. Full reference docs can live in the wiki.
+You can change bindings and face button style via `FlxUXCore` configuration flags before calling `init()`.
+
+## Common configuration
 
 ### Core
 
-- Disable all FlxUX logic temporarily (for transitions, pauses, etc.):
-	- `FlxUXCore.active = false`
-- Disable NAV input but keep pointer behavior:
-	- `FlxUXCore.navEnabled = false`
-- Gate input during fades/tweens:
-	- FlxUX sets `FlxUXCore.ready = false` automatically on state transitions.
-	- If `FlxUXCore.autoReady = true` (default), FlxUX will re-enable input automatically once the new state starts updating.
-	- Set `FlxUXCore.autoReady = false` if you want to set `FlxUXCore.ready = true` yourself at the end of a fade.
+Disable FlxUX logic temporarily:
+
+```haxe
+FlxUXCore.active = false;
+```
+
+Disable navigation but keep pointer behavior:
+
+```haxe
+FlxUXCore.navEnabled = false;
+```
+
+Gate input during fades or transitions:
+
+- FlxUX sets `FlxUXCore.ready = false` automatically on state transitions
+- If `FlxUXCore.autoReady` is true (default), FlxUX will turn `ready` back on automatically
+- If you want full manual control, set `FlxUXCore.autoReady = false` and set `FlxUXCore.ready = true` yourself
 
 ### Groups
 
-- Exclude a group from NAV focus traversal (mouse/touch only):
-	- `group.capturesNav = false`
-- Disable a group without destroying it:
-	- `group.active = false`
+Make a group pointer-only:
 
-## Theming / styling (planned)
+```haxe
+group.capturesNav = false;
+```
 
-FlxUX includes a `FlxUXCore.theme` object intended for widget/theme values (focus highlighting, disabled alpha, etc.).
+Disable a group without destroying it:
 
-The theme system is not fully implemented yet. For now:
+```haxe
+group.active = false;
+```
 
-- Expect the theme API to expand as styling support is added.
-- Hover docs on `FlxUXTheme` / `FlxUXCore.theme` describe currently available fields.
+## Layout helpers
+
+`FlxUXGroup` includes a few simple layout helpers for menus.
+
+Match sizes:
+
+```haxe
+// Make all buttons the same width
+group.matchWidth();
+
+// Make all buttons the same height
+group.matchHeight();
+
+// Make all buttons the same width and height
+group.matchSize();
+```
+
+Stack buttons vertically:
+
+```haxe
+// Position buttons at x=0 and stack them from top to bottom
+group.stack(8);
+```
+
+Spread buttons horizontally:
+
+```haxe
+// Position buttons at y=0 and lay them out left to right
+group.spread(8);
+```
+
+Grid layout:
+
+```haxe
+// 3 columns, 8px gaps, center the final row if it is not full
+group.grid(3, 8, 8, FlxUXGridLastRowAlign.CENTER);
+```
+
+Center the group on screen:
+
+```haxe
+group.alignCenter();
+```
+
+## Skins
+
+FlxUX buttons can use a built-in pixel-friendly 9-slice skin. The default can be static or animated.
+
+Global defaults:
+
+```haxe
+// Static by default
+FlxUXCore.useDefaultButtonSkinStatic();
+
+// Or opt in to the animated sheet
+FlxUXCore.useDefaultButtonSkinAnim(18);
+```
+
+Per-group defaults:
+
+```haxe
+group.useDefaultButtonSkinStatic();
+group.useDefaultButtonSkinAnim(18);
+```
+
+Per-button:
+
+```haxe
+button.useDefaultButtonSkinStatic();
+button.useDefaultButtonSkinAnim(18);
+```
+
+Override priority is:
+
+1) Button overrides
+2) Group overrides
+3) Core defaults
+
+## Themes
+
+FlxUX exposes a theme object that contains default styling values:
+
+- Pixel-art defaults and snapping
+- Button skin defaults and animation sequences
+- Focus highlight style and graphics
+- Highlight padding
+
+### Load a theme from JSON
+
+In an OpenFL project you can load a JSON theme from an embedded text asset:
+
+```haxe
+FlxUXCore.loadThemeFromAsset("themes/default.json");
+```
+
+This calls `setTheme()` internally. It applies core defaults and then refreshes any currently registered UI.
+
+### Theme JSON format
+
+Most properties are numbers, booleans, strings, or arrays. Graphics can be either a string asset id, or a 9-slice object.
+
+Example:
+
+```json
+{
+	"pixelArtDefaults": true,
+	"snapUiToPixels": true,
+
+	"buttonUseAnim": false,
+	"buttonSkinFps": 10,
+	"buttonGraphic": {
+		"source": "flixel-ux/ux/button.png",
+		"left": 6,
+		"top": 6,
+		"right": 6,
+		"bottom": 6
+	},
+
+	"focusMode": "FRAME",
+	"focusFrameGraphic": {
+		"source": "flixel/images/ui/box.png",
+		"left": 4,
+		"top": 4,
+		"right": 4,
+		"bottom": 4
+	},
+
+	"highlightPadX": 12,
+	"highlightPadY": 12
+}
+```
+
+See `FlxUXTheme` for all supported fields.
 
 ## Troubleshooting
 
-### Buttons render, but keyboard/gamepad navigation doesn’t work
+### Buttons render, but keyboard or gamepad navigation does not work
 
-Check:
-- `FlxUXCore.init()` was called.
-- Your group was registered via `FlxUXCore.addGroup(group)`.
-- `group.capturesNav` is `true`.
-- Buttons are eligible (`visible`, `active`, and `enabled`).
-- NAV is allowed:
+Check these:
+
+- `FlxUXCore.init()` was called
+- Your buttons are in a `FlxUXGroup`
+- `group.capturesNav` is true
+- Buttons are eligible (visible, active, and enabled)
+- Navigation is enabled
   - `FlxUXCore.navEnabled == true`
   - `FlxUXCore.navCapturePolicy != NEVER`
 
 ### UI stops responding after switching states
 
-This is expected: FlxUX clears registered groups on state transitions.
-Recreate and re-register groups in each state’s `create()`.
+This is expected. FlxUX clears registered groups on state transitions.
+
+Recreate your groups and buttons in each state’s `create()`.

@@ -1,7 +1,23 @@
 package flixel.ux;
 
 import flixel.FlxG;
+import flixel.FlxSprite;
 import flixel.math.FlxPoint;
+import flixel.util.typeLimit.OneOfFour;
+import haxe.extern.EitherType;
+import haxe.Json;
+import openfl.Assets;
+import openfl.display.BitmapData;
+
+/**
+ * Accepts common Flixel-friendly graphic inputs:
+ * - `String` (asset id)
+ * - `FlxGraphic`
+ * - `FlxSprite`
+ * - `BitmapData`
+ * - `FlxUX9Slice`
+ */
+typedef FlxUXGraphicInput = EitherType<OneOfFour<String, flixel.graphics.FlxGraphic, flixel.FlxSprite, BitmapData>, flixel.ux.FlxUX9Slice>;
 
 /**
  * Global input mode used by FlxUX.
@@ -11,26 +27,22 @@ import flixel.math.FlxPoint;
  */
 class FlxUXCore
 {
-	/**
-	 * Accepts common Flixel-friendly graphic inputs:
-	 * - `String` (asset id)
-	 * - `FlxGraphic`
-	 * - `FlxSprite`
-	 * - `BitmapData`
-	 * - `FlxUX9Slice`
-	 */
-	public static final GraphicInput = haxe.extern.EitherType<String,
-		haxe.extern.EitherType<flixel.graphics.FlxGraphic,
-			haxe.extern.EitherType<flixel.FlxSprite,
-				haxe.extern.EitherType<openfl.display.BitmapData, flixel.ux.FlxUX9Slice>>>>;
+	// (Graphic input typedef is declared at file scope as FlxUXGraphicInput.)
 
 	// --- Built-in defaults (so users can override and easily restore) ---
 	public static inline var DEFAULT_MOUSE_GRAPHIC:String = "flixel-ux/mouse_cursor.png";
+	public static inline var DEFAULT_BUTTON_SKIN_FPS:Int = 10;
+	public static inline var DEFAULT_BUTTON_FRAMES_GRAPHIC:String = "flixel-ux/ux/button.png";
+	public static inline var DEFAULT_BUTTON_FRAMES_ANIM_GRAPHIC:String = "flixel-ux/ux/button_anim.png";
 	public static inline var DEFAULT_FOCUS_FRAME_FPS:Int = 6;
-	public static inline var DEFAULT_FOCUS_FRAME_GRAPHIC:FlxUX9Slice =
+	public static var DEFAULT_FOCUS_FRAME_GRAPHIC:FlxUX9Slice =
 		new FlxUX9Slice("flixel-ux/highlight_frame_9s_anim.png", 40, 40, 14, 17, 15, 18);
 	public static inline var DEFAULT_FOCUS_NEXT_TO_GRAPHIC:String = "flixel-ux/highlight_next_to.png";
 	public static inline var DEFAULT_FOCUS_OVERLAY_GRAPHIC:String = "flixel-ux/highlight_on.png";
+	public static var DEFAULT_BUTTON_GRAPHIC:FlxUX9Slice =
+		new FlxUX9Slice(DEFAULT_BUTTON_FRAMES_GRAPHIC, 16, 16, 3, 7, 3, 7);
+	public static var DEFAULT_BUTTON_GRAPHIC_ANIM:FlxUX9Slice =
+		new FlxUX9Slice(DEFAULT_BUTTON_FRAMES_ANIM_GRAPHIC, 16, 16, 3, 7, 3, 7);
 
 	// --- Button look (null => use built-in default procedural skin) ---
 	/**
@@ -39,7 +51,28 @@ class FlxUXCore
 	 * Accepts: String, FlxGraphic, FlxSprite, BitmapData, FlxUX9Slice.
 	 * If null, FlxUXButton uses its procedural `makeGraphic` default.
 	 */
-	public static var buttonGraphic:Null<GraphicInput> = null;
+	/**
+	 * Default button skin graphic input.
+	 *
+	 * Precedence: button -> group -> core.
+	 * If `null`, buttons use the built-in defaults (DEFAULT_BUTTON_GRAPHIC / DEFAULT_BUTTON_GRAPHIC_ANIM).
+	 */
+	public static var buttonGraphic:Null<FlxUXGraphicInput> = null;
+
+	/** If set, button skins are treated as animated and will update per-state using this FPS. */
+	public static var buttonSkinFps:Int = DEFAULT_BUTTON_SKIN_FPS;
+	public static inline var DEFAULT_BUTTON_USE_ANIM:Bool = false;
+	public static var buttonUseAnim:Bool = DEFAULT_BUTTON_USE_ANIM;
+
+	public static var DEFAULT_BUTTON_ANIM_UP:Array<Int> = [0, 1];
+	public static var DEFAULT_BUTTON_ANIM_OVER:Array<Int> = [2, 3, 4, 5];
+	public static var DEFAULT_BUTTON_ANIM_DOWN:Array<Int> = [6, 7, 8, 9];
+	public static var DEFAULT_BUTTON_ANIM_DISABLED:Array<Int> = [10];
+
+	public static var buttonAnimUp:Array<Int> = DEFAULT_BUTTON_ANIM_UP;
+	public static var buttonAnimOver:Array<Int> = DEFAULT_BUTTON_ANIM_OVER;
+	public static var buttonAnimDown:Array<Int> = DEFAULT_BUTTON_ANIM_DOWN;
+	public static var buttonAnimDisabled:Array<Int> = DEFAULT_BUTTON_ANIM_DISABLED;
 	// --- Focus highlight configuration (null => core/group fallback => built-in default) ---
 	/** Current focus highlight mode (defaults to FRAME). */
 	public static var focusMode:FlxUXFocusMode = FlxUXFocusMode.FRAME;
@@ -51,14 +84,14 @@ class FlxUXCore
 	 *
 	 * Accepts: String, FlxGraphic, FlxSprite, BitmapData, FlxUX9Slice.
 	 */
-	public static var focusFrameGraphic:GraphicInput = DEFAULT_FOCUS_FRAME_GRAPHIC;
+	public static var focusFrameGraphic:FlxUXGraphicInput = DEFAULT_FOCUS_FRAME_GRAPHIC;
 
 	/** Focus next-to graphic input. */
-	public static var focusNextToGraphic:Null<GraphicInput> = null;
+	public static var focusNextToGraphic:Null<FlxUXGraphicInput> = null;
 	/** If true, also show next-to graphic on right side. */
 	public static var focusNextToMirrored:Bool = false;
 	/** Optional right-side graphic input for mirrored next-to. If null, uses focusNextToGraphic (optionally flipped). */
-	public static var focusNextToGraphicRight:Null<GraphicInput> = null;
+	public static var focusNextToGraphicRight:Null<FlxUXGraphicInput> = null;
 	/** If true, flips the right-side next-to graphic horizontally. */
 	public static var focusNextToFlipRight:Bool = true;
 	/** Gap between button and next-to graphic (pixels). */
@@ -67,7 +100,7 @@ class FlxUXCore
 	public static var focusNextToOffsetY:Float = 0;
 
 	/** Focus overlay (on-top) graphic input. */
-	public static var focusOverlayGraphic:Null<GraphicInput> = null;
+	public static var focusOverlayGraphic:Null<FlxUXGraphicInput> = null;
 	/** Overlay placement: x = buttonRight + offsetX, y = buttonBottom + offsetY (defaults give half-hang). */
 	public static var focusOverlayOffsetX:Float = -8;
 	public static var focusOverlayOffsetY:Float = -8;
@@ -108,19 +141,31 @@ class FlxUXCore
 	 * Controls whether FlxUX mouse service runs (hardware cursor override / pressed state).
 	 */
 	public static var cursorEnabled:Bool = true;
-	/** Hardware cursor graphic input (optional). Accepts: String, FlxGraphic, FlxSprite, BitmapData. */
-	public static var mouseCursorGraphic:GraphicInput = DEFAULT_MOUSE_GRAPHIC;
 
-	private static var groups:Array<FlxUXGroup> = [];
-	private static var initialized:Bool = false;
-	private static var navConfirmHeld:Bool = false;
-	private static var pendingAutoReady:Bool = false;
-	private static var pointerPreferred:Bool = true;
+	/**
+	 * If true (default), FlxUX will disable sprite antialiasing globally using `FlxSprite.defaultAntialiasing`.
+	 *
+	 * This helps pixel art UI look crisp by default. Games that want smoothing can set this to `false`
+	 * before calling `FlxUXCore.init()`.
+	 */
+	public static var pixelArtDefaults:Bool = true;
+
+	/** If true, FlxUXGroup layout helpers will snap button positions to whole pixels. */
+	public static var snapUiToPixels:Bool = true;
+	/** Hardware cursor graphic input (optional). Accepts: String, FlxGraphic, FlxSprite, BitmapData. */
+	public static var mouseCursorGraphic:FlxUXGraphicInput = DEFAULT_MOUSE_GRAPHIC;
 
 	/** Restores built-in defaults (graphics + common focus settings). */
 	public static function resetDefaults():Void
 	{
 		mouseCursorGraphic = DEFAULT_MOUSE_GRAPHIC;
+		buttonGraphic = null;
+		buttonSkinFps = DEFAULT_BUTTON_SKIN_FPS;
+		buttonUseAnim = DEFAULT_BUTTON_USE_ANIM;
+		buttonAnimUp = DEFAULT_BUTTON_ANIM_UP;
+		buttonAnimOver = DEFAULT_BUTTON_ANIM_OVER;
+		buttonAnimDown = DEFAULT_BUTTON_ANIM_DOWN;
+		buttonAnimDisabled = DEFAULT_BUTTON_ANIM_DISABLED;
 		focusMode = FlxUXFocusMode.FRAME;
 		focusFrameFps = DEFAULT_FOCUS_FRAME_FPS;
 		focusFrameGraphic = DEFAULT_FOCUS_FRAME_GRAPHIC;
@@ -133,6 +178,58 @@ class FlxUXCore
 		focusOverlayGraphic = null;
 		focusOverlayOffsetX = -8;
 		focusOverlayOffsetY = -8;
+	}
+
+	/** Resets button skin settings to the built-in defaults (does not change focus/mouse defaults). */
+	public static function resetButtonDefaults():Void
+	{
+		buttonGraphic = null;
+		buttonSkinFps = DEFAULT_BUTTON_SKIN_FPS;
+		buttonUseAnim = DEFAULT_BUTTON_USE_ANIM;
+		buttonAnimUp = DEFAULT_BUTTON_ANIM_UP;
+		buttonAnimOver = DEFAULT_BUTTON_ANIM_OVER;
+		buttonAnimDown = DEFAULT_BUTTON_ANIM_DOWN;
+		buttonAnimDisabled = DEFAULT_BUTTON_ANIM_DISABLED;
+	}
+
+	/** Forces the built-in static button sheet (no per-state animation playback). */
+	public static function useDefaultButtonSkinStatic():Void
+	{
+		buttonGraphic = null;
+		buttonUseAnim = false;
+		buttonSkinFps = 0;
+	}
+
+	/** Forces the built-in animated button sheet + uses the default sequences. */
+	public static function useDefaultButtonSkinAnim(fps:Int = DEFAULT_BUTTON_SKIN_FPS):Void
+	{
+		buttonGraphic = null;
+		buttonUseAnim = true;
+		buttonSkinFps = (fps > 0) ? fps : DEFAULT_BUTTON_SKIN_FPS;
+		buttonAnimUp = DEFAULT_BUTTON_ANIM_UP;
+		buttonAnimOver = DEFAULT_BUTTON_ANIM_OVER;
+		buttonAnimDown = DEFAULT_BUTTON_ANIM_DOWN;
+		buttonAnimDisabled = DEFAULT_BUTTON_ANIM_DISABLED;
+	}
+
+	/**
+	 * Sets a custom button skin graphic for all buttons (can be overridden per-group/per-button).
+	 *
+	 * If you pass a `FlxUX9Slice` and `fps > 0`, it will animate using per-state sequences.
+	 */
+	public static function setButtonSkin(graphic:FlxUXGraphicInput, fps:Int = 0):Void
+	{
+		buttonGraphic = graphic;
+		buttonSkinFps = (fps > 0) ? fps : 0;
+	}
+
+	/** Overrides the per-state animation sequences used by the animated default (and any 9-slice anim skin). */
+	public static function setButtonAnimSequences(up:Array<Int>, over:Array<Int>, down:Array<Int>, disabled:Array<Int>):Void
+	{
+		buttonAnimUp = up;
+		buttonAnimOver = over;
+		buttonAnimDown = down;
+		buttonAnimDisabled = disabled;
 	}
 
 	/**
@@ -175,6 +272,96 @@ class FlxUXCore
 	/** Global theme values used by FlxUX widgets (planned). */
 	public static var theme:FlxUXTheme = new FlxUXTheme();
 
+	/** Sets the active theme and applies any immediate core-wide values. */
+	public static function setTheme(t:FlxUXTheme):Void
+	{
+		theme = (t != null) ? t : new FlxUXTheme();
+		applyTheme();
+		refreshLiveUi();
+	}
+
+	/** Applies the currently active theme to any core-wide defaults. */
+	public static function applyTheme():Void
+	{
+		// Apply theme values to core-wide defaults.
+		// (We intentionally don't touch sounds here yet.)
+		if (theme == null)
+			theme = new FlxUXTheme();
+
+		pixelArtDefaults = theme.pixelArtDefaults;
+		snapUiToPixels = theme.snapUiToPixels;
+
+		buttonUseAnim = theme.buttonUseAnim;
+		buttonSkinFps = theme.buttonSkinFps;
+		buttonGraphic = theme.buttonGraphic;
+		buttonAnimUp = theme.buttonAnimUp;
+		buttonAnimOver = theme.buttonAnimOver;
+		buttonAnimDown = theme.buttonAnimDown;
+		buttonAnimDisabled = theme.buttonAnimDisabled;
+
+		focusMode = theme.focusMode;
+		focusFrameFps = theme.focusFrameFps;
+		focusFrameGraphic = theme.focusFrameGraphic;
+		focusNextToGraphic = theme.focusNextToGraphic;
+		focusNextToMirrored = theme.focusNextToMirrored;
+		focusNextToGraphicRight = theme.focusNextToGraphicRight;
+		focusNextToFlipRight = theme.focusNextToFlipRight;
+		focusNextToGap = theme.focusNextToGap;
+		focusNextToOffsetY = theme.focusNextToOffsetY;
+		focusOverlayGraphic = theme.focusOverlayGraphic;
+		focusOverlayOffsetX = theme.focusOverlayOffsetX;
+		focusOverlayOffsetY = theme.focusOverlayOffsetY;
+	}
+
+	/**
+	 * Re-applies skin/highlight visuals to any groups/buttons that are currently registered.
+	 *
+	 * This is called automatically when `setTheme()` is used.
+	 */
+	public static function refreshLiveUi():Void
+	{
+		if (groups == null) return;
+		for (g in groups)
+		{
+			if (g == null) continue;
+			g.refreshTheme();
+		}
+	}
+
+	/** Loads a theme from a JSON string and activates it. */
+	public static function loadThemeFromJsonString(json:String):FlxUXTheme
+	{
+		var obj:Dynamic = null;
+		try
+		{
+			obj = Json.parse(json);
+		}
+		catch (_)
+		{
+			obj = null;
+		}
+		var t = FlxUXTheme.fromObject(obj);
+		setTheme(t);
+		return t;
+	}
+
+	/** Loads a theme from an embedded text asset id (e.g. "assets/themes/default.json") and activates it. */
+	public static function loadThemeFromAsset(assetId:String):FlxUXTheme
+	{
+		if (assetId == null) return theme;
+		var json:String = null;
+		try
+		{
+			json = Assets.getText(assetId);
+		}
+		catch (_)
+		{
+			json = null;
+		}
+		if (json == null) return theme;
+		return loadThemeFromJsonString(json);
+	}
+
 	/**
 	 * Action bindings used by FlxUX.
 	 *
@@ -209,6 +396,11 @@ class FlxUXCore
 		// In some setups FlxUXGroup may be created very early; safely no-op until FlxG.inputs exists.
 		if (flixel.FlxG.inputs == null)
 			return;
+
+		if (pixelArtDefaults)
+		{
+			FlxSprite.defaultAntialiasing = false;
+		}
 
 		actions = new FlxUXActions(
 			keyboardArrows,
@@ -321,6 +513,20 @@ class FlxUXCore
 		if (i < 0) return;
 		groups.splice(i, 1);
 		insertDense(groups, group, order);
+	}
+
+	private static function insertDense<T>(arr:Array<T>, item:T, ?index:Int):Void
+	{
+		if (index == null)
+		{
+			arr.push(item);
+			return;
+		}
+
+		var i:Int = index;
+		if (i < 0) i = 0;
+		if (i > arr.length) i = arr.length;
+		arr.insert(i, item);
 	}
 
 	@:allow(flixel.ux.FlxUXPlugin)
@@ -739,6 +945,14 @@ class FlxUXCore
 			return false;
 
 		for (touch in FlxG.touches.list)
+			/** Alignment options for the final row in `FlxUXGroup.grid()` when it is not full. */
+			public enum FlxUXGridLastRowAlign
+			{
+				LEFT;
+				CENTER;
+				RIGHT;
+			}
+
 		{
 			if (touch == null) continue;
 

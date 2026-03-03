@@ -4,9 +4,9 @@ import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.graphics.FlxGraphic;
 import openfl.display.BitmapData;
-import openfl.geom.Matrix;
 import openfl.geom.Point;
 import openfl.geom.Rectangle;
+import flixel.ux.FlxUXCore.FlxUXGraphicInput;
 
 /**
  * Simple 9-slice description.
@@ -16,7 +16,7 @@ import openfl.geom.Rectangle;
 class FlxUX9Slice
 {
 	/** Source graphic input (String asset id/path, FlxGraphic, FlxSprite, BitmapData, etc). */
-	public var source:FlxUXCore.GraphicInput;
+	public var source:FlxUXGraphicInput;
 
 	/** Optional frame size if source is a spritesheet. */
 	public var frameWidth:Int;
@@ -59,6 +59,9 @@ class FlxUX9Slice
 
 		drawNineSlice(out, src, srcRect, nine.left, nine.top, nine.right, nine.bottom);
 		var gfx:FlxGraphic = FlxGraphic.fromBitmapData(out);
+		// These rendered graphics are cached and reused; prevent Flixel from GC'ing them.
+		gfx.persist = true;
+		gfx.destroyOnNoUse = false;
 		cache.set(key, gfx);
 		return gfx;
 	}
@@ -66,7 +69,7 @@ class FlxUX9Slice
 	/**
 	 * Converts Flixel-style "graphic input" to `FlxGraphic`.
 	 */
-	public static function toGraphic(input:FlxUXCore.GraphicInput):FlxGraphic
+	public static function toGraphic(input:FlxUXGraphicInput):FlxGraphic
 	{
 		if (input == null) return null;
 		if (Std.isOfType(input, FlxGraphic)) return cast input;
@@ -78,9 +81,16 @@ class FlxUX9Slice
 		if (Std.isOfType(input, BitmapData))
 		{
 			var bd:BitmapData = cast input;
-			return FlxGraphic.fromBitmapData(bd);
+			var g:FlxGraphic = FlxGraphic.fromBitmapData(bd);
+			g.persist = true;
+			g.destroyOnNoUse = false;
+			return g;
 		}
-		return FlxG.bitmap.add(input, false);
+		if (Std.isOfType(input, String))
+		{
+			return FlxG.bitmap.add(cast(input, String), false);
+		}
+		return null;
 	}
 
 	private static function makeKey(nine:FlxUX9Slice, w:Int, h:Int, frameIndex:Int):String
@@ -96,7 +106,7 @@ class FlxUX9Slice
 	}
 
 	@:allow(flixel.ux.FlxUXGroup)
-	private static function resolveBitmapData(source:FlxUXCore.GraphicInput):BitmapData
+	private static function resolveBitmapData(source:FlxUXGraphicInput):BitmapData
 	{
 		if (source == null) return null;
 		if (Std.isOfType(source, BitmapData))
@@ -111,8 +121,12 @@ class FlxUX9Slice
 			var s:FlxSprite = cast source;
 			return (s.graphic != null) ? s.graphic.bitmap : null;
 		}
-		var g = FlxG.bitmap.add(source, false);
-		return (g != null) ? g.bitmap : null;
+		if (Std.isOfType(source, String))
+		{
+			var g = FlxG.bitmap.add(cast(source, String), false);
+			return (g != null) ? g.bitmap : null;
+		}
+		return null;
 	}
 
 	private static function frameRect(src:BitmapData, frameW:Int, frameH:Int, frameIndex:Int):Rectangle
@@ -150,40 +164,57 @@ class FlxUX9Slice
 		var centerDstW:Int = Std.int(Math.max(0, dw - left - right));
 		var centerDstH:Int = Std.int(Math.max(0, dh - top - bottom));
 
-		function blit(sx:Int, sy:Int, sW:Int, sH:Int, dx:Int, dy:Int, dW:Int, dH:Int):Void
+		// Nearest-neighbor scaling for pixel art.
+		function blitNearest(sx:Int, sy:Int, sW:Int, sH:Int, dx:Int, dy:Int, dW:Int, dH:Int):Void
 		{
 			if (sW <= 0 || sH <= 0 || dW <= 0 || dH <= 0) return;
 			var rect:Rectangle = new Rectangle(srcRect.x + sx, srcRect.y + sy, sW, sH);
-			var tmp:BitmapData = new BitmapData(sW, sH, true, 0x00000000);
-			tmp.copyPixels(src, rect, new Point(0, 0));
 			if (sW == dW && sH == dH)
 			{
-				out.copyPixels(tmp, tmp.rect, new Point(dx, dy), null, null, true);
+				out.copyPixels(src, rect, new Point(dx, dy), null, null, true);
+				return;
 			}
-			else
+
+			// Scale using nearest-neighbor by copying 1x1 pixels.
+			var sx0:Int = Std.int(rect.x);
+			var sy0:Int = Std.int(rect.y);
+			var scaleX:Float = sW / dW;
+			var scaleY:Float = sH / dH;
+			var p:Point = new Point();
+			var pixelRect:Rectangle = new Rectangle(0, 0, 1, 1);
+			for (yy in 0...dH)
 			{
-				var m:Matrix = new Matrix();
-				m.scale(dW / sW, dH / sH);
-				m.translate(dx, dy);
-				out.draw(tmp, m, null, null, null, true);
+				var srcY:Int = sy0 + Std.int(yy * scaleY);
+				if (srcY < sy0) srcY = sy0;
+				if (srcY >= sy0 + sH) srcY = sy0 + sH - 1;
+				pixelRect.y = srcY;
+				p.y = dy + yy;
+				for (xx in 0...dW)
+				{
+					var srcX:Int = sx0 + Std.int(xx * scaleX);
+					if (srcX < sx0) srcX = sx0;
+					if (srcX >= sx0 + sW) srcX = sx0 + sW - 1;
+					pixelRect.x = srcX;
+					p.x = dx + xx;
+					out.copyPixels(src, pixelRect, p, null, null, true);
+				}
 			}
-			tmp.dispose();
 		}
 
-		blit(0, 0, left, top, 0, 0, left, top);
-		blit(sw - right, 0, right, top, dw - right, 0, right, top);
-		blit(0, sh - bottom, left, bottom, 0, dh - bottom, left, bottom);
-		blit(sw - right, sh - bottom, right, bottom, dw - right, dh - bottom, right, bottom);
+		blitNearest(0, 0, left, top, 0, 0, left, top);
+		blitNearest(sw - right, 0, right, top, dw - right, 0, right, top);
+		blitNearest(0, sh - bottom, left, bottom, 0, dh - bottom, left, bottom);
+		blitNearest(sw - right, sh - bottom, right, bottom, dw - right, dh - bottom, right, bottom);
 
-		blit(left, 0, centerSrcW, top, left, 0, centerDstW, top);
-		blit(left, sh - bottom, centerSrcW, bottom, left, dh - bottom, centerDstW, bottom);
-		blit(0, top, left, centerSrcH, 0, top, left, centerDstH);
-		blit(sw - right, top, right, centerSrcH, dw - right, top, right, centerDstH);
+		blitNearest(left, 0, centerSrcW, top, left, 0, centerDstW, top);
+		blitNearest(left, sh - bottom, centerSrcW, bottom, left, dh - bottom, centerDstW, bottom);
+		blitNearest(0, top, left, centerSrcH, 0, top, left, centerDstH);
+		blitNearest(sw - right, top, right, centerSrcH, dw - right, top, right, centerDstH);
 
-		blit(left, top, centerSrcW, centerSrcH, left, top, centerDstW, centerDstH);
+		blitNearest(left, top, centerSrcW, centerSrcH, left, top, centerDstW, centerDstH);
 	}
 
-	public function new(source:FlxUXCore.GraphicInput, frameWidth:Int, frameHeight:Int, left:Int, top:Int, right:Int, bottom:Int)
+	public function new(source:FlxUXGraphicInput, frameWidth:Int, frameHeight:Int, left:Int, top:Int, right:Int, bottom:Int)
 	{
 		this.source = source;
 		this.frameWidth = frameWidth;
