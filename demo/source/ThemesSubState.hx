@@ -13,6 +13,8 @@ import flixel.ux.FlxUXTheme;
 class ThemesSubState extends FlxSubState
 {
 	var info:FlxText;
+	var currentThemeName:String = "";
+	var header:FlxText;
 
 	override public function create():Void
 	{
@@ -20,10 +22,11 @@ class ThemesSubState extends FlxSubState
 		add(DemoUi.makeSolidBackdrop());
 		DemoUi.addBackButton(this);
 
-		add(DemoUi.makeHeader(
-			"Themes + overrides",
-			"Theme values apply globally, but groups/buttons can override them. This demo swaps between two themes at runtime.")
+		header = DemoUi.makeHeader(
+			"Themes (red / blue)",
+			"This substate defines two JSON themes (red + blue) and swaps them at runtime using FlxUXCore.setTheme()."
 		);
+		add(header);
 
 		info = new FlxText(24, 86, FlxG.width - 48, "");
 		info.setFormat(null, 12, 0xFFB9C0D0, LEFT);
@@ -37,19 +40,23 @@ class ThemesSubState extends FlxSubState
 		add(boxOverrides.border);
 		add(boxOverrides.label);
 
-		// Global theme swap group
+		// Theme swap buttons.
 		var gTheme = new FlxUXGroup();
 		gTheme.x = 44;
 		gTheme.y = 200;
 		add(gTheme);
 
-		gTheme.addButton("Apply Theme A", () -> applyThemeA());
-		gTheme.addButton("Apply Theme B", () -> applyThemeB());
-		gTheme.addButton("Reload from JSON (Theme A)", () -> FlxUXCore.loadThemeFromJsonString(themeAJson()));
+		gTheme.addButton("Apply BLUE theme", () -> applyBlueTheme());
+		gTheme.addButton("Apply RED theme", () -> applyRedTheme());
+		gTheme.addButton("Re-apply BLUE (loadThemeFromJsonString)", () -> {
+			// Convenience helper: parses JSON and activates it.
+			FlxUXCore.loadThemeFromJsonString(themeBlueJson());
+			onThemeApplied("BLUE (loadThemeFromJsonString)");
+		});
 		gTheme.matchSize();
 		gTheme.stack(12);
 
-		// Overrides group: shows that group overrides win over core/theme
+		// Overrides demonstrate precedence: Core/theme -> group -> button.
 		var gOverrides = new FlxUXGroup();
 		gOverrides.x = boxOverrides.border.x + 20;
 		gOverrides.y = 200;
@@ -69,40 +76,88 @@ class ThemesSubState extends FlxSubState
 		gOverrides.matchSize();
 		gOverrides.stack(12);
 
-		applyThemeA();
+		applyBlueTheme();
 	}
 
-	function applyThemeA():Void
+	function onThemeApplied(name:String):Void
 	{
-		FlxUXCore.setTheme(FlxUXTheme.fromObject(haxe.Json.parse(themeAJson())));
-		info.text = "Active theme: A (loaded via JSON string)";
+		currentThemeName = name;
+		info.text = "Active theme: " + currentThemeName + "\n"
+			+ "- Theme-driven: button skins + label styling";
 	}
 
-	function applyThemeB():Void
+	function applyThemeJson(json:String, name:String):Void
 	{
-		FlxUXCore.setTheme(FlxUXTheme.fromObject(haxe.Json.parse(themeBJson())));
-		info.text = "Active theme: B (loaded via JSON string)";
+		// FlxUXCore.setTheme() applies the theme globally and refreshes existing FlxUX UI.
+		FlxUXCore.setTheme(FlxUXTheme.fromObject(haxe.Json.parse(json)));
+		onThemeApplied(name);
 	}
 
-	static function themeAJson():String
+	function applyBlueTheme():Void
+	{
+		applyThemeJson(themeBlueJson(), "BLUE");
+	}
+
+	function applyRedTheme():Void
+	{
+		applyThemeJson(themeRedJson(), "RED");
+	}
+
+	// BLUE theme
+	static function themeBlueJson():String
 	{
 		return '{'
-			+ '"uiAssetVariant":"_blue",'
+			+ '"pixelArtDefaults":true,'
+			+ '"snapUiToPixels":true,'
 			+ '"buttonUseAnim":false,'
 			+ '"buttonSkinFps":0,'
+			// Button skin (9-slice)
+			+ '"buttonGraphic":{'
+				+ '"source":"assets/ux/button_blue.png",'
+				+ '"left":16,"top":16,"right":3,"bottom":7'
+			+ '},'
+			// Focus visuals
+			+ '"focusMode":"FRAME",'
+			+ '"focusFrameFps":6,'
+			+ '"focusFrameGraphic":{'
+				+ '"source":"assets/ux/highlight_frame_9s_anim_blue.png",'
+				+ '"left":40,"top":40,"right":14,"bottom":17,'
+				+ '"frameWidth":15,"frameHeight":18'
+			+ '},'
+			+ '"focusNextToGraphic":"assets/ux/highlight_next_to_blue.png",'
+			+ '"focusOverlayGraphic":"assets/ux/highlight_on_blue.png",'
+			// Label styling
 			+ '"buttonLabelSize":14,'
 			+ '"buttonLabelColor":"#E7EAF2"'
 			+ '}';
 	}
 
-	static function themeBJson():String
+	// RED theme
+	static function themeRedJson():String
 	{
 		return '{'
-			+ '"uiAssetVariant":"_red",'
+			+ '"pixelArtDefaults":true,'
+			+ '"snapUiToPixels":true,'
 			+ '"buttonUseAnim":false,'
 			+ '"buttonSkinFps":0,'
+			// Button skin (9-slice)
+			+ '"buttonGraphic":{'
+				+ '"source":"assets/ux/button_red.png",'
+				+ '"left":16,"top":16,"right":3,"bottom":7'
+			+ '},'
+			// Focus visuals
+			+ '"focusMode":"FRAME",'
+			+ '"focusFrameFps":6,'
+			+ '"focusFrameGraphic":{'
+				+ '"source":"assets/ux/highlight_frame_9s_anim_red.png",'
+				+ '"left":40,"top":40,"right":14,"bottom":17,'
+				+ '"frameWidth":15,"frameHeight":18'
+			+ '},'
+			+ '"focusNextToGraphic":"assets/ux/highlight_next_to_red.png",'
+			+ '"focusOverlayGraphic":"assets/ux/highlight_on_red.png",'
+			// Label styling
 			+ '"buttonLabelSize":14,'
-			+ '"buttonLabelColor":"#B9C0D0"'
+			+ '"buttonLabelColor":"#FFE7EA"'
 			+ '}';
 	}
 }
