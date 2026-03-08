@@ -8,6 +8,9 @@ import haxe.extern.EitherType;
 import haxe.Json;
 import openfl.Assets;
 import openfl.display.BitmapData;
+import flixel.system.FlxAssets.FlxSoundAsset;
+import flixel.text.FlxText;
+import flixel.text.FlxText.FlxTextAlign;
 
 /**
  * Accepts common Flixel-friendly graphic inputs:
@@ -18,6 +21,9 @@ import openfl.display.BitmapData;
  * - `FlxUX9Slice`
  */
 typedef FlxUXGraphicInput = EitherType<OneOfFour<String, flixel.graphics.FlxGraphic, flixel.FlxSprite, BitmapData>, flixel.ux.FlxUX9Slice>;
+
+/** Factory for creating a button label sprite. */
+typedef FlxUXLabelFactory = (text:String) -> flixel.FlxSprite;
 
 /**
  * Global input mode used by FlxUX.
@@ -73,6 +79,26 @@ class FlxUXCore
 	public static var buttonAnimOver:Array<Int> = DEFAULT_BUTTON_ANIM_OVER;
 	public static var buttonAnimDown:Array<Int> = DEFAULT_BUTTON_ANIM_DOWN;
 	public static var buttonAnimDisabled:Array<Int> = DEFAULT_BUTTON_ANIM_DISABLED;
+
+	// --- Button sounds (optional; default is no sounds) ---
+	/** Sound played when the pointer moves over a button (or it becomes highlighted). Null = no sound. */
+	public static var buttonSoundOver:Null<FlxSoundAsset> = null;
+	/** Sound played when a button is pressed down. Null = no sound. */
+	public static var buttonSoundDown:Null<FlxSoundAsset> = null;
+	/** Sound played when a button click/activation completes (mouse up inside / click). Null = no sound. */
+	public static var buttonSoundClick:Null<FlxSoundAsset> = null;
+
+	// --- Button labels (optional; defaults to FlxText label) ---
+	/** Default label font (asset id). Null uses the default font. */
+	public static var buttonLabelFont:Null<String> = null;
+	/** Default label size. */
+	public static var buttonLabelSize:Int = 14;
+	/** Default label color. */
+	public static var buttonLabelColor:flixel.util.FlxColor = 0xFFFFFFFF;
+	/** Default label alignment (recommended CENTER for buttons). */
+	public static var buttonLabelAlign:FlxTextAlign = CENTER;
+	/** Optional factory for creating custom label sprites (e.g. FlxBitmapText). Null uses FlxText. */
+	public static var buttonLabelFactory:Null<FlxUXLabelFactory> = null;
 	// --- Focus highlight configuration (null => core/group fallback => built-in default) ---
 	/** Current focus highlight mode (defaults to FRAME). */
 	public static var focusMode:FlxUXFocusMode = FlxUXFocusMode.FRAME;
@@ -166,6 +192,14 @@ class FlxUXCore
 		buttonAnimOver = DEFAULT_BUTTON_ANIM_OVER;
 		buttonAnimDown = DEFAULT_BUTTON_ANIM_DOWN;
 		buttonAnimDisabled = DEFAULT_BUTTON_ANIM_DISABLED;
+		buttonSoundOver = null;
+		buttonSoundDown = null;
+		buttonSoundClick = null;
+		buttonLabelFont = null;
+		buttonLabelSize = 14;
+		buttonLabelColor = 0xFFFFFFFF;
+		buttonLabelAlign = CENTER;
+		buttonLabelFactory = null;
 		focusMode = FlxUXFocusMode.FRAME;
 		focusFrameFps = DEFAULT_FOCUS_FRAME_FPS;
 		focusFrameGraphic = DEFAULT_FOCUS_FRAME_GRAPHIC;
@@ -190,6 +224,14 @@ class FlxUXCore
 		buttonAnimOver = DEFAULT_BUTTON_ANIM_OVER;
 		buttonAnimDown = DEFAULT_BUTTON_ANIM_DOWN;
 		buttonAnimDisabled = DEFAULT_BUTTON_ANIM_DISABLED;
+		buttonSoundOver = null;
+		buttonSoundDown = null;
+		buttonSoundClick = null;
+		buttonLabelFont = null;
+		buttonLabelSize = 14;
+		buttonLabelColor = 0xFFFFFFFF;
+		buttonLabelAlign = CENTER;
+		buttonLabelFactory = null;
 	}
 
 	/** Forces the built-in static button sheet (no per-state animation playback). */
@@ -298,6 +340,18 @@ class FlxUXCore
 		buttonAnimOver = theme.buttonAnimOver;
 		buttonAnimDown = theme.buttonAnimDown;
 		buttonAnimDisabled = theme.buttonAnimDisabled;
+		buttonSoundOver = theme.buttonSoundOver;
+		buttonSoundDown = theme.buttonSoundDown;
+		buttonSoundClick = theme.buttonSoundClick;
+		buttonLabelFont = theme.buttonLabelFont;
+		buttonLabelSize = theme.buttonLabelSize;
+		buttonLabelColor = theme.buttonLabelColor;
+		buttonLabelAlign = switch (StringTools.trim(theme.buttonLabelAlign).toLowerCase())
+		{
+			case "left": LEFT;
+			case "right": RIGHT;
+			default: CENTER;
+		};
 
 		focusMode = theme.focusMode;
 		focusFrameFps = theme.focusFrameFps;
@@ -945,14 +999,6 @@ class FlxUXCore
 			return false;
 
 		for (touch in FlxG.touches.list)
-			/** Alignment options for the final row in `FlxUXGroup.grid()` when it is not full. */
-			public enum FlxUXGridLastRowAlign
-			{
-				LEFT;
-				CENTER;
-				RIGHT;
-			}
-
 		{
 			if (touch == null) continue;
 
@@ -963,6 +1009,14 @@ class FlxUXCore
 		return false;
 		#end
 	}
+}
+
+/** Alignment options for the final row in `FlxUXGroup.grid()` when it is not full. */
+enum FlxUXGridLastRowAlign
+{
+	LEFT;
+	CENTER;
+	RIGHT;
 }
 
 /**

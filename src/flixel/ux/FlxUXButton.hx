@@ -6,6 +6,10 @@ import flixel.ui.FlxButton;
 import flixel.ui.FlxButton.FlxButtonState;
 import flixel.ux.FlxUXCore.FlxUXGraphicInput;
 import flixel.graphics.FlxGraphic;
+import flixel.system.FlxAssets.FlxSoundAsset;
+import flixel.text.FlxText;
+import flixel.text.FlxText.FlxTextAlign;
+import flixel.text.FlxBitmapText;
 
 class FlxUXButton extends FlxButton
 {
@@ -52,6 +56,18 @@ class FlxUXButton extends FlxButton
 	public var buttonAnimDown:Null<Array<Int>> = null;
 	public var buttonAnimDisabled:Null<Array<Int>> = null;
 
+	// Button sounds (null => fall back to group/core; default is no sounds)
+	public var buttonSoundOver:Null<FlxSoundAsset> = null;
+	public var buttonSoundDown:Null<FlxSoundAsset> = null;
+	public var buttonSoundClick:Null<FlxSoundAsset> = null;
+
+	// Button labels (null/0 => fall back to group/core)
+	public var buttonLabelFont:Null<String> = null;
+	public var buttonLabelSize:Int = 0;
+	public var buttonLabelColor:Null<flixel.util.FlxColor> = null;
+	public var buttonLabelAlign:Null<FlxTextAlign> = null;
+	public var buttonLabelFactory:Null<flixel.ux.FlxUXCore.FlxUXLabelFactory> = null;
+
 	/** Clears per-button skin overrides (this button falls back to group/core). */
 	public function resetButtonSkin():Void
 	{
@@ -62,6 +78,15 @@ class FlxUXButton extends FlxButton
 		buttonAnimOver = null;
 		buttonAnimDown = null;
 		buttonAnimDisabled = null;
+		applySkin();
+	}
+
+	/** Clears per-button sound overrides (this button falls back to group/core, which default to no sounds). */
+	public function resetButtonSounds():Void
+	{
+		buttonSoundOver = null;
+		buttonSoundDown = null;
+		buttonSoundClick = null;
 		applySkin();
 	}
 
@@ -125,6 +150,8 @@ class FlxUXButton extends FlxButton
 		this.action = action;
 
 		onUp.callback = () -> activate();
+		// Apply label formatting defaults once at creation.
+		applyLabelOptions();
 
 		if (autoSizeToLabel)
 			autosize();
@@ -171,7 +198,7 @@ class FlxUXButton extends FlxButton
 	public function centerLabel():Void
 	{
 		if (this.label == null) return;
-		// FlxButton's label is a separate sprite positioned in world coordinates.
+		// FlxButton's label is a separate object positioned in world coordinates.
 		this.label.x = x + (width - this.label.width) * 0.5;
 		var yOff:Float = 0;
 		// Built-in button art has a 4px "depth"; lift the label when not pressed.
@@ -182,10 +209,91 @@ class FlxUXButton extends FlxButton
 		this.label.y = y + (height - this.label.height) * 0.5 + yOff;
 	}
 
+	/** Applies label options (font/size/color/align and optional label factory) using precedence: button -> group -> core. */
+	public function applyLabelOptions():Void
+	{
+		// Factory choice
+		var factory = (buttonLabelFactory != null) ? buttonLabelFactory : ((uxGroup != null && uxGroup.buttonLabelFactory != null) ? uxGroup.buttonLabelFactory : FlxUXCore.buttonLabelFactory);
+		if (factory != null)
+		{
+			// Replace label sprite if it's not already a custom one.
+			var newLabel = factory(this.label != null ? this.label.text : "");
+			if (newLabel != null)
+			{
+				// Remove the old label from the button and attach the new one.
+				// FlxButton manages label as a public field.
+				this.label = cast newLabel;
+			}
+		}
+
+		var font:Null<String> = null;
+		if (buttonLabelFont != null) font = buttonLabelFont;
+		else if (uxGroup != null && uxGroup.buttonLabelFont != null) font = uxGroup.buttonLabelFont;
+		else font = FlxUXCore.buttonLabelFont;
+
+		var size:Int = 0;
+		if (buttonLabelSize > 0) size = buttonLabelSize;
+		else if (uxGroup != null && uxGroup.buttonLabelSize > 0) size = uxGroup.buttonLabelSize;
+		else size = FlxUXCore.buttonLabelSize;
+		if (size <= 0) size = 14;
+
+		var color:flixel.util.FlxColor = 0xFFFFFFFF;
+		if (buttonLabelColor != null) color = buttonLabelColor;
+		else if (uxGroup != null && uxGroup.buttonLabelColor != null) color = uxGroup.buttonLabelColor;
+		else color = FlxUXCore.buttonLabelColor;
+
+		var align:FlxTextAlign = CENTER;
+		if (buttonLabelAlign != null) align = buttonLabelAlign;
+		else if (uxGroup != null && uxGroup.buttonLabelAlign != null) align = uxGroup.buttonLabelAlign;
+		else align = FlxUXCore.buttonLabelAlign;
+
+		// Apply formatting if label is a FlxText.
+		if (Std.isOfType(this.label, FlxText))
+		{
+			var t:FlxText = cast this.label;
+			t.setFormat(font, size, color, align);
+		}
+		// Bitmap labels are user-controlled; we can at least tint.
+		else if (Std.isOfType(this.label, FlxBitmapText))
+		{
+			this.label.color = color;
+		}
+		else
+		{
+			this.label.color = color;
+		}
+
+		centerLabel();
+	}
+
 	/** Applies this button's skin based on FlxUXCore/group settings (called by FlxUXGroup). */
 	@:allow(flixel.ux.FlxUXGroup)
 	private function applySkin():Void
 	{
+		// Apply sound overrides (button -> group -> core). Default is no sounds.
+		var sOver = (buttonSoundOver != null) ? buttonSoundOver : ((uxGroup != null && uxGroup.buttonSoundOver != null) ? uxGroup.buttonSoundOver : FlxUXCore.buttonSoundOver);
+		var sDown = (buttonSoundDown != null) ? buttonSoundDown : ((uxGroup != null && uxGroup.buttonSoundDown != null) ? uxGroup.buttonSoundDown : FlxUXCore.buttonSoundDown);
+		var sClick = (buttonSoundClick != null) ? buttonSoundClick : ((uxGroup != null && uxGroup.buttonSoundClick != null) ? uxGroup.buttonSoundClick : FlxUXCore.buttonSoundClick);
+		// FlxButton's events store a FlxSound instance, not an asset id.
+		// Keep it simple for users: they provide assets, we load/clear the event sounds.
+		if (onOver != null)
+		{
+			if (sOver != null) onOver.sound.loadEmbedded(sOver, false, false);
+			else onOver.sound = null;
+		}
+		if (onDown != null)
+		{
+			if (sDown != null) onDown.sound.loadEmbedded(sDown, false, false);
+			else onDown.sound = null;
+		}
+		if (onUp != null)
+		{
+			if (sClick != null) onUp.sound.loadEmbedded(sClick, false, false);
+			else onUp.sound = null;
+		}
+		// Apply label options (format + optional bitmap label factory)
+		applyLabelOptions();
+
 		var input:Null<FlxUXGraphicInput> = null;
 		if (buttonGraphic != null)
 			input = buttonGraphic;

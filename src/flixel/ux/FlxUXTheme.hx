@@ -3,6 +3,7 @@ package flixel.ux;
 import flixel.util.FlxColor;
 import haxe.DynamicAccess;
 import flixel.ux.FlxUXCore.FlxUXGraphicInput;
+import flixel.system.FlxAssets.FlxSoundAsset;
 
 class FlxUXTheme
 {
@@ -23,6 +24,17 @@ class FlxUXTheme
 	public var buttonAnimOver:Array<Int> = [2, 3, 4, 5];
 	public var buttonAnimDown:Array<Int> = [6, 7, 8, 9];
 	public var buttonAnimDisabled:Array<Int> = [10];
+
+	// Button sounds (optional, default is no sounds)
+	public var buttonSoundOver:Null<FlxSoundAsset> = null;
+	public var buttonSoundDown:Null<FlxSoundAsset> = null;
+	public var buttonSoundClick:Null<FlxSoundAsset> = null;
+
+	// Button label defaults
+	public var buttonLabelFont:Null<String> = null;
+	public var buttonLabelSize:Int = 14;
+	public var buttonLabelColor:FlxColor = 0xFFFFFFFF;
+	public var buttonLabelAlign:String = "center";
 
 	// Focus visuals
 	public var focusMode:FlxUXCore.FlxUXFocusMode = FlxUXCore.FlxUXFocusMode.FRAME;
@@ -153,6 +165,34 @@ class FlxUXTheme
 		if (map.exists("buttonAnimOver")) t.buttonAnimOver = asIntArray(map.get("buttonAnimOver"), t.buttonAnimOver);
 		if (map.exists("buttonAnimDown")) t.buttonAnimDown = asIntArray(map.get("buttonAnimDown"), t.buttonAnimDown);
 		if (map.exists("buttonAnimDisabled")) t.buttonAnimDisabled = asIntArray(map.get("buttonAnimDisabled"), t.buttonAnimDisabled);
+
+		// Button sounds
+		if (map.exists("buttonSoundOver"))
+		{
+			var s:Dynamic = map.get("buttonSoundOver");
+			if (Std.isOfType(s, String)) t.buttonSoundOver = cast(s, String);
+		}
+		if (map.exists("buttonSoundDown"))
+		{
+			var s:Dynamic = map.get("buttonSoundDown");
+			if (Std.isOfType(s, String)) t.buttonSoundDown = cast(s, String);
+		}
+		if (map.exists("buttonSoundClick"))
+		{
+			var s:Dynamic = map.get("buttonSoundClick");
+			if (Std.isOfType(s, String)) t.buttonSoundClick = cast(s, String);
+		}
+
+		// Button labels
+		if (map.exists("buttonLabelFont")) t.buttonLabelFont = asString(map.get("buttonLabelFont"), t.buttonLabelFont);
+		if (map.exists("buttonLabelSize")) t.buttonLabelSize = asInt(map.get("buttonLabelSize"), t.buttonLabelSize);
+		if (map.exists("buttonLabelColor"))
+		{
+			var c:Dynamic = map.get("buttonLabelColor");
+			if (Std.isOfType(c, Int)) t.buttonLabelColor = (c : Int);
+			else if (Std.isOfType(c, String)) t.buttonLabelColor = parseColorString(cast c);
+		}
+		if (map.exists("buttonLabelAlign")) t.buttonLabelAlign = asString(map.get("buttonLabelAlign"), t.buttonLabelAlign);
 
 		if (map.exists("focusMode"))
 		{
