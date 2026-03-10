@@ -94,7 +94,13 @@ class FlxUXCore
 	/** Default label size. */
 	public static var buttonLabelSize:Int = 14;
 	/** Default label color. */
-	public static var buttonLabelColor:flixel.util.FlxColor = 0xFFFFFFFF;
+	public static var buttonLabelColor:flixel.util.FlxColor = 0xFF666666;
+	/** Default label color when highlighted/hovered. Null => fall back to buttonLabelColor. */
+	public static var buttonLabelColorHover:Null<flixel.util.FlxColor> = 0xFF333333;
+	/** Default label color when pressed. Null => fall back to buttonLabelColorHover, then buttonLabelColor. */
+	public static var buttonLabelColorDown:Null<flixel.util.FlxColor> = 0xFF333333;
+	/** Default label color when disabled. Null => fall back to buttonLabelColor. */
+	public static var buttonLabelColorDisabled:Null<flixel.util.FlxColor> = 0xFF777777;
 	/** Default label alignment (recommended CENTER for buttons). */
 	public static var buttonLabelAlign:FlxTextAlign = CENTER;
 	/** Optional factory for creating custom label sprites (e.g. FlxBitmapText). Null uses FlxText. */
@@ -197,7 +203,10 @@ class FlxUXCore
 		buttonSoundClick = null;
 		buttonLabelFont = null;
 		buttonLabelSize = 14;
-		buttonLabelColor = 0xFFFFFFFF;
+		buttonLabelColor = 0xFF666666;
+		buttonLabelColorHover = 0xFF333333;
+		buttonLabelColorDown = 0xFF333333;
+		buttonLabelColorDisabled = 0xFF777777;
 		buttonLabelAlign = CENTER;
 		buttonLabelFactory = null;
 		focusMode = FlxUXFocusMode.FRAME;
@@ -229,7 +238,10 @@ class FlxUXCore
 		buttonSoundClick = null;
 		buttonLabelFont = null;
 		buttonLabelSize = 14;
-		buttonLabelColor = 0xFFFFFFFF;
+		buttonLabelColor = 0xFF666666;
+		buttonLabelColorHover = 0xFF333333;
+		buttonLabelColorDown = 0xFF333333;
+		buttonLabelColorDisabled = 0xFF777777;
 		buttonLabelAlign = CENTER;
 		buttonLabelFactory = null;
 	}
@@ -346,6 +358,9 @@ class FlxUXCore
 		buttonLabelFont = theme.buttonLabelFont;
 		buttonLabelSize = theme.buttonLabelSize;
 		buttonLabelColor = theme.buttonLabelColor;
+		buttonLabelColorHover = theme.buttonLabelColorHover;
+		buttonLabelColorDown = theme.buttonLabelColorDown;
+		buttonLabelColorDisabled = theme.buttonLabelColorDisabled;
 		buttonLabelAlign = switch (StringTools.trim(theme.buttonLabelAlign).toLowerCase())
 		{
 			case "left": LEFT;

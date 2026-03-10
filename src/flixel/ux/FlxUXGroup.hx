@@ -12,6 +12,8 @@ import openfl.geom.Rectangle;
 import flixel.ux.FlxUXCore.FlxUXNavStyle;
 import flixel.ux.FlxUXCore.FlxUXFocusMode;
 import flixel.ux.FlxUXCore.FlxUXGraphicInput;
+import flixel.ux.FlxUXCore.FlxUXGridLastRowAlign;
+import flixel.system.FlxAssets.FlxSoundAsset;
 import flixel.ux.FlxUXCore.FlxUXFocusMode;
 import flixel.ux.FlxUXCore.FlxUXGraphicInput;
 
@@ -64,6 +66,21 @@ class FlxUXGroup extends FlxGroup
 	public var buttonAnimDown:Null<Array<Int>> = null;
 	public var buttonAnimDisabled:Null<Array<Int>> = null;
 
+	// Button sounds (null => fall back to FlxUXCore, default is no sounds)
+	public var buttonSoundOver:Null<FlxSoundAsset> = null;
+	public var buttonSoundDown:Null<FlxSoundAsset> = null;
+	public var buttonSoundClick:Null<FlxSoundAsset> = null;
+
+	// Button labels (null => fall back to FlxUXCore)
+	public var buttonLabelFont:Null<String> = null;
+	public var buttonLabelSize:Int = 0;
+	public var buttonLabelColor:Null<flixel.util.FlxColor> = null;
+	public var buttonLabelColorHover:Null<flixel.util.FlxColor> = null;
+	public var buttonLabelColorDown:Null<flixel.util.FlxColor> = null;
+	public var buttonLabelColorDisabled:Null<flixel.util.FlxColor> = null;
+	public var buttonLabelAlign:Null<flixel.text.FlxText.FlxTextAlign> = null;
+	public var buttonLabelFactory:Null<flixel.ux.FlxUXCore.FlxUXLabelFactory> = null;
+
 	/** Clears group-level button skin overrides (buttons fall back to FlxUXCore defaults). */
 	public function resetButtonSkin():Void
 	{
@@ -74,6 +91,14 @@ class FlxUXGroup extends FlxGroup
 		buttonAnimOver = null;
 		buttonAnimDown = null;
 		buttonAnimDisabled = null;
+	}
+
+	/** Clears group-level button sound overrides (buttons fall back to FlxUXCore, which defaults to no sounds). */
+	public function resetButtonSounds():Void
+	{
+		buttonSoundOver = null;
+		buttonSoundDown = null;
+		buttonSoundClick = null;
 	}
 
 	/** Forces the built-in static default sheet for this group (no per-state animation playback). */
@@ -117,18 +142,26 @@ class FlxUXGroup extends FlxGroup
 	{
 		// Update highlight padding if this group hasn't customized it.
 		// Heuristic: if still at the built-in default (12), follow theme.
-		if (highlightPadX == 12 && FlxUXCore.theme != null)
-			highlightPadX = FlxUXCore.theme.highlightPadX;
-		if (highlightPadY == 12 && FlxUXCore.theme != null)
-			highlightPadY = FlxUXCore.theme.highlightPadY;
+		var theme = FlxUXCore.theme;
+		if (highlightPadX == 12 && theme != null)
+			highlightPadX = theme.highlightPadX;
+		if (highlightPadY == 12 && theme != null)
+			highlightPadY = theme.highlightPadY;
 
 		if (buttons != null)
 		{
-			for (b in buttons)
+			// Don't rely on iterating the group directly: some targets/backends can throw
+			// (e.g. null-access on internal length). Iterate its members array defensively.
+			var members = buttons.members;
+			if (members != null)
 			{
-				if (b == null) continue;
-				b.uxGroup = this;
-				b.applySkin();
+				for (i in 0...members.length)
+				{
+					var b = members[i];
+					if (b == null) continue;
+					b.uxGroup = this;
+					b.applySkin();
+				}
 			}
 		}
 
@@ -600,7 +633,7 @@ class FlxUXGroup extends FlxGroup
 	 * @param gapY Vertical gap between cells.
 	 * @param lastRowAlign Alignment for the final row when it is not full.
 	 */
-	public function grid(columns:Int, gapX:Float, gapY:Float, lastRowAlign:flixel.ux.FlxUXCore.FlxUXGridLastRowAlign = LEFT):Void
+	public function grid(columns:Int, gapX:Float, gapY:Float, lastRowAlign:FlxUXGridLastRowAlign = LEFT):Void
 	{
 		if (columns < 1) columns = 1;
 		var cellW:Float = 0;

@@ -65,8 +65,16 @@ class FlxUXButton extends FlxButton
 	public var buttonLabelFont:Null<String> = null;
 	public var buttonLabelSize:Int = 0;
 	public var buttonLabelColor:Null<flixel.util.FlxColor> = null;
+	/** Optional per-button label color when hovered/highlighted. */
+	public var buttonLabelColorHover:Null<flixel.util.FlxColor> = null;
+	/** Optional per-button label color when pressed. */
+	public var buttonLabelColorDown:Null<flixel.util.FlxColor> = null;
+	/** Optional per-button label color when disabled. */
+	public var buttonLabelColorDisabled:Null<flixel.util.FlxColor> = null;
 	public var buttonLabelAlign:Null<FlxTextAlign> = null;
 	public var buttonLabelFactory:Null<flixel.ux.FlxUXCore.FlxUXLabelFactory> = null;
+
+	private var _baseLabelText:String = "";
 
 	/** Clears per-button skin overrides (this button falls back to group/core). */
 	public function resetButtonSkin():Void
@@ -147,6 +155,7 @@ class FlxUXButton extends FlxButton
 	public function new(x:Float = 0, y:Float = 0, label:String = "", ?action:Void->Void)
 	{
 		super(x, y, label);
+		_baseLabelText = label;
 		this.action = action;
 
 		onUp.callback = () -> activate();
@@ -170,7 +179,19 @@ class FlxUXButton extends FlxButton
 
 		// Only change if needed.
 		if (Std.int(width) != w || Std.int(height) != h)
+		{
+			// Autosize is the one time we *do* want to change the underlying size based on label.
+			// After this, groups can safely call matchSize()/grid()/etc.
 			makeGraphic(w, h, frameBaseColor, true);
+			// Keep the current skin consistent with the new size.
+			if (usingDefaultSkin)
+				_applyDefaultSkin();
+			else
+				applySkin();
+		}
+
+		// Prevent further implicit resizing after the initial autosize.
+		autoSizeToLabel = false;
 
 		centerLabel();
 	}
@@ -185,12 +206,23 @@ class FlxUXButton extends FlxButton
 		if (w < 1) w = 1;
 		if (h < 1) h = 1;
 		autoSizeToLabel = false;
-		makeGraphic(w, h, frameBaseColor, true);
 		// Preserve the current skin type.
+		// IMPORTANT: don't rebuild the base graphic with makeGraphic() here unless we're using the
+		// procedural default skin. For 9-slice skins, makeGraphic() can temporarily replace the
+		// sprite's graphic and cause bizarre distortion until the next refresh.
 		if (usingDefaultSkin)
+		{
+			makeGraphic(w, h, frameBaseColor, true);
 			_applyDefaultSkin();
+		}
 		else
+		{
+			// Just re-apply the skin at the new size.
+			// applySkin() uses current width/height, so ensure our size is set first.
+			this.frameWidth = w;
+			this.frameHeight = h;
 			applySkin();
+		}
 		centerLabel();
 	}
 
@@ -237,10 +269,21 @@ class FlxUXButton extends FlxButton
 		else size = FlxUXCore.buttonLabelSize;
 		if (size <= 0) size = 14;
 
-		var color:flixel.util.FlxColor = 0xFFFFFFFF;
-		if (buttonLabelColor != null) color = buttonLabelColor;
-		else if (uxGroup != null && uxGroup.buttonLabelColor != null) color = uxGroup.buttonLabelColor;
-		else color = FlxUXCore.buttonLabelColor;
+		var colorNormal:flixel.util.FlxColor = FlxUXCore.buttonLabelColor;
+		if (buttonLabelColor != null) colorNormal = buttonLabelColor;
+		else if (uxGroup != null && uxGroup.buttonLabelColor != null) colorNormal = uxGroup.buttonLabelColor;
+
+		var colorHover = FlxUXCore.buttonLabelColorHover;
+		if (buttonLabelColorHover != null) colorHover = buttonLabelColorHover;
+		else if (uxGroup != null && uxGroup.buttonLabelColorHover != null) colorHover = uxGroup.buttonLabelColorHover;
+
+		var colorDown = FlxUXCore.buttonLabelColorDown;
+		if (buttonLabelColorDown != null) colorDown = buttonLabelColorDown;
+		else if (uxGroup != null && uxGroup.buttonLabelColorDown != null) colorDown = uxGroup.buttonLabelColorDown;
+
+		var colorDisabled = FlxUXCore.buttonLabelColorDisabled;
+		if (buttonLabelColorDisabled != null) colorDisabled = buttonLabelColorDisabled;
+		else if (uxGroup != null && uxGroup.buttonLabelColorDisabled != null) colorDisabled = uxGroup.buttonLabelColorDisabled;
 
 		var align:FlxTextAlign = CENTER;
 		if (buttonLabelAlign != null) align = buttonLabelAlign;
@@ -251,19 +294,59 @@ class FlxUXButton extends FlxButton
 		if (Std.isOfType(this.label, FlxText))
 		{
 			var t:FlxText = cast this.label;
-			t.setFormat(font, size, color, align);
+			// Only allow wrapping if the user explicitly inserted a newline.
+			// Otherwise, keep a single-line label and grow the button / let users resize.
+			if (_baseLabelText != null && _baseLabelText.indexOf("\n") < 0)
+				t.fieldWidth = 0;
+			else
+				t.fieldWidth = Std.int(this.width - marginX * 2);
+
+			t.setFormat(font, size, colorNormal, align);
 		}
 		// Bitmap labels are user-controlled; we can at least tint.
 		else if (Std.isOfType(this.label, FlxBitmapText))
 		{
-			this.label.color = color;
+			this.label.color = colorNormal;
 		}
 		else
 		{
-			this.label.color = color;
+			this.label.color = colorNormal;
 		}
 
+		_applyLabelStateColor();
+
 		centerLabel();
+	}
+
+	private function _applyLabelStateColor():Void
+	{
+		if (this.label == null) return;
+		// Precedence already resolved in applyLabelOptions by storing on fields; here we just pick a state.
+		var normal:flixel.util.FlxColor = (buttonLabelColor != null) ? buttonLabelColor
+			: ((uxGroup != null && uxGroup.buttonLabelColor != null) ? uxGroup.buttonLabelColor : FlxUXCore.buttonLabelColor);
+		var hover:Null<flixel.util.FlxColor> = (buttonLabelColorHover != null) ? buttonLabelColorHover
+			: ((uxGroup != null && uxGroup.buttonLabelColorHover != null) ? uxGroup.buttonLabelColorHover : FlxUXCore.buttonLabelColorHover);
+		var down:Null<flixel.util.FlxColor> = (buttonLabelColorDown != null) ? buttonLabelColorDown
+			: ((uxGroup != null && uxGroup.buttonLabelColorDown != null) ? uxGroup.buttonLabelColorDown : FlxUXCore.buttonLabelColorDown);
+		var dis:Null<flixel.util.FlxColor> = (buttonLabelColorDisabled != null) ? buttonLabelColorDisabled
+			: ((uxGroup != null && uxGroup.buttonLabelColorDisabled != null) ? uxGroup.buttonLabelColorDisabled : FlxUXCore.buttonLabelColorDisabled);
+
+		var c = normal;
+		if (!active)
+			c = (dis != null) ? dis : normal;
+		else
+		{
+			switch (status)
+			{
+				case FlxButtonState.PRESSED:
+					c = (down != null) ? down : ((hover != null) ? hover : normal);
+				case FlxButtonState.HIGHLIGHT:
+					c = (hover != null) ? hover : normal;
+				default:
+					c = normal;
+			}
+		}
+		this.label.color = c;
 	}
 
 	/** Applies this button's skin based on FlxUXCore/group settings (called by FlxUXGroup). */
@@ -602,6 +685,7 @@ class FlxUXButton extends FlxButton
 		}
 
 		_updateFrameFromStatus();
+		_applyLabelStateColor();
 		centerLabel();
 	}
 

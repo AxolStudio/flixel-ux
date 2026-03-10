@@ -15,10 +15,12 @@ class ThemesSubState extends FlxSubState
 	var info:FlxText;
 	var currentThemeName:String = "";
 	var header:FlxText;
+	var _themeBefore:FlxUXTheme;
 
 	override public function create():Void
 	{
 		super.create();
+		_themeBefore = FlxUXCore.theme;
 		add(DemoUi.makeSolidBackdrop());
 		DemoUi.addBackButton(this);
 
@@ -32,51 +34,82 @@ class ThemesSubState extends FlxSubState
 		info.setFormat(null, 12, 0xFFB9C0D0, LEFT);
 		add(info);
 
-		var boxTheme = DemoUi.makeBox(24, 130, 520, FlxG.height - 170, "Theme swap (global)");
+		var boxTheme = DemoUi.makeBox(16, 120, 250, FlxG.height - 150, "Theme swap (global)");
 		add(boxTheme.border);
 		add(boxTheme.label);
 
-		var boxOverrides = DemoUi.makeBox(24 + 520 + 16, 130, FlxG.width - 24 * 2 - 520 - 16, FlxG.height - 170, "Overrides (group + button)");
+		var boxOverrides = DemoUi.makeBox(16 + 250 + 12, 120, FlxG.width - 16 * 2 - 250 - 12, FlxG.height - 150, "Group-only themes");
 		add(boxOverrides.border);
 		add(boxOverrides.label);
 
 		// Theme swap buttons.
 		var gTheme = new FlxUXGroup();
-		gTheme.x = 44;
-		gTheme.y = 200;
+		gTheme.x = boxTheme.border.x + 16;
+		gTheme.y = boxTheme.border.y + 50;
 		add(gTheme);
 
 		gTheme.addButton("Apply BLUE theme", () -> applyBlueTheme());
 		gTheme.addButton("Apply RED theme", () -> applyRedTheme());
-		gTheme.addButton("Re-apply BLUE (loadThemeFromJsonString)", () -> {
+		gTheme.addButton("Re-apply BLUE", () -> {
 			// Convenience helper: parses JSON and activates it.
 			FlxUXCore.loadThemeFromJsonString(themeBlueJson());
 			onThemeApplied("BLUE (loadThemeFromJsonString)");
 		});
+		var jsonHint = new FlxText(gTheme.x, gTheme.y + 3 * (38 + 10) + 6, boxTheme.border.width - 32,
+			"(Same as Apply BLUE, but via loadThemeFromJsonString)");
+		jsonHint.setFormat(null, 10, 0xFFB9C0D0, LEFT);
+		add(jsonHint);
+		for (b in gTheme.getEligibleButtonsOrdered())
+			b.resize(220, 38);
 		gTheme.matchSize();
-		gTheme.stack(12);
+		gTheme.stack(10);
 
-		// Overrides demonstrate precedence: Core/theme -> group -> button.
-		var gOverrides = new FlxUXGroup();
-		gOverrides.x = boxOverrides.border.x + 20;
-		gOverrides.y = 200;
-		add(gOverrides);
+		// Right side: group-only themes (independent of global theme)
+		var gRight = new FlxUXGroup();
+		gRight.x = boxOverrides.border.x + 16;
+		gRight.y = boxOverrides.border.y + 50;
+		add(gRight);
+		gRight.addButton("Group: default", () -> {
+			gRight.setButtonSkin(FlxUXCore.DEFAULT_BUTTON_GRAPHIC, 0);
+			gRight.buttonLabelColor = null;
+			gRight.buttonLabelColorHover = null;
+			gRight.buttonLabelColorDown = null;
+			gRight.buttonLabelColorDisabled = null;
+			gRight.refreshTheme();
+		});
+		gRight.addButton("Group: BLUE", () -> {
+			gRight.setButtonSkin(new flixel.ux.FlxUX9Slice("assets/ux/button_blue.png", 0, 0, 16, 16, 3, 7), 0);
+			gRight.buttonLabelColor = 0xFFEAF0FF;
+			gRight.buttonLabelColorHover = 0xFFFFFFFF;
+			gRight.buttonLabelColorDown = 0xFFFFFFFF;
+			gRight.buttonLabelColorDisabled = 0xFF9AA4BF;
+			gRight.refreshTheme();
+		});
+		gRight.addButton("Group: RED", () -> {
+			gRight.setButtonSkin(new flixel.ux.FlxUX9Slice("assets/ux/button_red.png", 0, 0, 16, 16, 3, 7), 0);
+			gRight.buttonLabelColor = 0xFFFFEFF2;
+			gRight.buttonLabelColorHover = 0xFFFFFFFF;
+			gRight.buttonLabelColorDown = 0xFFFFFFFF;
+			gRight.buttonLabelColorDisabled = 0xFFC9A0A8;
+			gRight.refreshTheme();
+		});
 
-		// Group-level label override
-		gOverrides.buttonLabelSize = 18;
-		gOverrides.buttonLabelColor = 0xFFFFD37D;
-
-		var b1 = gOverrides.addButton("Group override", () -> {});
-		var b2 = gOverrides.addButton("Button override", () -> {});
-		// Per-button override wins
-		b2.buttonLabelSize = 14;
-		b2.buttonLabelColor = 0xFF8EE6FF;
-		b2.applyLabelOptions();
-
-		gOverrides.matchSize();
-		gOverrides.stack(12);
+		// Sample buttons affected by the group-only theme
+		gRight.addButton("Sample A", () -> {});
+		gRight.addButton("Sample B", () -> {});
+		for (b in gRight.getEligibleButtonsOrdered())
+			b.resize(180, 36);
+		gRight.matchSize();
+		gRight.stack(10);
 
 		applyBlueTheme();
+	}
+
+	override public function close():Void
+	{
+		// Restore whatever theme was active before entering this substate.
+		FlxUXCore.setTheme(_themeBefore);
+		super.close();
 	}
 
 	function onThemeApplied(name:String):Void
@@ -128,7 +161,10 @@ class ThemesSubState extends FlxSubState
 			+ '"focusOverlayGraphic":"assets/ux/highlight_on_blue.png",'
 			// Label styling
 			+ '"buttonLabelSize":14,'
-			+ '"buttonLabelColor":"#E7EAF2"'
+			+ '"buttonLabelColor":"#EAF0FF",'
+			+ '"buttonLabelColorHover":"#FFFFFF",'
+			+ '"buttonLabelColorDown":"#FFFFFF",'
+			+ '"buttonLabelColorDisabled":"#9AA4BF"'
 			+ '}';
 	}
 
@@ -157,7 +193,10 @@ class ThemesSubState extends FlxSubState
 			+ '"focusOverlayGraphic":"assets/ux/highlight_on_red.png",'
 			// Label styling
 			+ '"buttonLabelSize":14,'
-			+ '"buttonLabelColor":"#FFE7EA"'
+			+ '"buttonLabelColor":"#FFEFF2",'
+			+ '"buttonLabelColorHover":"#FFFFFF",'
+			+ '"buttonLabelColorDown":"#FFFFFF",'
+			+ '"buttonLabelColorDisabled":"#C9A0A8"'
 			+ '}';
 	}
 }

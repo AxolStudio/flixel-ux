@@ -5,7 +5,8 @@
 	<app title="flixel-ux-demo" file="flixel-ux-demo" main="Main" version="0.0.1" company="AxolStudio" />
 	<app preloader="flixel.system.FlxPreloader" />
 
-	<window width="1280" height="720" fps="60" background="#000000" hardware="true" vsync="false" />
+	<!-- Larger desktop window (physical) while keeping the game's virtual resolution defined in Main.hx -->
+	<window width="1600" height="900" fps="60" background="#000000" hardware="true" vsync="false" />
 	<window if="html5" resizable="true" />
 	<window if="desktop" orientation="landscape" fullscreen="false" resizable="true" />
 

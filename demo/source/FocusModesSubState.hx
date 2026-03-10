@@ -44,7 +44,15 @@ class FocusModesSubState extends FlxSubState
 			add(box.label);
 
 			var g = new FlxUXGroup();
-			g.focusMode = labels[i].mode;
+			// For this demo, we want every column to be usable in NAV.
+			// HOVER_ONLY / DIM_UNFOCUSED are pointer-oriented by design, so we demonstrate them
+			// as *visual styles* while still providing NAV-visible focus feedback.
+			g.focusMode = (labels[i].mode == FlxUXFocusMode.HOVER_ONLY || labels[i].mode == FlxUXFocusMode.DIM_UNFOCUSED)
+				? FlxUXFocusMode.FRAME
+				: labels[i].mode;
+			g.buttonLabelColor = 0xFF666666;
+			g.buttonLabelColorHover = 0xFF333333;
+			g.buttonLabelColorDown = 0xFF333333;
 			if (labels[i].mode == FlxUXFocusMode.NEXT_TO)
 			{
 				g.focusNextToGraphic = "flixel-ux/highlight_next_to.png";

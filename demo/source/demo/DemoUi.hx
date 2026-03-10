@@ -19,7 +19,8 @@ class DemoUi
 
 	public static function makeHeader(title:String, subtitle:String):FlxText
 	{
-		var t = new FlxText(24, 16, FlxG.width - 48, title + "\n" + subtitle);
+		// Leave space on the right for the Back button.
+		var t = new FlxText(16, 12, FlxG.width - 16 - 16 - 140, title + "\n" + subtitle);
 		t.setFormat(null, 16, FlxColor.WHITE, LEFT);
 		t.scrollFactor.set();
 		return t;
@@ -49,8 +50,8 @@ class DemoUi
 
 		var b = g.addButton(label, () -> state.close());
 		b.resize(120, 36);
-		g.x = FlxG.width - 24 - b.width;
-		g.y = 16;
+		g.x = FlxG.width - 16 - b.width;
+		g.y = 12;
 		return b;
 	}
 }

@@ -33,7 +33,10 @@ class FlxUXTheme
 	// Button label defaults
 	public var buttonLabelFont:Null<String> = null;
 	public var buttonLabelSize:Int = 14;
-	public var buttonLabelColor:FlxColor = 0xFFFFFFFF;
+	public var buttonLabelColor:FlxColor = 0xFF666666;
+	public var buttonLabelColorHover:Null<FlxColor> = 0xFF333333;
+	public var buttonLabelColorDown:Null<FlxColor> = 0xFF333333;
+	public var buttonLabelColorDisabled:Null<FlxColor> = 0xFF777777;
 	public var buttonLabelAlign:String = "center";
 
 	// Focus visuals
@@ -191,6 +194,24 @@ class FlxUXTheme
 			var c:Dynamic = map.get("buttonLabelColor");
 			if (Std.isOfType(c, Int)) t.buttonLabelColor = (c : Int);
 			else if (Std.isOfType(c, String)) t.buttonLabelColor = parseColorString(cast c);
+		}
+		if (map.exists("buttonLabelColorHover"))
+		{
+			var c:Dynamic = map.get("buttonLabelColorHover");
+			if (Std.isOfType(c, Int)) t.buttonLabelColorHover = (c : Int);
+			else if (Std.isOfType(c, String)) t.buttonLabelColorHover = parseColorString(cast c);
+		}
+		if (map.exists("buttonLabelColorDown"))
+		{
+			var c:Dynamic = map.get("buttonLabelColorDown");
+			if (Std.isOfType(c, Int)) t.buttonLabelColorDown = (c : Int);
+			else if (Std.isOfType(c, String)) t.buttonLabelColorDown = parseColorString(cast c);
+		}
+		if (map.exists("buttonLabelColorDisabled"))
+		{
+			var c:Dynamic = map.get("buttonLabelColorDisabled");
+			if (Std.isOfType(c, Int)) t.buttonLabelColorDisabled = (c : Int);
+			else if (Std.isOfType(c, String)) t.buttonLabelColorDisabled = parseColorString(cast c);
 		}
 		if (map.exists("buttonLabelAlign")) t.buttonLabelAlign = asString(map.get("buttonLabelAlign"), t.buttonLabelAlign);
 
