@@ -153,9 +153,9 @@ class FlxUXTheme
 			var fw:Int = asInt(dm.get("frameWidth"), 0);
 			var fh:Int = asInt(dm.get("frameHeight"), 0);
 
-			// FlxUX9Slice constructor order is:
-			// (source, frameWidth, frameHeight, left, top, right, bottom)
-			// Theme JSON uses the same names.
+			// FlxUX9Slice constructor order:
+			// source, frameWidth, frameHeight, left, top, right, bottom
+			// Theme JSON uses matching names.
 			return new flixel.ux.FlxUX9Slice(src, fw, fh, l, top, r, b);
 		}
 

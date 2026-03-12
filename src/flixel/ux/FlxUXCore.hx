@@ -31,7 +31,7 @@ typedef FlxUXLabelFactory = (text:String) -> flixel.FlxSprite;
  */
 class FlxUXCore
 {
-	// (Graphic input typedef is declared at file scope as FlxUXGraphicInput.)
+	// Note: FlxUXGraphicInput is declared at file scope (above) as a typedef.
 
 	// --- Built-in defaults (so users can override and easily restore) ---
 	public static inline var DEFAULT_MOUSE_GRAPHIC:String = "flixel-ux/mouse_cursor.png";
@@ -337,7 +337,7 @@ class FlxUXCore
 	public static function applyTheme():Void
 	{
 		// Apply theme values to core-wide defaults.
-		// (We intentionally don't touch sounds here yet.)
+		// Sounds are handled separately.
 		if (theme == null)
 			theme = new FlxUXTheme();
 

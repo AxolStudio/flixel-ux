@@ -32,29 +32,7 @@ Then add the library to your project:
 
 ## Quick start
 
-### 1) Create a group and add it to the state
-
-Create a `FlxUXGroup` and add the group to your state.
-
-```haxe
-import flixel.FlxState;
-import flixel.ux.FlxUXGroup;
-
-class MenuState extends FlxState
-{
-	override public function create():Void
-	{
-		super.create();
-
-		var group = new FlxUXGroup();
-		add(group);
-	}
-}
-```
-
-### 2) Add buttons to the group
-
-Add buttons through the group. You do not need to separately add each button to the state.
+Here’s a minimal menu example using `FlxUXGroup`, `addButton()`, and `spread()`.
 
 ```haxe
 import flixel.FlxState;
@@ -69,210 +47,63 @@ class MenuState extends FlxState
 		var group = new FlxUXGroup();
 		add(group);
 
-		group.addButton("Play", startGame, 100, 100);
-		group.addButton("Options", openOptions, 100, 140);
+		group.addButton("Play", startGame);
+		group.addButton("Options", openOptions);
+		group.addButton("Quit", quit);
+
+		group.spread(8);
+		group.alignCenter();
 	}
 
 	function startGame():Void {}
 	function openOptions():Void {}
+	function quit():Void {}
 }
 ```
 
-## How FlxUX works
+## Customization (core → group → button)
 
-- `FlxUXCore` can be initialized with custom settings, or configured at runtime.
-- `FlxUXCore` defines default behavior and look for your groups and buttons.
-- You can override those defaults per group or per button.
-- FlxUX automatically switches between `POINTER` and `NAV` modes based on player input.
-- In `NAV` mode, you can choose different focus styles.
+FlxUX configuration follows a simple override chain:
 
-Optional explicit initialization with custom defaults:
+1) `FlxUXCore` (global defaults)
+2) `FlxUXGroup` (menu-level defaults)
+3) `FlxUXButton` (single-button overrides)
+
+### 1) Global defaults
+
+Adjust the built-in defaults anywhere (commonly in `create()` before you build your menus). Calling `FlxUXCore.init()` is optional; groups auto-init.
 
 ```haxe
 import flixel.ux.FlxUXCore;
 import flixel.ux.FlxUXFocusMode;
 
+FlxUXCore.focusMode = FlxUXFocusMode.FRAME;
 FlxUXCore.buttonUseAnim = true;
 FlxUXCore.buttonSkinFps = 18;
-FlxUXCore.focusMode = FlxUXFocusMode.FRAME;
-FlxUXCore.init();
 ```
 
-Runtime updates are also supported:
+### 2) Themes (recommended)
+
+Themes bundle the common defaults into one object and can be swapped at runtime.
 
 ```haxe
-import flixel.ux.FlxUXNavStyle;
-
-FlxUXCore.focusMode = FlxUXFocusMode.NEXT_TO;
-FlxUXCore.navStyle = FlxUXNavStyle.SPATIAL;
-```
-
-## Layout helpers
-
-`FlxUXGroup` includes a few simple layout helpers for menus.
-
-Match sizes:
-
-```haxe
-// Make all buttons the same width
-group.matchWidth();
-
-// Make all buttons the same height
-group.matchHeight();
-
-// Make all buttons the same width and height
-group.matchSize();
-```
-
-Stack buttons vertically:
-
-```haxe
-// Stack buttons from top to bottom
-group.stack(8);
-```
-
-Spread buttons horizontally:
-
-```haxe
-// Lay buttons out left to right
-group.spread(8);
-```
-
-Grid layout:
-
-```haxe
-// 3 columns, 8px gaps, center the final row if it is not full
-group.grid(3, 8, 8, FlxUXGridLastRowAlign.CENTER);
-```
-
-Center the group on screen:
-
-```haxe
-group.alignCenter();
-```
-
-## Styles and graphics
-
-FlxUX supports styling at three levels:
-
-1. Core defaults (`FlxUXCore`)
-2. Group defaults (`FlxUXGroup`)
-3. Per-button overrides (`FlxUXButton`)
-
-Override priority is button, then group, then core.
-
-You can set custom graphics for:
-
-- Button visuals
-- Focus frame visuals
-- Focus next-to visuals
-- Focus overlay visuals
-
-Supported button skin styles include:
-
-- Normal static graphics
-- Animated graphics
-- 9-slice graphics
-- 9-slice graphics with animation
-
-Examples:
-
-```haxe
-import flixel.ux.FlxUX9Slice;
-
-// Core-wide button default (9-slice)
-FlxUXCore.setButtonSkin(new FlxUX9Slice("assets/ui/button_9s.png", 8, 8, 8, 8, 16, 16));
-
-// Core focus visuals
-FlxUXCore.focusMode = FlxUXFocusMode.FRAME;
-FlxUXCore.focusFrameGraphic = new FlxUX9Slice("assets/ui/focus_frame.png", 10, 10, 10, 10, 40, 40);
-FlxUXCore.focusNextToGraphic = "assets/ui/focus_arrow.png";
-FlxUXCore.focusOverlayGraphic = "assets/ui/focus_overlay.png";
-
-// Group-level override
-group.setButtonSkin(new FlxUX9Slice("assets/ui/pause_button.png", 6, 6, 6, 6, 16, 16), 12);
-
-// Button-level override
-button.setButtonSkin("assets/ui/special_button_strip.png");
-```
-
-Focus style options:
-
-- `FlxUXFocusMode.FRAME`
-- `FlxUXFocusMode.NEXT_TO`
-- `FlxUXFocusMode.OVERLAY`
-- `FlxUXFocusMode.HOVER_ONLY`
-- `FlxUXFocusMode.DIM_UNFOCUSED`
-
-## Themes
-
-Themes package style defaults into a single reusable object.
-
-You can define a theme in code:
-
-```haxe
+import flixel.ux.FlxUXCore;
 import flixel.ux.FlxUXTheme;
-
-var myTheme = new FlxUXTheme();
-myTheme.buttonUseAnim = true;
-myTheme.buttonSkinFps = 18;
-myTheme.focusMode = FlxUXFocusMode.FRAME;
-myTheme.highlightPadX = 10;
-myTheme.highlightPadY = 10;
-
-FlxUXCore.theme = myTheme;
-```
-
-Or load a theme from JSON at startup or any other time:
-
-```haxe
 import openfl.Assets;
 
 FlxUXCore.theme = FlxUXTheme.fromJson(Assets.getText("themes/default.json"));
 ```
 
-Assigning `FlxUXCore.theme` applies core defaults and refreshes currently registered FlxUX UI.
+### 3) Group and per-button overrides
 
-Common theme fields include:
+```haxe
+import flixel.ux.FlxUX9Slice;
+import flixel.ux.FlxUXTheme;
 
-- Pixel-art defaults and snapping
-- Button skin defaults and animation sequences
-- Focus highlight style and graphics
-- Highlight padding
+group.theme = FlxUXTheme.fromJson(Assets.getText("themes/pauseMenu.json"));
 
-### Theme JSON format
-
-Most properties are numbers, booleans, strings, or arrays. Graphics can be either a string asset id, or a 9-slice object.
-
-Example:
-
-```json
-{
-	"pixelArtDefaults": true,
-	"snapUiToPixels": true,
-
-	"buttonUseAnim": false,
-	"buttonSkinFps": 10,
-	"buttonGraphic": {
-		"source": "flixel-ux/ux/button.png",
-		"left": 6,
-		"top": 6,
-		"right": 6,
-		"bottom": 6
-	},
-
-	"focusMode": "FRAME",
-	"focusFrameGraphic": {
-		"source": "flixel/images/ui/box.png",
-		"left": 4,
-		"top": 4,
-		"right": 4,
-		"bottom": 4
-	},
-
-	"highlightPadX": 12,
-	"highlightPadY": 12
-}
+var button = group.addButton("Special", onSpecial);
+button.theme = FlxUXTheme.fromJson(Assets.getText("themes/specialButton.json"));
 ```
 
-See `FlxUXTheme` for all supported fields.
+See `FlxUXTheme` for the full list of supported fields.

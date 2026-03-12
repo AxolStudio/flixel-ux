@@ -21,7 +21,7 @@ The main menu opens a few substates. Each one is focused on a couple FlxUX featu
   - Uses `FlxUXGroup` boxes with borders + labels.
 
 - **Themes + overrides**
-  - Swaps between two themes at runtime (`FlxUXCore.applyTheme()`), then refreshes live UI.
+  - Swaps between themes at runtime by assigning `FlxUXCore.theme`.
   - Demonstrates how overrides work:
     - Core defaults → Group overrides → Button overrides.
 

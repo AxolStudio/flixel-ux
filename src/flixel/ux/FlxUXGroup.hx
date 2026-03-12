@@ -233,7 +233,7 @@ class FlxUXGroup extends FlxGroup
 		if (buttons != null)
 		{
 			// Don't rely on iterating the group directly: some targets/backends can throw
-			// (e.g. null-access on internal length). Iterate its members array defensively.
+			// For example, some backends can null-access an internal length. Iterate members defensively.
 			var members = buttons.members;
 			if (members != null)
 			{
@@ -242,8 +242,8 @@ class FlxUXGroup extends FlxGroup
 					var b = members[i];
 					if (b == null) continue;
 					b.uxGroup = this;
-					// applySkin() already applies label options and state colors using precedence
-					// (button -> group -> core). Calling applyLabelOptions() again here can cause
+					// applySkin() already applies label options and state colors using precedence:
+					// button -> group -> core. Calling applyLabelOptions() again here can cause
 					// label metrics to churn (fieldWidth changes) and creates the "hover changes width"
 					// jitter seen in the theme demo.
 					b.applySkin();

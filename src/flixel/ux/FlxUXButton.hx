@@ -639,7 +639,7 @@ class FlxUXButton extends FlxButton
 				animTime = 0;
 			}
 			// Force regenerate the correct state frame immediately.
-			// (Reset both state + animation tracking so we don't early-out when switching skins.)
+			// Reset state + animation tracking so we don't early-out when switching skins.
 			lastSkinStateIndex = -1;
 			lastSkinAnimFrameIndex = -1;
 			updateFrameFromStatus();
