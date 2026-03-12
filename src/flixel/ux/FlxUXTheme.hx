@@ -61,6 +61,23 @@ class FlxUXTheme
 	public function new() {}
 
 	/**
+	 * Builds a theme from a JSON string.
+	 */
+	public static function fromJson(json:String):FlxUXTheme
+	{
+		if (json == null)
+			return new FlxUXTheme();
+		try
+		{
+			return fromObject(haxe.Json.parse(json));
+		}
+		catch (_)
+		{
+			return new FlxUXTheme();
+		}
+	}
+
+	/**
 	 * Builds a theme from a parsed JSON object.
 	 *
 	 * Supported fields (optional):
@@ -269,6 +286,9 @@ class FlxUXTheme
 		return t;
 	}
 
+	/**
+	 * Parses a common color string.
+	 */
 	private static function parseColorString(s:String):FlxColor
 	{
 		if (s == null) return 0xFFFFFFFF;

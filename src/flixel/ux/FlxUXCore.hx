@@ -5,8 +5,6 @@ import flixel.FlxSprite;
 import flixel.math.FlxPoint;
 import flixel.util.typeLimit.OneOfFour;
 import haxe.extern.EitherType;
-import haxe.Json;
-import openfl.Assets;
 import openfl.display.BitmapData;
 import flixel.system.FlxAssets.FlxSoundAsset;
 import flixel.text.FlxText;
@@ -51,12 +49,6 @@ class FlxUXCore
 		new FlxUX9Slice(DEFAULT_BUTTON_FRAMES_ANIM_GRAPHIC, 16, 16, 3, 7, 3, 7);
 
 	// --- Button look (null => use built-in default procedural skin) ---
-	/**
-	 * Default button skin graphic input.
-	 *
-	 * Accepts: String, FlxGraphic, FlxSprite, BitmapData, FlxUX9Slice.
-	 * If null, FlxUXButton uses its procedural `makeGraphic` default.
-	 */
 	/**
 	 * Default button skin graphic input.
 	 *
@@ -323,18 +315,22 @@ class FlxUXCore
 	/** Current navigation style. */
 	public static var navStyle:FlxUXNavStyle = FlxUXNavStyle.LINEAR;
 
-	/** Global theme values used by FlxUX widgets (planned). */
-	public static var theme:FlxUXTheme = new FlxUXTheme();
-
-	/** Sets the active theme and applies any immediate core-wide values. */
-	public static function setTheme(t:FlxUXTheme):Void
+	/**
+	 * Global theme values used by FlxUX widgets.
+	 */
+	public static var theme(get, set):FlxUXTheme;
+	private static var currentTheme:FlxUXTheme = new FlxUXTheme();
+	private static function get_theme():FlxUXTheme
 	{
-		theme = (t != null) ? t : new FlxUXTheme();
-		// Theme swaps may change the underlying source graphics used by 9-slice skins.
-		// Invalidate the rendered 9-slice cache so buttons/highlights regenerate cleanly.
+		return currentTheme;
+	}
+	private static function set_theme(value:FlxUXTheme):FlxUXTheme
+	{
+		currentTheme = (value != null) ? value : new FlxUXTheme();
 		FlxUX9Slice.clearCache();
 		applyTheme();
 		refreshLiveUi();
+		return currentTheme;
 	}
 
 	/** Applies the currently active theme to any core-wide defaults. */
@@ -388,7 +384,7 @@ class FlxUXCore
 	/**
 	 * Re-applies skin/highlight visuals to any groups/buttons that are currently registered.
 	 *
-	 * This is called automatically when `setTheme()` is used.
+	 * This is called automatically when `FlxUXCore.theme` is assigned.
 	 */
 	public static function refreshLiveUi():Void
 	{
@@ -398,40 +394,6 @@ class FlxUXCore
 			if (g == null) continue;
 			g.refreshTheme();
 		}
-	}
-
-	/** Loads a theme from a JSON string and activates it. */
-	public static function loadThemeFromJsonString(json:String):FlxUXTheme
-	{
-		var obj:Dynamic = null;
-		try
-		{
-			obj = Json.parse(json);
-		}
-		catch (_)
-		{
-			obj = null;
-		}
-		var t = FlxUXTheme.fromObject(obj);
-		setTheme(t);
-		return t;
-	}
-
-	/** Loads a theme from an embedded text asset id (e.g. "assets/themes/default.json") and activates it. */
-	public static function loadThemeFromAsset(assetId:String):FlxUXTheme
-	{
-		if (assetId == null) return theme;
-		var json:String = null;
-		try
-		{
-			json = Assets.getText(assetId);
-		}
-		catch (_)
-		{
-			json = null;
-		}
-		if (json == null) return theme;
-		return loadThemeFromJsonString(json);
 	}
 
 	/**
@@ -487,8 +449,8 @@ class FlxUXCore
 
 		FlxG.plugins.addIfUniqueType(new FlxUXPlugin());
 
-		FlxG.signals.preStateSwitch.add(_onStateTransition);
-		FlxG.signals.preStateCreate.add((_) -> _onStateTransition());
+		FlxG.signals.preStateSwitch.add(onStateTransition);
+		FlxG.signals.preStateCreate.add((unused) -> onStateTransition());
 	}
 
 	/**
@@ -521,7 +483,7 @@ class FlxUXCore
 		navConfirmHeld = false;
 	}
 
-	private static function _onStateTransition():Void
+	private static function onStateTransition():Void
 	{
 		clearGroups();
 		ready = false;
@@ -618,8 +580,12 @@ class FlxUXCore
 		actions.update();
 
 		// Always allow mode switching & cursor handling, independent from NAV capture.
+		#if FLX_NO_MOUSE
+		var mouseInput = false;
+		#else
 		var mouseInput = actions.moveMouse.triggered || actions.pointerPressDown;
-		var touchInput = _hasTouchPointerInput();
+		#end
+		var touchInput = hasTouchPointerInput();
 
 		if (mouseInput || touchInput)
 		{
@@ -634,6 +600,9 @@ class FlxUXCore
 			pointerPreferred = false;
 		}
 
+		#if FLX_NO_MOUSE
+		mouse.enabled = false;
+		#else
 		if (cursorEnabled)
 		{
 			mouse.enabled = true;
@@ -645,6 +614,7 @@ class FlxUXCore
 			mouse.enabled = false;
 			FlxG.mouse.visible = false;
 		}
+		#end
 
 		if (!active)
 			return;
@@ -664,7 +634,7 @@ class FlxUXCore
 				case FlxUXNavCapturePolicy.AUTO: hasTargets;
 			};
 
-			if (shouldProcessNav && _effectiveNavStyle() == FlxUXNavStyle.LINEAR)
+			if (shouldProcessNav && effectiveNavStyle() == FlxUXNavStyle.LINEAR)
 			{
 				// Sync focused button visuals with confirm pressed state.
 				var confirmHeldNow = actions.confirmDown;
@@ -713,11 +683,11 @@ class FlxUXCore
 		}
 	}
 
-	private static function _effectiveNavStyle():FlxUXNavStyle
+	private static function effectiveNavStyle():FlxUXNavStyle
 	{
 		if (focused != null)
 		{
-			var g = focused._getUXGroup();
+			var g = focused.getUXGroup();
 			if (g != null && g.navStyle != null)
 				return g.navStyle;
 		}
@@ -730,7 +700,7 @@ class FlxUXCore
 		if (list == null || list.length == 0) return;
 
 		// If the focused group requests LINEAR (override), honor it.
-		if (_effectiveNavStyle() != FlxUXNavStyle.SPATIAL)
+		if (effectiveNavStyle() != FlxUXNavStyle.SPATIAL)
 		{
 			if (dirX > 0 || dirY > 0) focusNext(list);
 			else focusPrev(list);
@@ -738,7 +708,7 @@ class FlxUXCore
 		}
 
 		var origin = FlxPoint.get(focused.x + focused.width * 0.5, focused.y + focused.height * 0.5);
-		var focusedGroup = focused._getUXGroup();
+		var focusedGroup = focused.getUXGroup();
 
 		inline function scoreCandidate(b:FlxUXButton):Float
 		{
@@ -764,7 +734,7 @@ class FlxUXCore
 		for (b in list)
 		{
 			if (b == null || b == focused) continue;
-			if (focusedGroup != null && b._getUXGroup() != focusedGroup) continue;
+			if (focusedGroup != null && b.getUXGroup() != focusedGroup) continue;
 			var s = scoreCandidate(b);
 			if (s < bestScore)
 			{
@@ -955,12 +925,12 @@ class FlxUXCore
 		// Update per-group highlighter visuals.
 		if (prev != null)
 		{
-			var gPrev = prev._getUXGroup();
+			var gPrev = prev.getUXGroup();
 			if (gPrev != null) gPrev.updateFocusGraphics();
 		}
 		if (focused != null)
 		{
-			var gNow = focused._getUXGroup();
+			var gNow = focused.getUXGroup();
 			if (gNow != null) gNow.updateFocusGraphics();
 		}
 	}
@@ -992,23 +962,7 @@ class FlxUXCore
 		return out;
 	}
 
-	private static function _insertDense<T>(arr:Array<T>, item:T, ?order:Int):Void
-	{
-		var maxIndex = arr.length;
-		var pos = order;
-
-		if (pos == null)
-			pos = maxIndex;
-		else
-		{
-			if (pos < 0) pos = 0;
-			if (pos > maxIndex) pos = maxIndex;
-		}
-
-		arr.insert(pos, item);
-	}
-
-	private static function _hasTouchPointerInput():Bool
+	private static function hasTouchPointerInput():Bool
 	{
 		#if FLX_NO_TOUCH
 		return false;

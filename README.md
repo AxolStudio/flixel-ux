@@ -220,16 +220,18 @@ myTheme.focusMode = FlxUXFocusMode.FRAME;
 myTheme.highlightPadX = 10;
 myTheme.highlightPadY = 10;
 
-FlxUXCore.setTheme(myTheme);
+FlxUXCore.theme = myTheme;
 ```
 
 Or load a theme from JSON at startup or any other time:
 
 ```haxe
-FlxUXCore.loadThemeFromAsset("themes/default.json");
+import openfl.Assets;
+
+FlxUXCore.theme = FlxUXTheme.fromJson(Assets.getText("themes/default.json"));
 ```
 
-`setTheme()` and `loadThemeFromAsset()` apply core defaults and refresh currently registered FlxUX UI.
+Assigning `FlxUXCore.theme` applies core defaults and refreshes currently registered FlxUX UI.
 
 Common theme fields include:
 

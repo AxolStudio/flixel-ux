@@ -12,14 +12,20 @@ class LayoutHelpersSubState extends FlxSubState
 	override public function create():Void
 	{
 		super.create();
-
+		/**
+		 * Demo setup - you can ignore this section
+		 * =====================================================================
+		 **/
 		add(DemoUi.makeSolidBackdrop());
 		DemoUi.addBackButton(this);
-
 		add(DemoUi.makeHeader(
 			"Layout helpers",
 			"These helpers place buttons based on their current sizes: stack (vertical), spread (horizontal), grid (cells).")
 		);
+		/**
+		 * END OF DEMO SETUP
+		 * =====================================================================
+		 **/
 
 		var padX = 12;
 		var topY = 120;

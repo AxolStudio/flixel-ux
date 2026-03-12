@@ -4,6 +4,7 @@ import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.graphics.FlxGraphic;
 import openfl.display.BitmapData;
+import openfl.geom.Matrix;
 import openfl.geom.Point;
 import openfl.geom.Rectangle;
 import flixel.ux.FlxUXCore.FlxUXGraphicInput;
@@ -28,7 +29,7 @@ class FlxUX9Slice
 	public var right:Int;
 	public var bottom:Int;
 	private static var cache:Map<String, FlxGraphic> = new Map();
-	// Reverse index so we can evict all cached renders for a given source quickly.
+	/** Reverse index so we can evict all cached renders for a given source quickly. */
 	private static var cacheBySource:Map<String, Array<String>> = new Map();
 
 	/** Clears the internal 9-slice cache. */
@@ -52,13 +53,7 @@ class FlxUX9Slice
 			if (k == null) continue;
 			var g = cache.get(k);
 			cache.remove(k);
-			// IMPORTANT:
-			// Do NOT toggle persist/destroyOnNoUse here.
-			// On some targets (notably HL/OpenFL) sprites/frames can still reference the graphic
-			// for a short time even after we've decided to evict it, and making it destroyable
-			// can lead to destroyed bitmap access and placeholder rendering.
-			//
-			// Removing from our cache is sufficient: subsequent get() calls will re-render.
+			// Removing from our cache is sufficient; subsequent get() calls will re-render.
 		}
 	}
 
@@ -102,16 +97,8 @@ class FlxUX9Slice
 		var out:BitmapData = new BitmapData(targetW, targetH, true, 0x00000000);
 
 		drawNineSlice(out, src, srcRect, nine.left, nine.top, nine.right, nine.bottom);
-		// Give the rendered output a deterministic key so FlxG.bitmap can track it consistently
-		// across targets and to make debugging/cache eviction reliable.
+		// Deterministic key keeps FlxG.bitmap identity stable across targets.
 		var gfx:FlxGraphic = FlxGraphic.fromBitmapData(out, false, key);
-		// IMPORTANT:
-		// These are *derived* graphics. FlxSprite/animation frames can transiently hold references
-		// through draw/update, and some targets (notably HL) will try to query frames on a graphic
-		// even after it was destroyed, producing placeholder renders.
-		//
-		// So we keep derived graphics alive while they are in our cache.
-		// Theme/group hot-swaps are handled by explicit eviction (clearCache/evictSource).
 		gfx.persist = true;
 		gfx.destroyOnNoUse = false;
 		cache.set(key, gfx);
@@ -137,10 +124,7 @@ class FlxUX9Slice
 		if (Std.isOfType(input, BitmapData))
 		{
 			var bd:BitmapData = cast input;
-			// IMPORTANT:
-			// BitmapData doesn't come with a canonical asset id, and FlxGraphic.fromBitmapData()
-			// will create a FlxGraphic with a null/unstable key.
-			// Our 9-slice cache relies on a stable identity, so we assign an explicit key.
+			// BitmapData doesn't come with a canonical asset id; assign a stable key.
 			var key = 'uxbd|' + stableSourceKey(cast bd);
 			var g:FlxGraphic = FlxGraphic.fromBitmapData(bd, false, key);
 			g.persist = true;
@@ -166,13 +150,7 @@ class FlxUX9Slice
 		return 'ux9|' + assetKey + '|' + fw + 'x' + fh + '|f' + frameIndex + '|to' + w + 'x' + h + '|ns' + l + ',' + t + ',' + r + ',' + b;
 	}
 
-	/**
-	 * Produces a stable cache key for a graphic input.
-	 *
-	 * IMPORTANT: Std.string() on objects (FlxGraphic/BitmapData/etc) is not stable and can collide
-	 * or vary across runs/targets. That can cause cached 9-slice renders to be reused for the wrong
-	 * source, which looks like “wrong slices” or “entire sheet used as one frame”.
-	 */
+	/** Produces a stable-ish identity string for cache keys. */
 	private static function stableSourceKey(source:FlxUXGraphicInput):String
 	{
 		if (source == null) return 'null';
@@ -195,11 +173,9 @@ class FlxUX9Slice
 		{
 			var bd:BitmapData = cast source;
 			// BitmapData has no stable id; include dimensions + hashCode when available.
-			// openfl exposes __hashCode internally on some targets; guard with try.
 			var hc:String = '';
 			try
 			{
-				// @:privateAccess is not needed; Dynamic access is fine.
 				var dyn:Dynamic = bd;
 				if (Reflect.hasField(dyn, "__hashCode")) hc = ':' + Std.string(Reflect.field(dyn, "__hashCode"));
 			}
@@ -274,8 +250,7 @@ class FlxUX9Slice
 		var centerDstW:Int = Std.int(Math.max(0, dw - left - right));
 		var centerDstH:Int = Std.int(Math.max(0, dh - top - bottom));
 
-		// Nearest-neighbor scaling for pixel art.
-		function blitNearest(sx:Int, sy:Int, sW:Int, sH:Int, dx:Int, dy:Int, dW:Int, dH:Int):Void
+		function blitScaled(sx:Int, sy:Int, sW:Int, sH:Int, dx:Int, dy:Int, dW:Int, dH:Int):Void
 		{
 			if (sW <= 0 || sH <= 0 || dW <= 0 || dH <= 0) return;
 			var rect:Rectangle = new Rectangle(srcRect.x + sx, srcRect.y + sy, sW, sH);
@@ -284,44 +259,23 @@ class FlxUX9Slice
 				out.copyPixels(src, rect, new Point(dx, dy), null, null, true);
 				return;
 			}
-
-			// Scale using nearest-neighbor by copying 1x1 pixels.
-			var sx0:Int = Std.int(rect.x);
-			var sy0:Int = Std.int(rect.y);
-			var scaleX:Float = sW / dW;
-			var scaleY:Float = sH / dH;
-			var p:Point = new Point();
-			var pixelRect:Rectangle = new Rectangle(0, 0, 1, 1);
-			for (yy in 0...dH)
-			{
-				var srcY:Int = sy0 + Std.int(yy * scaleY);
-				if (srcY < sy0) srcY = sy0;
-				if (srcY >= sy0 + sH) srcY = sy0 + sH - 1;
-				pixelRect.y = srcY;
-				p.y = dy + yy;
-				for (xx in 0...dW)
-				{
-					var srcX:Int = sx0 + Std.int(xx * scaleX);
-					if (srcX < sx0) srcX = sx0;
-					if (srcX >= sx0 + sW) srcX = sx0 + sW - 1;
-					pixelRect.x = srcX;
-					p.x = dx + xx;
-					out.copyPixels(src, pixelRect, p, null, null, true);
-				}
-			}
+			var m = new Matrix();
+			m.scale(dW / sW, dH / sH);
+			m.translate(dx - rect.x * (dW / sW), dy - rect.y * (dH / sH));
+			out.draw(src, m, null, null, new Rectangle(dx, dy, dW, dH), false);
 		}
 
-		blitNearest(0, 0, left, top, 0, 0, left, top);
-		blitNearest(sw - right, 0, right, top, dw - right, 0, right, top);
-		blitNearest(0, sh - bottom, left, bottom, 0, dh - bottom, left, bottom);
-		blitNearest(sw - right, sh - bottom, right, bottom, dw - right, dh - bottom, right, bottom);
+		blitScaled(0, 0, left, top, 0, 0, left, top);
+		blitScaled(sw - right, 0, right, top, dw - right, 0, right, top);
+		blitScaled(0, sh - bottom, left, bottom, 0, dh - bottom, left, bottom);
+		blitScaled(sw - right, sh - bottom, right, bottom, dw - right, dh - bottom, right, bottom);
 
-		blitNearest(left, 0, centerSrcW, top, left, 0, centerDstW, top);
-		blitNearest(left, sh - bottom, centerSrcW, bottom, left, dh - bottom, centerDstW, bottom);
-		blitNearest(0, top, left, centerSrcH, 0, top, left, centerDstH);
-		blitNearest(sw - right, top, right, centerSrcH, dw - right, top, right, centerDstH);
+		blitScaled(left, 0, centerSrcW, top, left, 0, centerDstW, top);
+		blitScaled(left, sh - bottom, centerSrcW, bottom, left, dh - bottom, centerDstW, bottom);
+		blitScaled(0, top, left, centerSrcH, 0, top, left, centerDstH);
+		blitScaled(sw - right, top, right, centerSrcH, dw - right, top, right, centerDstH);
 
-		blitNearest(left, top, centerSrcW, centerSrcH, left, top, centerDstW, centerDstH);
+		blitScaled(left, top, centerSrcW, centerSrcH, left, top, centerDstW, centerDstH);
 	}
 
 	public function new(source:FlxUXGraphicInput, frameWidth:Int, frameHeight:Int, left:Int, top:Int, right:Int, bottom:Int)

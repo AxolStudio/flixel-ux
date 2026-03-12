@@ -15,9 +15,25 @@ class FlxUXMouse
 	/** If true, FlxUX will call `FlxG.mouse.load()` to override the hardware cursor scale. */
 	public var overrideHardwareCursor:Bool = true;
 
+	/** Frames per second for animated cursors. */
+	public var cursorFps:Int = 0;
+
+	/** Frame sequence for cursor "up" state (not pressed). */
+	public var cursorAnimUp:Array<Int> = [0];
+	/** Frame sequence for cursor "down" state (pressed). */
+	public var cursorAnimDown:Array<Int> = [1];
+
 	private var loaded:Bool = false;
 	private var cursorSprite:FlxSprite;
 	private var lastCursorKey:String = null;
+	private var cursorFrames:Array<BitmapData> = [];
+	private var cursorFrameW:Int = 0;
+	private var cursorFrameH:Int = 0;
+	private var animTime:Float = 0;
+	private var animIndex:Int = 0;
+	private var lastPressed:Bool = false;
+	private var lastRenderedFrame:Int = -1;
+	private var lastRenderedState:Int = -1;
 
 	/** Creates a new cursor helper. Call `init()` to install hooks and apply scaling. */
 	public function new() {}
@@ -34,12 +50,20 @@ class FlxUXMouse
 
 		if (FlxG.stage != null)
 		{
-			FlxG.stage.addEventListener(Event.RESIZE, (_) -> reloadCursorScale());
-			FlxG.stage.addEventListener(Event.FULLSCREEN, (_) -> reloadCursorScale());
+			FlxG.stage.addEventListener(Event.RESIZE, (unused) -> reloadCursorScale());
+			FlxG.stage.addEventListener(Event.FULLSCREEN, (unused) -> reloadCursorScale());
 		}
 
 		cursorSprite = new FlxSprite();
 		loaded = true;
+		cursorFrames = [];
+		cursorFrameW = 0;
+		cursorFrameH = 0;
+		animTime = 0;
+		animIndex = 0;
+		lastPressed = false;
+		lastRenderedFrame = -1;
+		lastRenderedState = -1;
 
 		reloadCursorScale();
 	}
@@ -73,75 +97,135 @@ class FlxUXMouse
 		if (input == null)
 			return;
 
-		var key:String = Std.string(input);
+		var key:String = FlxUX9Slice.sourceKey(input);
 		if (lastCursorKey != key)
 		{
 			lastCursorKey = key;
-			if (Std.isOfType(input, String))
-			{
-				var s:String = cast input;
-				var bd:BitmapData = openfl.utils.Assets.getBitmapData(s, false);
-				if (bd != null && bd.height > 0)
-				{
-					var fw:Int = bd.width;
-					var fh:Int = bd.height;
-					if (bd.width == 48 && bd.height == 24)
-					{
-						cursorSprite.loadGraphic(s, true, 24, 24);
-					}
-					else if (bd.width == 24 && bd.height == 48)
-					{
-						cursorSprite.loadGraphic(s, true, 24, 24);
-					}
-					else
-					{
-						var frameH:Int = Std.int(bd.height / 2);
-						if (frameH > 0)
-							cursorSprite.loadGraphic(s, true, bd.width, frameH);
-						else
-							cursorSprite.loadGraphic(s);
-					}
-				}
-				else
-				{
-					cursorSprite.loadGraphic(s);
-				}
-			}
-			else
-			{
-				var g = FlxUX9Slice.toGraphic(input);
-				if (g == null)
-					return;
-				cursorSprite.loadGraphic(g);
-			}
+			loadCursorInput(input);
 			cursorSprite.antialiasing = false;
 			cursorSprite.scrollFactor.set();
-			if (cursorSprite.frames != null && cursorSprite.frames.frames.length >= 2)
+			animTime = 0;
+			animIndex = 0;
+			lastRenderedFrame = -1;
+			lastRenderedState = -1;
+		}
+
+		var state:Int = pressed ? 1 : 0;
+		var seq = pressed ? cursorAnimDown : cursorAnimUp;
+		if (seq == null || seq.length == 0)
+			seq = [pressed ? 1 : 0];
+
+		if (!pressed && lastPressed)
+		{
+			animTime = 0;
+			animIndex = 0;
+		}
+		else if (pressed && !lastPressed)
+		{
+			animTime = 0;
+			animIndex = 0;
+		}
+		lastPressed = pressed;
+
+		if (cursorFps > 0 && seq.length > 1)
+		{
+			animTime += elapsed;
+			var frameDur:Float = 1.0 / cursorFps;
+			while (animTime >= frameDur)
 			{
-				cursorSprite.animation.add("ux_cursor", [0, 1], 0, false);
-				cursorSprite.animation.play("ux_cursor", true);
+				animTime -= frameDur;
+				animIndex++;
 			}
 		}
 
-		cursorSprite.update(elapsed);
+		var seqIndex:Int = (seq.length > 0) ? (animIndex % seq.length) : 0;
+		var frameIndex:Int = (seq.length > 0) ? seq[seqIndex] : 0;
 
-		if (cursorSprite.frames != null && cursorSprite.frames.frames.length >= 2)
-			cursorSprite.animation.frameIndex = pressed ? 1 : 0;
+		if (state == lastRenderedState && frameIndex == lastRenderedFrame)
+			return;
 
-		var frame = cursorSprite.frame;
-		if (frame == null || frame.parent == null) return;
+		lastRenderedState = state;
+		lastRenderedFrame = frameIndex;
+		applyHardwareCursorFrame(frameIndex);
+	}
 
-		var fw = Std.int(frame.frame.width);
-		var fh = Std.int(frame.frame.height);
-		if (fw <= 0 || fh <= 0) return;
-		var out = new BitmapData(fw, fh, true, 0x00000000);
-		var r = new openfl.geom.Rectangle(frame.frame.x, frame.frame.y, frame.frame.width, frame.frame.height);
-		out.copyPixels(frame.parent.bitmap, r, new openfl.geom.Point(0, 0), null, null, true);
+	private function loadCursorInput(input:FlxUXGraphicInput):Void
+	{
+		cursorFrames = [];
+		cursorFrameW = 0;
+		cursorFrameH = 0;
 
-		// Re-load the cursor bitmap each update so we can animate.
+		var bd:BitmapData = null;
+		if (Std.isOfType(input, String))
+		{
+			try bd = openfl.utils.Assets.getBitmapData(cast input, false) catch (_:Dynamic) bd = null;
+		}
+		else
+		{
+			var g = FlxUX9Slice.toGraphic(input);
+			bd = (g != null) ? g.bitmap : null;
+			if (g != null)
+				cursorSprite.loadGraphic(g);
+		}
+
+		if (bd == null)
+			return;
+
+		var split = detectSpriteSheet(bd);
+		cursorFrameW = split.frameWidth;
+		cursorFrameH = split.frameHeight;
+
+		var cols:Int = Std.int(bd.width / cursorFrameW);
+		var rows:Int = Std.int(bd.height / cursorFrameH);
+		if (cols < 1) cols = 1;
+		if (rows < 1) rows = 1;
+		var total = cols * rows;
+
+		for (i in 0...total)
+		{
+			var sx:Int = (i % cols) * cursorFrameW;
+			var sy:Int = Std.int(i / cols) * cursorFrameH;
+			var out = new BitmapData(cursorFrameW, cursorFrameH, true, 0x00000000);
+			out.copyPixels(bd, new openfl.geom.Rectangle(sx, sy, cursorFrameW, cursorFrameH), new openfl.geom.Point(0, 0), null, null, true);
+			cursorFrames.push(out);
+		}
+
+		if (Std.isOfType(input, String))
+		{
+			if (total > 1)
+				cursorSprite.loadGraphic(cast input, true, cursorFrameW, cursorFrameH);
+			else
+				cursorSprite.loadGraphic(cast input);
+		}
+	}
+
+	private function applyHardwareCursorFrame(frameIndex:Int):Void
+	{
+		if (cursorFrames == null || cursorFrames.length == 0)
+			return;
+		var i = frameIndex;
+		if (i < 0) i = 0;
+		if (i >= cursorFrames.length) i = cursorFrames.length - 1;
 		var mScale:Float = (FlxG.stage != null) ? (FlxG.stage.stageHeight / FlxG.height) : 1;
-		FlxG.mouse.load(out, mScale, 0, 0);
+		FlxG.mouse.load(cursorFrames[i], mScale, 0, 0);
 		FlxG.mouse.cursor.smoothing = false;
 		FlxG.mouse.cursor.pixelSnapping = PixelSnapping.ALWAYS;
+	}
+
+	private function detectSpriteSheet(bd:BitmapData):{ frameWidth:Int, frameHeight:Int }
+	{
+		if (bd.width == 48 && bd.height == 24)
+			return { frameWidth: 24, frameHeight: 24 };
+		if (bd.width == 24 && bd.height == 48)
+			return { frameWidth: 24, frameHeight: 24 };
+
+		if (bd.height % 2 == 0)
+		{
+			var fh:Int = Std.int(bd.height / 2);
+			if (fh > 0)
+				return { frameWidth: bd.width, frameHeight: fh };
+		}
+
+		return { frameWidth: bd.width, frameHeight: bd.height };
 	}
 }

@@ -5,29 +5,32 @@ import flixel.input.actions.FlxAction.FlxActionAnalog;
 import flixel.input.actions.FlxAction.FlxActionDigital;
 import flixel.input.actions.FlxActionManager;
 import flixel.input.FlxInput.FlxInputState;
+
+#if !FLX_NO_MOUSE
 import flixel.input.actions.FlxActionInputAnalog.FlxAnalogState;
-import flixel.input.keyboard.FlxKey;
-import flixel.input.gamepad.FlxGamepadInputID;
 import flixel.input.mouse.FlxMouseButton.FlxMouseButtonID;
+#end
+
+#if !FLX_NO_KEYBOARD
+import flixel.input.keyboard.FlxKey;
+#end
+
+#if !FLX_NO_GAMEPAD
+import flixel.input.gamepad.FlxGamepadInputID;
+#end
 
 class FlxUXActions
 {
 	/** Action manager registered with `FlxG.inputs`. */
 	public var manager:FlxActionManager;
 
-	/**
-	 * Digital navigation actions.
-	 *
-	 * These are intended for focus navigation in NAV mode.
-	 */
+	/** Digital navigation actions (intended for NAV focus traversal). */
 	public var up:FlxActionDigital;
 	public var down:FlxActionDigital;
 	public var left:FlxActionDigital;
 	public var right:FlxActionDigital;
 
-	/**
-	 * Digital activation actions.
-	 */
+	/** Digital activation actions. */
 	public var confirm:FlxActionDigital;
 	public var confirmHeld:FlxActionDigital;
 	public var confirmUp:FlxActionDigital;
@@ -85,7 +88,6 @@ class FlxUXActions
 		}
 
 		manager = FlxG.inputs.addInput(new FlxActionManager());
-		// Keep default reset behavior for broad Flixel version compatibility.
 
 		up = new FlxActionDigital();
 		down = new FlxActionDigital();
@@ -126,6 +128,8 @@ class FlxUXActions
 		confirmUp.addKey(FlxKey.ENTER, FlxInputState.JUST_RELEASED);
 		confirmUp.addKey(FlxKey.SPACE, FlxInputState.JUST_RELEASED);
 		cancel.addKey(FlxKey.ESCAPE, FlxInputState.JUST_PRESSED);
+		#else
+		// No keyboard support in this build.
 		#end
 
 		#if !FLX_NO_GAMEPAD
@@ -167,12 +171,16 @@ class FlxUXActions
 				confirmUp.addGamepad(FlxGamepadInputID.A, FlxInputState.JUST_RELEASED);
 				cancel.addGamepad(FlxGamepadInputID.B, FlxInputState.JUST_PRESSED);
 		}
+		#else
+		// No gamepad support in this build.
 		#end
 
 		#if !FLX_NO_MOUSE
 		pointerPress.addMouse(FlxMouseButtonID.LEFT, FlxInputState.JUST_PRESSED);
 		pointerPressHeld.addMouse(FlxMouseButtonID.LEFT, FlxInputState.PRESSED);
 		moveMouse.addMouseMotion(FlxAnalogState.MOVED);
+		#else
+		// No mouse support in this build.
 		#end
 
 		// Reset derived states after rebinding.
@@ -181,16 +189,10 @@ class FlxUXActions
 		pointerPressDown = false;
 	}
 
-	/**
-	 * Updates derived button state for "hold" and "release" behavior.
-	 *
-	 * Flixel's action system primarily exposes per-frame triggers (via `triggered` / `check()`).
-	 * For UI interactions we also need "is held" and "released this frame" semantics.
-	 */
+	/** Updates derived state like "held" and "released" from Flixel's per-frame triggers. */
 	public function update():Void
 	{
-		// ActionManager will update actions as part of FlxG.inputs.
-		// We just combine per-frame triggers into the semantics FlxUXCore wants.
+		// ActionManager updates actions as part of FlxG.inputs.
 		confirmDown = confirmHeld.triggered;
 		confirmReleased = confirmUp.triggered;
 		pointerPressDown = pointerPressHeld.triggered;

@@ -13,14 +13,20 @@ class FocusModesSubState extends FlxSubState
 	override public function create():Void
 	{
 		super.create();
-
+		/**
+		 * Demo setup - you can ignore this section
+		 * =====================================================================
+		 **/
 		add(DemoUi.makeSolidBackdrop());
 		DemoUi.addBackButton(this);
-
 		add(DemoUi.makeHeader(
 			"Focus modes",
 			"FlxUX has 5 focus modes. The highlight graphics are customizable (and can be disabled).")
 		);
+		/**
+		 * END OF DEMO SETUP
+		 * =====================================================================
+		 **/
 
 		var labels = [
 			{ name: "FRAME", mode: FlxUXFocusMode.FRAME },

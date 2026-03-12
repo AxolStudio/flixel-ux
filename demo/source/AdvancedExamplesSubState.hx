@@ -13,17 +13,19 @@ import flixel.ux.FlxUXGroup;
 
 class AdvancedExamplesSubState extends FlxSubState
 {
-	var slideContainer:FlxSprite;
-	var containerXTarget:Float;
+	private var slideContainer:FlxSprite;
+	private var containerXTarget:Float;
 
 	override public function create():Void
 	{
 		super.create();
-
-		// Solid black background.
+		/**
+		 * Demo setup - you can ignore this section
+		 * =====================================================================
+		 **/
 		add(DemoUi.makeSolidBackdrop());
 
-		// A simple sliding container: everything in this substate sits to the right, then tweens in.
+		// A simple sliding container: everything in this substate starts offscreen and tweens in.
 		slideContainer = new FlxSprite();
 		slideContainer.scrollFactor.set();
 		slideContainer.exists = false; // dummy anchor
@@ -42,8 +44,12 @@ class AdvancedExamplesSubState extends FlxSubState
 		var box = DemoUi.makeBox(24 + FlxG.width, 140, FlxG.width - 48, FlxG.height - 180, "Mixed sizes + custom label format");
 		add(box.border);
 		add(box.label);
+		/**
+		 * END OF DEMO SETUP
+		 * =====================================================================
+		 **/
 
-		// This substate mostly shows that FlxUXGroup + FlxUXButton work fine while being moved/tweened.
+		// This substate shows FlxUXGroup + FlxUXButton working fine while being moved/tweened.
 		// It also demonstrates label overrides at the Core/Group/Button levels.
 		var g = new FlxUXGroup();
 		g.x = 40 + FlxG.width;

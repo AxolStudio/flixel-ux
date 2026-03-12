@@ -14,8 +14,6 @@ import flixel.ux.FlxUXCore.FlxUXFocusMode;
 import flixel.ux.FlxUXCore.FlxUXGraphicInput;
 import flixel.ux.FlxUXCore.FlxUXGridLastRowAlign;
 import flixel.system.FlxAssets.FlxSoundAsset;
-import flixel.ux.FlxUXCore.FlxUXFocusMode;
-import flixel.ux.FlxUXCore.FlxUXGraphicInput;
 
 /**
  * UX Group: a lightweight container that is both:
@@ -30,34 +28,96 @@ import flixel.ux.FlxUXCore.FlxUXGraphicInput;
  */
 class FlxUXGroup extends FlxGroup
 {
-	/** Debug traces for layout/sizing. Enable with `-D flxux_debug_sizes`. */
-	public static inline var DEBUG_SIZES:Bool = #if flxux_debug_sizes true #else false #end;
-	private inline function _dbg(msg:String):Void
-	{
-		if (!DEBUG_SIZES) return;
-		trace('[FlxUXGroup] ' + msg);
-	}
-	private inline function _dbgButtonSizes(where:String):Void
-	{
-		if (!DEBUG_SIZES) return;
-		var i = 0;
-		for (b in orderedButtons)
-		{
-			if (b == null) continue;
-			trace('[FlxUXGroup] ' + where + ' b' + i
-				+ ' "' + (b.label != null ? b.label.text : '') + '"'
-				+ ' pos=(' + Std.int(b.x) + ',' + Std.int(b.y) + ')'
-				+ ' size=(' + Std.int(b.width) + ',' + Std.int(b.height) + ')'
-				+ ' frame=(' + b.frameWidth + ',' + b.frameHeight + ')');
-			i++;
-		}
-	}
 	// ---------------------------------------------------------------------------------------------
 	// Public configuration
 	// ---------------------------------------------------------------------------------------------
 
 	/** Whether this group participates in any UX behavior at all (separate from FlxBasic.active). */
 	public var uxActive:Bool = true;
+
+	/**
+	 * Optional per-group theme.
+	 *
+	 * Setting this copies theme fields onto the group's override variables and calls `refreshTheme()`.
+	 */
+	public var theme(get, set):Null<FlxUXTheme>;
+	private var currentTheme:Null<FlxUXTheme> = null;
+	private function get_theme():Null<FlxUXTheme>
+	{
+		return currentTheme;
+	}
+	private function set_theme(value:Null<FlxUXTheme>):Null<FlxUXTheme>
+	{
+		currentTheme = value;
+		if (value == null)
+		{
+			resetButtonSkin();
+			resetButtonSounds();
+			buttonLabelFont = null;
+			buttonLabelSize = 0;
+			buttonLabelColor = null;
+			buttonLabelColorHover = null;
+			buttonLabelColorDown = null;
+			buttonLabelColorDisabled = null;
+			buttonLabelAlign = null;
+			buttonLabelFactory = null;
+			focusMode = null;
+			focusFrameGraphic = null;
+			focusNextToGraphic = null;
+			focusNextToMirrored = null;
+			focusNextToGraphicRight = null;
+			focusNextToFlipRight = null;
+			focusNextToGap = null;
+			focusNextToOffsetY = null;
+			focusOverlayGraphic = null;
+			focusOverlayOffsetX = null;
+			focusOverlayOffsetY = null;
+		}
+		else
+		{
+			buttonUseAnim = value.buttonUseAnim;
+			buttonSkinFps = value.buttonSkinFps;
+			buttonGraphic = value.buttonGraphic;
+			buttonAnimUp = value.buttonAnimUp;
+			buttonAnimOver = value.buttonAnimOver;
+			buttonAnimDown = value.buttonAnimDown;
+			buttonAnimDisabled = value.buttonAnimDisabled;
+			buttonSoundOver = value.buttonSoundOver;
+			buttonSoundDown = value.buttonSoundDown;
+			buttonSoundClick = value.buttonSoundClick;
+			buttonLabelFont = value.buttonLabelFont;
+			buttonLabelSize = value.buttonLabelSize;
+			buttonLabelColor = value.buttonLabelColor;
+			buttonLabelColorHover = value.buttonLabelColorHover;
+			buttonLabelColorDown = value.buttonLabelColorDown;
+			buttonLabelColorDisabled = value.buttonLabelColorDisabled;
+			buttonLabelAlign = switch (StringTools.trim(value.buttonLabelAlign).toLowerCase())
+			{
+				case "left": flixel.text.FlxText.FlxTextAlign.LEFT;
+				case "right": flixel.text.FlxText.FlxTextAlign.RIGHT;
+				default: flixel.text.FlxText.FlxTextAlign.CENTER;
+			};
+
+			focusMode = value.focusMode;
+			focusFrameGraphic = value.focusFrameGraphic;
+			focusNextToGraphic = value.focusNextToGraphic;
+			focusNextToMirrored = value.focusNextToMirrored;
+			focusNextToGraphicRight = value.focusNextToGraphicRight;
+			focusNextToFlipRight = value.focusNextToFlipRight;
+			focusNextToGap = value.focusNextToGap;
+			focusNextToOffsetY = value.focusNextToOffsetY;
+			focusOverlayGraphic = value.focusOverlayGraphic;
+			focusOverlayOffsetX = value.focusOverlayOffsetX;
+			focusOverlayOffsetY = value.focusOverlayOffsetY;
+
+			highlightPadX = value.highlightPadX;
+			highlightPadY = value.highlightPadY;
+		}
+
+		FlxUX9Slice.clearCache();
+		refreshTheme();
+		return currentTheme;
+	}
 
 	/**
 	 * Whether this group's widgets should be part of global NAV focus navigation.
@@ -545,7 +605,6 @@ class FlxUXGroup extends FlxGroup
 	/** Sets all button widths to match the widest button. */
 	public function matchWidth():Void
 	{
-		_dbgButtonSizes('matchWidth.before');
 		var maxW:Float = 0;
 			for (b in orderedButtons)
 			if (b != null) maxW = Math.max(maxW, b.width);
@@ -554,13 +613,11 @@ class FlxUXGroup extends FlxGroup
 			{
 				b.resize(Std.int(maxW), Std.int(b.height));
 			}
-		_dbgButtonSizes('matchWidth.after maxW=' + Std.int(maxW));
 	}
 
 	/** Sets all button heights to match the tallest button. */
 	public function matchHeight():Void
 	{
-		_dbgButtonSizes('matchHeight.before');
 		var maxH:Float = 0;
 			for (b in orderedButtons)
 			if (b != null) maxH = Math.max(maxH, b.height);
@@ -569,7 +626,6 @@ class FlxUXGroup extends FlxGroup
 			{
 				b.resize(Std.int(b.width), Std.int(maxH));
 			}
-		_dbgButtonSizes('matchHeight.after maxH=' + Std.int(maxH));
 	}
 
 	/** Sets all button widths + heights to match the largest button. */
@@ -582,7 +638,6 @@ class FlxUXGroup extends FlxGroup
 	/** Centers this group on the screen based on its current button bounds. */
 	public function alignCenter():Void
 	{
-		_dbgButtonSizes('alignCenter.before');
 		var gx = boundsX;
 		var gy = boundsY;
 		var w = width;
@@ -596,8 +651,6 @@ class FlxUXGroup extends FlxGroup
 			this.x = Std.int(this.x);
 			this.y = Std.int(this.y);
 		}
-		_dbg('alignCenter moved group to (' + Std.int(x) + ',' + Std.int(y) + ') bounds=(' + Std.int(boundsX) + ',' + Std.int(boundsY) + ') size=(' + Std.int(width) + ',' + Std.int(height) + ')');
-		_dbgButtonSizes('alignCenter.after');
 	}
 
 	/**
@@ -613,7 +666,7 @@ class FlxUXGroup extends FlxGroup
 			for (b in orderedButtons)
 		{
 			if (b == null) continue;
-			_setChildBasePos(b, 0, yCursor);
+			setChildBasePos(b, 0, yCursor);
 			b.x = x + 0;
 			b.y = y + yCursor;
 			if (FlxUXCore.snapUiToPixels)
@@ -644,7 +697,7 @@ class FlxUXGroup extends FlxGroup
 		for (b in orderedButtons)
 		{
 			if (b == null) continue;
-			_setChildBasePos(b, xCursor, 0);
+			setChildBasePos(b, xCursor, 0);
 			b.x = x + xCursor;
 			b.y = y + 0;
 			if (FlxUXCore.snapUiToPixels)
@@ -668,7 +721,6 @@ class FlxUXGroup extends FlxGroup
 	 */
 	public function grid(columns:Int, gapX:Float, gapY:Float, lastRowAlign:FlxUXGridLastRowAlign = LEFT):Void
 	{
-		_dbgButtonSizes('grid.before');
 		if (columns < 1) columns = 1;
 		var cellW:Float = 0;
 		var cellH:Float = 0;
@@ -678,8 +730,6 @@ class FlxUXGroup extends FlxGroup
 			cellW = Math.max(cellW, b.width);
 			cellH = Math.max(cellH, b.height);
 		}
-		_dbg('grid cell=(' + Std.int(cellW) + ',' + Std.int(cellH) + ') columns=' + columns + ' gap=(' + gapX + ',' + gapY + ')');
-
 		// Count buttons (orderedButtons can contain nulls).
 		var count:Int = 0;
 		for (b in orderedButtons)
@@ -715,7 +765,7 @@ class FlxUXGroup extends FlxGroup
 			var by:Float = row * (cellH + gapY);
 			if (row == rows - 1 && lastRowCount < columns)
 				bx += lastRowOffsetX;
-			_setChildBasePos(b, bx, by);
+			setChildBasePos(b, bx, by);
 			b.x = x + bx;
 			b.y = y + by;
 			if (FlxUXCore.snapUiToPixels)
@@ -726,10 +776,9 @@ class FlxUXGroup extends FlxGroup
 			logicalIndex++;
 			i++;
 		}
-		_dbgButtonSizes('grid.after');
 	}
 
-	private function _setChildBaseX(child:FlxUXButton, baseX:Float):Void
+	private function setChildBaseX(child:FlxUXButton, baseX:Float):Void
 	{
 		if (child == null) return;
 		var p = buttonBasePos.get(child);
@@ -741,7 +790,7 @@ class FlxUXGroup extends FlxGroup
 		p.x = baseX;
 	}
 
-	private function _setChildBaseY(child:FlxUXButton, baseY:Float):Void
+	private function setChildBaseY(child:FlxUXButton, baseY:Float):Void
 	{
 		if (child == null) return;
 		var p = buttonBasePos.get(child);
@@ -753,7 +802,7 @@ class FlxUXGroup extends FlxGroup
 		p.y = baseY;
 	}
 
-	private function _setChildBasePos(child:FlxUXButton, baseX:Float, baseY:Float):Void
+	private function setChildBasePos(child:FlxUXButton, baseX:Float, baseY:Float):Void
 	{
 		if (child == null) return;
 		var p = buttonBasePos.get(child);
@@ -798,18 +847,18 @@ class FlxUXGroup extends FlxGroup
 			if (focusSideLeft != null) focusSideLeft.visible = false;
 			if (focusSideRight != null) focusSideRight.visible = false;
 			if (focusOverlay != null) focusOverlay.visible = false;
-				lastHighlightKey = null;
+			lastHighlightKey = null;
 			return;
 		}
 
 		var focused = FlxUXCore.focused;
-		if (focused == null || focused._getUXGroup() != this)
+		if (focused == null || focused.getUXGroup() != this)
 		{
 			focusHighlighter.visible = false;
 			if (focusSideLeft != null) focusSideLeft.visible = false;
 			if (focusSideRight != null) focusSideRight.visible = false;
 			if (focusOverlay != null) focusOverlay.visible = false;
-				lastHighlightKey = null;
+			lastHighlightKey = null;
 			return;
 		}
 
