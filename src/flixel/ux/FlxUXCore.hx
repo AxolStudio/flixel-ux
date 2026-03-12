@@ -330,6 +330,9 @@ class FlxUXCore
 	public static function setTheme(t:FlxUXTheme):Void
 	{
 		theme = (t != null) ? t : new FlxUXTheme();
+		// Theme swaps may change the underlying source graphics used by 9-slice skins.
+		// Invalidate the rendered 9-slice cache so buttons/highlights regenerate cleanly.
+		FlxUX9Slice.clearCache();
 		applyTheme();
 		refreshLiveUi();
 	}

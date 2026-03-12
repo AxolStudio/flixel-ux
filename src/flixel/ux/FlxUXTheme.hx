@@ -136,7 +136,10 @@ class FlxUXTheme
 			var fw:Int = asInt(dm.get("frameWidth"), 0);
 			var fh:Int = asInt(dm.get("frameHeight"), 0);
 
-			return new flixel.ux.FlxUX9Slice(src, l, top, r, b, fw, fh);
+			// FlxUX9Slice constructor order is:
+			// (source, frameWidth, frameHeight, left, top, right, bottom)
+			// Theme JSON uses the same names.
+			return new flixel.ux.FlxUX9Slice(src, fw, fh, l, top, r, b);
 		}
 
 		if (map.exists("disabledAlpha"))

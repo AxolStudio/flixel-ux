@@ -28,11 +28,48 @@ class FlxUX9Slice
 	public var right:Int;
 	public var bottom:Int;
 	private static var cache:Map<String, FlxGraphic> = new Map();
+	// Reverse index so we can evict all cached renders for a given source quickly.
+	private static var cacheBySource:Map<String, Array<String>> = new Map();
 
 	/** Clears the internal 9-slice cache. */
 	public static function clearCache():Void
 	{
 		cache = new Map();
+		cacheBySource = new Map();
+	}
+
+	/** Evicts all cached renders produced from the given source input. */
+	public static function evictSource(source:FlxUXGraphicInput):Void
+	{
+		var sk = stableSourceKey(source);
+		if (!cacheBySource.exists(sk))
+			return;
+		var keys = cacheBySource.get(sk);
+		cacheBySource.remove(sk);
+		if (keys == null) return;
+		for (k in keys)
+		{
+			if (k == null) continue;
+			var g = cache.get(k);
+			cache.remove(k);
+			// IMPORTANT:
+			// Do NOT toggle persist/destroyOnNoUse here.
+			// On some targets (notably HL/OpenFL) sprites/frames can still reference the graphic
+			// for a short time even after we've decided to evict it, and making it destroyable
+			// can lead to destroyed bitmap access and placeholder rendering.
+			//
+			// Removing from our cache is sufficient: subsequent get() calls will re-render.
+		}
+	}
+
+	/**
+	 * Exposes the stable cache identity for a graphic input.
+	 *
+	 * Used by other FlxUX classes when they need cache keys that must match FlxUX9Slice.get().
+	 */
+	public static inline function sourceKey(source:FlxUXGraphicInput):String
+	{
+		return stableSourceKey(source);
 	}
 
 	/**
@@ -46,7 +83,14 @@ class FlxUX9Slice
 
 		var key:String = makeKey(nine, targetW, targetH, frameIndex);
 		if (cache.exists(key))
-			return cache.get(key);
+		{
+			var cg = cache.get(key);
+			// If the cached graphic was destroyed (possible when destroyOnNoUse is true),
+			// don't return it. Flixel will otherwise render a placeholder and we get “wrong theme”.
+			if (cg != null && cg.bitmap != null)
+				return cg;
+			cache.remove(key);
+		}
 
 		var src:BitmapData = resolveBitmapData(nine.source);
 		if (src == null) return null;
@@ -58,11 +102,23 @@ class FlxUX9Slice
 		var out:BitmapData = new BitmapData(targetW, targetH, true, 0x00000000);
 
 		drawNineSlice(out, src, srcRect, nine.left, nine.top, nine.right, nine.bottom);
-		var gfx:FlxGraphic = FlxGraphic.fromBitmapData(out);
-		// These rendered graphics are cached and reused; prevent Flixel from GC'ing them.
+		// Give the rendered output a deterministic key so FlxG.bitmap can track it consistently
+		// across targets and to make debugging/cache eviction reliable.
+		var gfx:FlxGraphic = FlxGraphic.fromBitmapData(out, false, key);
+		// IMPORTANT:
+		// These are *derived* graphics. FlxSprite/animation frames can transiently hold references
+		// through draw/update, and some targets (notably HL) will try to query frames on a graphic
+		// even after it was destroyed, producing placeholder renders.
+		//
+		// So we keep derived graphics alive while they are in our cache.
+		// Theme/group hot-swaps are handled by explicit eviction (clearCache/evictSource).
 		gfx.persist = true;
 		gfx.destroyOnNoUse = false;
 		cache.set(key, gfx);
+		var srcKey = stableSourceKey(nine.source);
+		if (!cacheBySource.exists(srcKey))
+			cacheBySource.set(srcKey, []);
+		cacheBySource.get(srcKey).push(key);
 		return gfx;
 	}
 
@@ -81,7 +137,12 @@ class FlxUX9Slice
 		if (Std.isOfType(input, BitmapData))
 		{
 			var bd:BitmapData = cast input;
-			var g:FlxGraphic = FlxGraphic.fromBitmapData(bd);
+			// IMPORTANT:
+			// BitmapData doesn't come with a canonical asset id, and FlxGraphic.fromBitmapData()
+			// will create a FlxGraphic with a null/unstable key.
+			// Our 9-slice cache relies on a stable identity, so we assign an explicit key.
+			var key = 'uxbd|' + stableSourceKey(cast bd);
+			var g:FlxGraphic = FlxGraphic.fromBitmapData(bd, false, key);
 			g.persist = true;
 			g.destroyOnNoUse = false;
 			return g;
@@ -95,7 +156,7 @@ class FlxUX9Slice
 
 	private static function makeKey(nine:FlxUX9Slice, w:Int, h:Int, frameIndex:Int):String
 	{
-		var assetKey:String = Std.string(nine.source);
+		var assetKey:String = stableSourceKey(nine.source);
 		var fw:Int = nine.frameWidth;
 		var fh:Int = nine.frameHeight;
 		var l:Int = nine.left;
@@ -103,6 +164,51 @@ class FlxUX9Slice
 		var r:Int = nine.right;
 		var b:Int = nine.bottom;
 		return 'ux9|' + assetKey + '|' + fw + 'x' + fh + '|f' + frameIndex + '|to' + w + 'x' + h + '|ns' + l + ',' + t + ',' + r + ',' + b;
+	}
+
+	/**
+	 * Produces a stable cache key for a graphic input.
+	 *
+	 * IMPORTANT: Std.string() on objects (FlxGraphic/BitmapData/etc) is not stable and can collide
+	 * or vary across runs/targets. That can cause cached 9-slice renders to be reused for the wrong
+	 * source, which looks like “wrong slices” or “entire sheet used as one frame”.
+	 */
+	private static function stableSourceKey(source:FlxUXGraphicInput):String
+	{
+		if (source == null) return 'null';
+		if (Std.isOfType(source, String))
+			return 'str:' + cast(source, String);
+		if (Std.isOfType(source, FlxGraphic))
+		{
+			var fg:FlxGraphic = cast source;
+			// key is the canonical identity inside FlxG.bitmap
+			return (fg.key != null) ? ('gfx:' + fg.key) : ('gfx@' + Std.string(fg));
+		}
+		if (Std.isOfType(source, FlxSprite))
+		{
+			var s:FlxSprite = cast source;
+			if (s.graphic != null)
+				return stableSourceKey(cast s.graphic);
+			return 'sprite@' + Std.string(s);
+		}
+		if (Std.isOfType(source, BitmapData))
+		{
+			var bd:BitmapData = cast source;
+			// BitmapData has no stable id; include dimensions + hashCode when available.
+			// openfl exposes __hashCode internally on some targets; guard with try.
+			var hc:String = '';
+			try
+			{
+				// @:privateAccess is not needed; Dynamic access is fine.
+				var dyn:Dynamic = bd;
+				if (Reflect.hasField(dyn, "__hashCode")) hc = ':' + Std.string(Reflect.field(dyn, "__hashCode"));
+			}
+			catch (_:Dynamic) {}
+			return 'bd:' + bd.width + 'x' + bd.height + hc;
+		}
+		// Fallback for any other EitherType wrapper cases.
+		var cls = Type.getClass(source);
+		return 'obj:' + ((cls != null) ? Type.getClassName(cls) : 'dynamic') + '@' + Std.string(source);
 	}
 
 	@:allow(flixel.ux.FlxUXGroup)
@@ -135,10 +241,14 @@ class FlxUX9Slice
 		if (frameH <= 0) frameH = src.height;
 		var cols:Int = Std.int(src.width / frameW);
 		if (cols < 1) cols = 1;
-		var x:Int = (frameIndex % cols) * frameW;
-		var y:Int = Std.int(frameIndex / cols) * frameH;
-		if (x + frameW > src.width) x = 0;
-		if (y + frameH > src.height) y = 0;
+		var rows:Int = Std.int(src.height / frameH);
+		if (rows < 1) rows = 1;
+		var total:Int = cols * rows;
+		var fi:Int = frameIndex;
+		if (fi < 0) fi = 0;
+		if (fi >= total) fi = total - 1;
+		var x:Int = (fi % cols) * frameW;
+		var y:Int = Std.int(fi / cols) * frameH;
 		return new Rectangle(x, y, frameW, frameH);
 	}
 

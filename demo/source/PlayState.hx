@@ -11,8 +11,6 @@ class PlayState extends FlxState
 {
 	override public function create():Void
 	{
-		super.create();
-
 		/**
 		 *  Initializing the screen for the demo - you can ignore this section
 		 * =====================================================================
@@ -55,6 +53,8 @@ class PlayState extends FlxState
 		
 		// using the combined relative positions and sizes of the buttons in this group, center the entire group on the screen
 		menu.alignCenter(); 
+
+		super.create();
 
 	}
 }

@@ -30,6 +30,28 @@ import flixel.ux.FlxUXCore.FlxUXGraphicInput;
  */
 class FlxUXGroup extends FlxGroup
 {
+	/** Debug traces for layout/sizing. Enable with `-D flxux_debug_sizes`. */
+	public static inline var DEBUG_SIZES:Bool = #if flxux_debug_sizes true #else false #end;
+	private inline function _dbg(msg:String):Void
+	{
+		if (!DEBUG_SIZES) return;
+		trace('[FlxUXGroup] ' + msg);
+	}
+	private inline function _dbgButtonSizes(where:String):Void
+	{
+		if (!DEBUG_SIZES) return;
+		var i = 0;
+		for (b in orderedButtons)
+		{
+			if (b == null) continue;
+			trace('[FlxUXGroup] ' + where + ' b' + i
+				+ ' "' + (b.label != null ? b.label.text : '') + '"'
+				+ ' pos=(' + Std.int(b.x) + ',' + Std.int(b.y) + ')'
+				+ ' size=(' + Std.int(b.width) + ',' + Std.int(b.height) + ')'
+				+ ' frame=(' + b.frameWidth + ',' + b.frameHeight + ')');
+			i++;
+		}
+	}
 	// ---------------------------------------------------------------------------------------------
 	// Public configuration
 	// ---------------------------------------------------------------------------------------------
@@ -160,6 +182,10 @@ class FlxUXGroup extends FlxGroup
 					var b = members[i];
 					if (b == null) continue;
 					b.uxGroup = this;
+					// applySkin() already applies label options and state colors using precedence
+					// (button -> group -> core). Calling applyLabelOptions() again here can cause
+					// label metrics to churn (fieldWidth changes) and creates the "hover changes width"
+					// jitter seen in the theme demo.
 					b.applySkin();
 				}
 			}
@@ -519,6 +545,7 @@ class FlxUXGroup extends FlxGroup
 	/** Sets all button widths to match the widest button. */
 	public function matchWidth():Void
 	{
+		_dbgButtonSizes('matchWidth.before');
 		var maxW:Float = 0;
 			for (b in orderedButtons)
 			if (b != null) maxW = Math.max(maxW, b.width);
@@ -527,11 +554,13 @@ class FlxUXGroup extends FlxGroup
 			{
 				b.resize(Std.int(maxW), Std.int(b.height));
 			}
+		_dbgButtonSizes('matchWidth.after maxW=' + Std.int(maxW));
 	}
 
 	/** Sets all button heights to match the tallest button. */
 	public function matchHeight():Void
 	{
+		_dbgButtonSizes('matchHeight.before');
 		var maxH:Float = 0;
 			for (b in orderedButtons)
 			if (b != null) maxH = Math.max(maxH, b.height);
@@ -540,6 +569,7 @@ class FlxUXGroup extends FlxGroup
 			{
 				b.resize(Std.int(b.width), Std.int(maxH));
 			}
+		_dbgButtonSizes('matchHeight.after maxH=' + Std.int(maxH));
 	}
 
 	/** Sets all button widths + heights to match the largest button. */
@@ -552,6 +582,7 @@ class FlxUXGroup extends FlxGroup
 	/** Centers this group on the screen based on its current button bounds. */
 	public function alignCenter():Void
 	{
+		_dbgButtonSizes('alignCenter.before');
 		var gx = boundsX;
 		var gy = boundsY;
 		var w = width;
@@ -565,6 +596,8 @@ class FlxUXGroup extends FlxGroup
 			this.x = Std.int(this.x);
 			this.y = Std.int(this.y);
 		}
+		_dbg('alignCenter moved group to (' + Std.int(x) + ',' + Std.int(y) + ') bounds=(' + Std.int(boundsX) + ',' + Std.int(boundsY) + ') size=(' + Std.int(width) + ',' + Std.int(height) + ')');
+		_dbgButtonSizes('alignCenter.after');
 	}
 
 	/**
@@ -635,6 +668,7 @@ class FlxUXGroup extends FlxGroup
 	 */
 	public function grid(columns:Int, gapX:Float, gapY:Float, lastRowAlign:FlxUXGridLastRowAlign = LEFT):Void
 	{
+		_dbgButtonSizes('grid.before');
 		if (columns < 1) columns = 1;
 		var cellW:Float = 0;
 		var cellH:Float = 0;
@@ -644,6 +678,7 @@ class FlxUXGroup extends FlxGroup
 			cellW = Math.max(cellW, b.width);
 			cellH = Math.max(cellH, b.height);
 		}
+		_dbg('grid cell=(' + Std.int(cellW) + ',' + Std.int(cellH) + ') columns=' + columns + ' gap=(' + gapX + ',' + gapY + ')');
 
 		// Count buttons (orderedButtons can contain nulls).
 		var count:Int = 0;
@@ -691,6 +726,7 @@ class FlxUXGroup extends FlxGroup
 			logicalIndex++;
 			i++;
 		}
+		_dbgButtonSizes('grid.after');
 	}
 
 	private function _setChildBaseX(child:FlxUXButton, baseX:Float):Void
@@ -891,7 +927,7 @@ class FlxUXGroup extends FlxGroup
 
 			if (frames <= 1)
 			{
-				var k = 'ux9frame|' + Std.string(ns.source) + '|' + ns.frameWidth + 'x' + ns.frameHeight + '|to' + tw + 'x' + th;
+				var k = 'ux9frame|' + flixel.ux.FlxUX9Slice.sourceKey(ns.source) + '|' + ns.frameWidth + 'x' + ns.frameHeight + '|to' + tw + 'x' + th;
 				if (!setKey(k))
 					return;
 				var gfx = FlxUX9Slice.get(ns, tw, th, 0);
@@ -900,7 +936,7 @@ class FlxUXGroup extends FlxGroup
 			}
 			else
 			{
-				var key = 'ux9frameanim|' + Std.string(ns.source) + '|' + ns.frameWidth + 'x' + ns.frameHeight + '|to' + tw + 'x' + th + '|n' + frames;
+				var key = 'ux9frameanim|' + flixel.ux.FlxUX9Slice.sourceKey(ns.source) + '|' + ns.frameWidth + 'x' + ns.frameHeight + '|to' + tw + 'x' + th + '|n' + frames;
 				if (!setKey(key))
 					return;
 				var out = new BitmapData(tw, th * frames, true, 0x00000000);
