@@ -106,4 +106,36 @@ var button = group.addButton("Special", onSpecial);
 button.theme = FlxUXTheme.fromJson(Assets.getText("themes/specialButton.json"));
 ```
 
+## Locked state (4th button state)
+
+Flixel internally calls the 4th button state `DISABLED`. In FlxUX, the public API name is **locked**.
+
+When a button is locked:
+
+- It uses the 4th skin state (disabled graphic / animation frames)
+- It cannot be focused or activated
+- It keeps updating (it does not toggle `active`)
+
+```haxe
+var b = group.addButton("Can't click this", onClick);
+b.locked = true;
+```
+
+### Locked label color
+
+You can style locked labels separately from normal disabled labels.
+
+Precedence is the same as everything else: **button → group → core**.
+
+```haxe
+// Global default for all locked buttons
+FlxUXCore.buttonLabelColorLocked = 0xFF444444;
+
+// Group override
+group.buttonLabelColorLocked = 0xFF222222;
+
+// Per-button override
+b.buttonLabelColorLocked = 0xFF111111;
+```
+
 See `FlxUXTheme` for the full list of supported fields.

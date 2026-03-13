@@ -52,6 +52,14 @@ class FlxUXActions
 	/** Whether pointer press is currently held (mouse/touch), if applicable. */
 	public var pointerPressDown(default, null):Bool = false;
 
+	/** Default ctor values used by `rebind()` to rebuild identically later. */
+	public var keyboardArrows:Bool;
+	public var keyboardWASD:Bool;
+	public var gamepadDpad:Bool;
+	public var gamepadLeftStick:Bool;
+	public var gamepadRightStick:Bool;
+	public var gamepadFaceStyle:FlxUXCore.FlxUXGamepadFaceStyle;
+
 	/**
 	 * Creates the action binding container and binds inputs immediately.
 	 *
@@ -64,6 +72,29 @@ class FlxUXActions
 		?gamepadLeftStick:Bool = true,
 		?gamepadRightStick:Bool = false,
 		?gamepadFaceStyle:FlxUXCore.FlxUXGamepadFaceStyle = FlxUXCore.FlxUXGamepadFaceStyle.NINTENDO)
+	{
+		this.keyboardArrows = keyboardArrows;
+		this.keyboardWASD = keyboardWASD;
+		this.gamepadDpad = gamepadDpad;
+		this.gamepadLeftStick = gamepadLeftStick;
+		this.gamepadRightStick = gamepadRightStick;
+		this.gamepadFaceStyle = gamepadFaceStyle;
+		rebind(keyboardArrows, keyboardWASD, gamepadDpad, gamepadLeftStick, gamepadRightStick, gamepadFaceStyle);
+	}
+
+	/** Destroys the action manager and unhooks it from `FlxG.inputs`. */
+	public function destroy():Void
+	{
+		if (manager != null)
+		{
+			FlxG.inputs.remove(manager);
+			manager.destroy();
+			manager = null;
+		}
+	}
+
+	/** Rebinds actions using the last ctor values. */
+	public inline function rebindDefaults():Void
 	{
 		rebind(keyboardArrows, keyboardWASD, gamepadDpad, gamepadLeftStick, gamepadRightStick, gamepadFaceStyle);
 	}
@@ -81,11 +112,14 @@ class FlxUXActions
 		?gamepadRightStick:Bool = false,
 		?gamepadFaceStyle:FlxUXCore.FlxUXGamepadFaceStyle = FlxUXCore.FlxUXGamepadFaceStyle.NINTENDO):Void
 	{
-		if (manager != null)
-		{
-			FlxG.inputs.remove(manager);
-			manager.destroy();
-		}
+		this.keyboardArrows = keyboardArrows;
+		this.keyboardWASD = keyboardWASD;
+		this.gamepadDpad = gamepadDpad;
+		this.gamepadLeftStick = gamepadLeftStick;
+		this.gamepadRightStick = gamepadRightStick;
+		this.gamepadFaceStyle = gamepadFaceStyle;
+
+		destroy();
 
 		manager = FlxG.inputs.addInput(new FlxActionManager());
 
@@ -129,7 +163,6 @@ class FlxUXActions
 		confirmUp.addKey(FlxKey.SPACE, FlxInputState.JUST_RELEASED);
 		cancel.addKey(FlxKey.ESCAPE, FlxInputState.JUST_PRESSED);
 		#else
-		// No keyboard support in this build.
 		#end
 
 		#if !FLX_NO_GAMEPAD
@@ -172,7 +205,6 @@ class FlxUXActions
 				cancel.addGamepad(FlxGamepadInputID.B, FlxInputState.JUST_PRESSED);
 		}
 		#else
-		// No gamepad support in this build.
 		#end
 
 		#if !FLX_NO_MOUSE
@@ -180,10 +212,8 @@ class FlxUXActions
 		pointerPressHeld.addMouse(FlxMouseButtonID.LEFT, FlxInputState.PRESSED);
 		moveMouse.addMouseMotion(FlxAnalogState.MOVED);
 		#else
-		// No mouse support in this build.
 		#end
 
-		// Reset derived states after rebinding.
 		confirmDown = false;
 		confirmReleased = false;
 		pointerPressDown = false;
@@ -192,7 +222,6 @@ class FlxUXActions
 	/** Updates derived state like "held" and "released" from Flixel's per-frame triggers. */
 	public function update():Void
 	{
-		// ActionManager updates actions as part of FlxG.inputs.
 		confirmDown = confirmHeld.triggered;
 		confirmReleased = confirmUp.triggered;
 		pointerPressDown = pointerPressHeld.triggered;

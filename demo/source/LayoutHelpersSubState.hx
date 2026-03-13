@@ -13,7 +13,7 @@ class LayoutHelpersSubState extends FlxSubState
 	{
 		super.create();
 		/**
-		 * Demo setup - you can ignore this section
+		 *  Demo setup - you can ignore this section
 		 * =====================================================================
 		 **/
 		add(DemoUi.makeSolidBackdrop());
@@ -22,7 +22,7 @@ class LayoutHelpersSubState extends FlxSubState
 			"Layout helpers",
 			"These helpers place buttons based on their current sizes: stack (vertical), spread (horizontal), grid (cells).")
 		);
-		/**
+		/** 
 		 * END OF DEMO SETUP
 		 * =====================================================================
 		 **/

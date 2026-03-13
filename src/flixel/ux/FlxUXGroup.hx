@@ -28,12 +28,24 @@ import flixel.system.FlxAssets.FlxSoundAsset;
  */
 class FlxUXGroup extends FlxGroup
 {
-	// ---------------------------------------------------------------------------------------------
-	// Public configuration
-	// ---------------------------------------------------------------------------------------------
-
 	/** Whether this group participates in any UX behavior at all (separate from FlxBasic.active). */
 	public var uxActive:Bool = true;
+
+	/**
+	 * If `true`, all buttons in this group are locked.
+	 *
+	 * This is a propagation convenience: it sets `button.locked` for all currently tracked buttons.
+	 */
+	public var locked(get, set):Bool;
+	private var _locked:Bool = false;
+	private inline function get_locked():Bool return _locked;
+	private function set_locked(v:Bool):Bool
+	{
+		if (_locked == v) return _locked;
+		_locked = v;
+		applyLockedToButtons();
+		return _locked;
+	}
 
 	/**
 	 * Optional per-group theme.
@@ -59,6 +71,7 @@ class FlxUXGroup extends FlxGroup
 			buttonLabelColorHover = null;
 			buttonLabelColorDown = null;
 			buttonLabelColorDisabled = null;
+			buttonLabelColorLocked = null;
 			buttonLabelAlign = null;
 			buttonLabelFactory = null;
 			focusMode = null;
@@ -91,6 +104,7 @@ class FlxUXGroup extends FlxGroup
 			buttonLabelColorHover = value.buttonLabelColorHover;
 			buttonLabelColorDown = value.buttonLabelColorDown;
 			buttonLabelColorDisabled = value.buttonLabelColorDisabled;
+			buttonLabelColorLocked = value.buttonLabelColorLocked;
 			buttonLabelAlign = switch (StringTools.trim(value.buttonLabelAlign).toLowerCase())
 			{
 				case "left": flixel.text.FlxText.FlxTextAlign.LEFT;
@@ -134,7 +148,6 @@ class FlxUXGroup extends FlxGroup
 	 */
 	public var onCancel:Void->Void;
 
-	// Focus highlight settings (null => fall back to FlxUXCore, then built-in defaults)
 	public var focusMode:Null<FlxUXFocusMode> = null;
 	/** Default button skin graphic input for buttons in this group (null => FlxUXCore.buttonGraphic). */
 	public var buttonGraphic:Null<FlxUXGraphicInput> = null;
@@ -148,18 +161,18 @@ class FlxUXGroup extends FlxGroup
 	public var buttonAnimDown:Null<Array<Int>> = null;
 	public var buttonAnimDisabled:Null<Array<Int>> = null;
 
-	// Button sounds (null => fall back to FlxUXCore, default is no sounds)
 	public var buttonSoundOver:Null<FlxSoundAsset> = null;
 	public var buttonSoundDown:Null<FlxSoundAsset> = null;
 	public var buttonSoundClick:Null<FlxSoundAsset> = null;
 
-	// Button labels (null => fall back to FlxUXCore)
 	public var buttonLabelFont:Null<String> = null;
 	public var buttonLabelSize:Int = 0;
 	public var buttonLabelColor:Null<flixel.util.FlxColor> = null;
 	public var buttonLabelColorHover:Null<flixel.util.FlxColor> = null;
 	public var buttonLabelColorDown:Null<flixel.util.FlxColor> = null;
 	public var buttonLabelColorDisabled:Null<flixel.util.FlxColor> = null;
+	/** Optional per-group label color when a FlxUXButton is locked (forced DISABLED). */
+	public var buttonLabelColorLocked:Null<flixel.util.FlxColor> = null;
 	public var buttonLabelAlign:Null<flixel.text.FlxText.FlxTextAlign> = null;
 	public var buttonLabelFactory:Null<flixel.ux.FlxUXCore.FlxUXLabelFactory> = null;
 
@@ -222,8 +235,6 @@ class FlxUXGroup extends FlxGroup
 	 */
 	public function refreshTheme():Void
 	{
-		// Update highlight padding if this group hasn't customized it.
-		// Heuristic: if still at the built-in default (12), follow theme.
 		var theme = FlxUXCore.theme;
 		if (highlightPadX == 12 && theme != null)
 			highlightPadX = theme.highlightPadX;
@@ -232,8 +243,6 @@ class FlxUXGroup extends FlxGroup
 
 		if (buttons != null)
 		{
-			// Don't rely on iterating the group directly: some targets/backends can throw
-			// For example, some backends can null-access an internal length. Iterate members defensively.
 			var members = buttons.members;
 			if (members != null)
 			{
@@ -242,17 +251,19 @@ class FlxUXGroup extends FlxGroup
 					var b = members[i];
 					if (b == null) continue;
 					b.uxGroup = this;
-					// applySkin() already applies label options and state colors using precedence:
-					// button -> group -> core. Calling applyLabelOptions() again here can cause
-					// label metrics to churn (fieldWidth changes) and creates the "hover changes width"
-					// jitter seen in the theme demo.
-					b.applySkin();
+					b.locked = _locked;
+					b.refreshSkinFromDefaults();
 				}
 			}
 		}
 
-		// Force highlight visuals to update using the new focus settings.
 		updateFocusGraphics();
+	}
+
+	/** Reverses this group's button order (layout helpers like `spread()` and `stack()` follow this order). */
+	public function reverse():Void
+	{
+		orderedButtons.reverse();
 	}
 	public var focusFrameGraphic:Null<FlxUXGraphicInput> = null;
 	public var focusNextToGraphic:Null<FlxUXGraphicInput> = null;
@@ -273,9 +284,6 @@ class FlxUXGroup extends FlxGroup
 	/** Padding (in pixels) added around the focused button when drawing the focus FRAME. */
 	public var highlightPadY:Float = 12;
 
-	// ---------------------------------------------------------------------------------------------
-	// Transform + bounds
-	// ---------------------------------------------------------------------------------------------
 
 	/**
 	 * Group position (moves all tracked children).
@@ -295,18 +303,12 @@ class FlxUXGroup extends FlxGroup
 	/** Height of the button bounds. Read-only. */
 	public var height(get, never):Float;
 
-	// ---------------------------------------------------------------------------------------------
-	// Layers
-	// ---------------------------------------------------------------------------------------------
 
 	/** Buttons layer. */
 	public var buttons(default, null):FlxTypedGroup<FlxUXButton>;
 	/** Sprite layer for focus/highlight visuals. */
 	public var sprites(default, null):FlxTypedGroup<FlxSprite>;
 
-	// ---------------------------------------------------------------------------------------------
-	// Internals
-	// ---------------------------------------------------------------------------------------------
 
 	private var orderedButtons:Array<FlxUXButton> = [];
 	private var buttonBasePos:Map<FlxUXButton, FlxPoint> = new Map();
@@ -378,6 +380,7 @@ class FlxUXGroup extends FlxGroup
 		if (button != null)
 		{
 			button.uxGroup = this;
+			button.locked = _locked;
 			button.applySkin();
 			buttons.add(button);
 			trackButton(button);
@@ -473,7 +476,8 @@ class FlxUXGroup extends FlxGroup
 	 */
 	public function getEligibleButtonsOrdered():Array<FlxUXButton>
 	{
-		if (!uxActive) return [];
+		if (!uxActive || _locked) return [];
+		if (!exists || !alive || !visible || !active) return [];
 
 		var out:Array<FlxUXButton> = [];
 		for (b in orderedButtons)
@@ -482,6 +486,20 @@ class FlxUXGroup extends FlxGroup
 				out.push(b);
 		}
 		return out;
+	}
+
+	private function applyLockedToButtons():Void
+	{
+		if (buttons == null || buttons.members == null) return;
+		var members = buttons.members;
+		for (i in 0...members.length)
+		{
+			var b = members[i];
+			if (b == null) continue;
+			b.locked = _locked;
+		}
+		if (_locked && FlxUXCore.focused != null && containsButton(FlxUXCore.focused))
+			FlxUXCore.setFocused(null);
 	}
 
 	private static function insertDense<T>(arr:Array<T>, item:T, ?order:Int):Void
@@ -730,7 +748,6 @@ class FlxUXGroup extends FlxGroup
 			cellW = Math.max(cellW, b.width);
 			cellH = Math.max(cellH, b.height);
 		}
-		// Count buttons (orderedButtons can contain nulls).
 		var count:Int = 0;
 		for (b in orderedButtons)
 			if (b != null) count++;
@@ -825,9 +842,7 @@ class FlxUXGroup extends FlxGroup
 	override public function update(elapsed:Float):Void
 	{
 		if (!exists || !active) return;
-		// Keep focus highlight animation running even if we reposition it manually.
 		if (focusHighlighter != null) focusHighlighter.update(elapsed);
-		// Keep highlighter in sync even if focus changed without a direct callback.
 		updateFocusGraphics();
 		super.update(elapsed);
 	}
@@ -839,8 +854,6 @@ class FlxUXGroup extends FlxGroup
 	{
 		if (focusHighlighter == null) return;
 
-		// Only show focus highlight in NAV mode (keyboard/gamepad).
-		// In POINTER mode (mouse/touch), rely on hover/pressed visuals.
 		if (FlxUXCore.mode != flixel.ux.FlxUXCore.FlxUXInputMode.NAV)
 		{
 			focusHighlighter.visible = false;
@@ -874,8 +887,6 @@ class FlxUXGroup extends FlxGroup
 		var overlayOffX:Float = (focusOverlayOffsetX != null) ? focusOverlayOffsetX : FlxUXCore.focusOverlayOffsetX;
 		var overlayOffY:Float = (focusOverlayOffsetY != null) ? focusOverlayOffsetY : FlxUXCore.focusOverlayOffsetY;
 
-		// "Buffer" semantics: pad is extra space OUTSIDE the button.
-		// Example pad=12 => highlight is 24px larger in both directions and positioned -12,-12.
 		var themePadX:Float = (FlxUXCore.theme != null) ? FlxUXCore.theme.highlightPadX : 12;
 		var themePadY:Float = (FlxUXCore.theme != null) ? FlxUXCore.theme.highlightPadY : 12;
 		var padX = (highlightPadX != 12) ? highlightPadX : themePadX;
@@ -887,7 +898,6 @@ class FlxUXGroup extends FlxGroup
 		if (tw < 1) tw = 1;
 		if (th < 1) th = 1;
 
-		// Apply focus visuals based on style.
 		switch (mode)
 		{
 			case FRAME:
@@ -910,7 +920,6 @@ class FlxUXGroup extends FlxGroup
 				applyFocusOverlay(overlayInput, overlayOffX, overlayOffY, focused);
 
 			default:
-				// HOVER_ONLY / DIM_UNFOCUSED: no group-level sprite.
 				focusHighlighter.visible = false;
 				if (focusSideLeft != null) focusSideLeft.visible = false;
 				if (focusSideRight != null) focusSideRight.visible = false;
@@ -922,7 +931,6 @@ class FlxUXGroup extends FlxGroup
 		if (focusHighlighter.visible)
 			focusHighlighter.scrollFactor.set(focused.scrollFactor.x, focused.scrollFactor.y);
 
-		// Position (for FRAME highlighter only)
 		if (focusHighlighter.visible)
 		{
 			focusHighlighter.x = tx;
@@ -935,7 +943,6 @@ class FlxUXGroup extends FlxGroup
 			}
 		}
 
-		// Side/overlay sprites base positions are updated inside their helpers.
 	}
 
 
@@ -944,22 +951,17 @@ class FlxUXGroup extends FlxGroup
 		if (input == null || focusHighlighter == null)
 			return;
 
-		// Avoid reloading/rebuilding the same highlight graphic every frame (would reset animation).
-		// This key is about *rendered output*, not the focused button.
 		inline function setKey(k:String):Bool
 		{
-				if (lastHighlightKey == k)
+			if (lastHighlightKey == k)
 				return false;
 				lastHighlightKey = k;
 			return true;
 		}
 
-		// Support 9-slice object
 		if (Std.isOfType(input, flixel.ux.FlxUX9Slice))
 		{
 			var ns:flixel.ux.FlxUX9Slice = cast input;
-			// If the source is a spritesheet (frameHeight>0) allow animation by stacking
-			// rendered frames vertically into a single tw x (th*frames) bitmap.
 			var frames = 1;
 			if (ns.frameWidth > 0 && ns.frameHeight > 0)
 			{
@@ -1006,7 +1008,6 @@ class FlxUXGroup extends FlxGroup
 			return;
 		}
 
-		// Anything else: treat as a standard Flixel graphic input.
 		var g = flixel.ux.FlxUX9Slice.toGraphic(input);
 		if (g != null)
 		{
@@ -1028,7 +1029,6 @@ class FlxUXGroup extends FlxGroup
 			return;
 		}
 
-		// Left
 		focusSideLeft.visible = true;
 		var gL = flixel.ux.FlxUX9Slice.toGraphic(leftInput);
 		if (gL != null) focusSideLeft.loadGraphic(gL);
@@ -1036,7 +1036,6 @@ class FlxUXGroup extends FlxGroup
 		focusSideLeft.x = focused.x - focusSideLeft.width - gap;
 		focusSideLeft.y = focused.y + (focused.height - focusSideLeft.height) * 0.5 + offY;
 
-		// Right
 		if (mirrored)
 		{
 			focusSideRight.visible = true;

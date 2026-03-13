@@ -7,8 +7,6 @@ import flixel.FlxSubState;
 import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
-import flixel.util.FlxColor;
-import flixel.ux.FlxUXButton;
 import flixel.ux.FlxUXGroup;
 
 class AdvancedExamplesSubState extends FlxSubState
@@ -20,66 +18,78 @@ class AdvancedExamplesSubState extends FlxSubState
 	{
 		super.create();
 		/**
-		 * Demo setup - you can ignore this section
+		 *  Demo setup - you can ignore this section
 		 * =====================================================================
 		 **/
 		add(DemoUi.makeSolidBackdrop());
 
-		// A simple sliding container: everything in this substate starts offscreen and tweens in.
 		slideContainer = new FlxSprite();
 		slideContainer.scrollFactor.set();
-		slideContainer.exists = false; // dummy anchor
+		slideContainer.exists = false;
 		add(slideContainer);
 
 		var back = DemoUi.addBackButton(this);
-		back.x += FlxG.width; // start off-screen with the rest
+		back.x += FlxG.width;
 
 		var header = DemoUi.makeHeader(
 			"Advanced examples",
-			"A few patterns you’ll probably use in real menus: mixed sizes, custom label formatting, and motion.");
+			"A common menu pattern: reordering a list of buttons, then re-applying layout helpers.");
 		header.x += FlxG.width;
 		add(header);
 
-		// Example box
-		var box = DemoUi.makeBox(24 + FlxG.width, 140, FlxG.width - 48, FlxG.height - 180, "Mixed sizes + custom label format");
+		var box = DemoUi.makeBox(24 + FlxG.width, 140, FlxG.width - 48, FlxG.height - 180, "");
 		add(box.border);
-		add(box.label);
-		/**
+		/** 
 		 * END OF DEMO SETUP
 		 * =====================================================================
 		 **/
 
-		// This substate shows FlxUXGroup + FlxUXButton working fine while being moved/tweened.
-		// It also demonstrates label overrides at the Core/Group/Button levels.
-		var g = new FlxUXGroup();
-		g.x = 40 + FlxG.width;
-		g.y = 210;
-		add(g);
+		var contentTop = 168;
+		var topRow = new FlxUXGroup();
+		topRow.y = contentTop;
+		add(topRow);
 
-		// Group-level label defaults (override FlxUXCore defaults for all buttons in this group)
-		g.buttonLabelSize = 14;
-		g.buttonLabelColor = 0xFF8EE6FF;
+		for (t in ["1", "2", "3", "4", "5"])
+		{
+			var b = topRow.addButton(t, null);
+			b.resize(80, 38);
+		}
+		topRow.spread(12);
+		topRow.x = 24 + (FlxG.width - 48 - topRow.width) * 0.5;
 
-		var b1:FlxUXButton = g.addButton("Small", () -> {});
-		b1.resize(160, 36);
+		var reverseBtnW = 340;
+		var reverseBtn = new flixel.ux.FlxUXButton(24 + FlxG.width + (FlxG.width - 48 - reverseBtnW) * 0.5, contentTop + 58, "Reverse", () ->
+		{
+			topRow.reverse();
+			topRow.spread(12);
+			topRow.x = 24 + (FlxG.width - 48 - topRow.width) * 0.5;
+		});
+		reverseBtn.resize(reverseBtnW, 40);
+		add(reverseBtn);
 
-		var b2:FlxUXButton = g.addButton("Default size (auto)", () -> {});
+		var enabledDisabled = new FlxUXGroup();
+		var pairTotalW = 520;
+		enabledDisabled.x = 24 + FlxG.width + (FlxG.width - 48 - pairTotalW) * 0.5;
+		enabledDisabled.y = contentTop + 120;
+		add(enabledDisabled);
 
-		var b3:FlxUXButton = g.addButton("Big action", () -> {});
-		b3.resize(320, 48);
-		// Button-level label overrides (override group/core for this button only)
-		b3.buttonLabelSize = 18;
-		b3.buttonLabelColor = FlxColor.WHITE;
-		b3.applyLabelOptions();
-
-		g.stack(10);
+		var enabledBtn = enabledDisabled.addButton("Enabled", null);
+		var pairGap = 16;
+		var pairBtnW = Std.int((pairTotalW - pairGap) / 2);
+		enabledBtn.resize(pairBtnW, 40);
+		var disabledBtn = enabledDisabled.addButton("Disabled", null);
+		disabledBtn.resize(pairBtnW, 40);
+		disabledBtn.locked = true;
+		enabledDisabled.spread(pairGap);
 
 		// Slide everything in.
 		FlxTween.tween(back, { x: back.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
 		FlxTween.tween(header, { x: header.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
 		FlxTween.tween(box.border, { x: box.border.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
-		FlxTween.tween(box.label, { x: box.label.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
-		FlxTween.tween(g, { x: g.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
+		// box.label intentionally not used on this screen.
+		FlxTween.tween(topRow, { x: topRow.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
+		FlxTween.tween(reverseBtn, { x: reverseBtn.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
+		FlxTween.tween(enabledDisabled, { x: enabledDisabled.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
 	}
 
 }

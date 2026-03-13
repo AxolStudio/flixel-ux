@@ -14,7 +14,7 @@ class FocusModesSubState extends FlxSubState
 	{
 		super.create();
 		/**
-		 * Demo setup - you can ignore this section
+		 *  Demo setup - you can ignore this section
 		 * =====================================================================
 		 **/
 		add(DemoUi.makeSolidBackdrop());
@@ -23,7 +23,7 @@ class FocusModesSubState extends FlxSubState
 			"Focus modes",
 			"FlxUX has 5 focus modes. The highlight graphics are customizable (and can be disabled).")
 		);
-		/**
+		/** 
 		 * END OF DEMO SETUP
 		 * =====================================================================
 		 **/
@@ -32,8 +32,6 @@ class FocusModesSubState extends FlxSubState
 			{ name: "FRAME", mode: FlxUXFocusMode.FRAME },
 			{ name: "NEXT_TO", mode: FlxUXFocusMode.NEXT_TO },
 			{ name: "OVERLAY", mode: FlxUXFocusMode.OVERLAY },
-			{ name: "HOVER_ONLY", mode: FlxUXFocusMode.HOVER_ONLY },
-			{ name: "DIM_UNFOCUSED", mode: FlxUXFocusMode.DIM_UNFOCUSED },
 		];
 
 		var topY = 120;
@@ -50,12 +48,7 @@ class FocusModesSubState extends FlxSubState
 			add(box.label);
 
 			var g = new FlxUXGroup();
-			// For this demo, we want every column to be usable in NAV.
-			// HOVER_ONLY / DIM_UNFOCUSED are pointer-oriented by design, so we demonstrate them
-			// as *visual styles* while still providing NAV-visible focus feedback.
-			g.focusMode = (labels[i].mode == FlxUXFocusMode.HOVER_ONLY || labels[i].mode == FlxUXFocusMode.DIM_UNFOCUSED)
-				? FlxUXFocusMode.FRAME
-				: labels[i].mode;
+			g.focusMode = labels[i].mode;
 			g.buttonLabelColor = 0xFF666666;
 			g.buttonLabelColorHover = 0xFF333333;
 			g.buttonLabelColorDown = 0xFF333333;

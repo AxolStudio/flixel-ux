@@ -12,7 +12,7 @@ class FlxUXPlugin extends FlxBasic
 	public function new()
 	{
 		super();
-		visible = false; // no draw
+		visible = false;
 	}
 
 	override public function update(elapsed:Float):Void

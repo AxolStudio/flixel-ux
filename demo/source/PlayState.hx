@@ -37,6 +37,7 @@ class PlayState extends FlxState
 		menu.addButton("Focus modes", () -> openSubState(new FocusModesSubState()));
 		menu.addButton("Themes + overrides", () -> openSubState(new ThemesSubState()));
 		menu.addButton("Layout helpers", () -> openSubState(new LayoutHelpersSubState()));
+		menu.addButton("Navigation modes", () -> openSubState(new NavigationModesSubState()));
 		menu.addButton("Advanced examples", () -> openSubState(new AdvancedExamplesSubState()));
 
 		#if sys

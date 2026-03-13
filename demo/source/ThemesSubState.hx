@@ -19,12 +19,13 @@ class ThemesSubState extends FlxSubState
 	private var redTheme:FlxUXTheme;
 	private var groupOnly:FlxUXGroup;
 	private var manualButton:FlxUXButton;
+	private var manualGroup:FlxUXGroup;
 
 	override public function create():Void
 	{
 		super.create();
 		/**
-		 * Demo setup - you can ignore this section
+		 *  Demo setup - you can ignore this section
 		 * =====================================================================
 		 **/
 		themeBefore = FlxUXCore.theme;
@@ -42,15 +43,19 @@ class ThemesSubState extends FlxSubState
 		info = new FlxText(24, 86, FlxG.width - 48, "");
 		info.setFormat(null, 12, 0xFFB9C0D0, LEFT);
 		add(info);
-		/**
+		/** 
 		 * END OF DEMO SETUP
 		 * =====================================================================
 		 **/
 
 		var gap:Int = 12;
 		var startX:Int = 16;
-		var startY:Int = 120;
-		var bottomH:Int = FlxG.height - 150;
+		// Make the section boxes a bit shorter so the header/info never crowd them.
+		// Keep the boxes flush with the bottom of the screen.
+		var bottomMargin:Int = 16;
+		var boxBottom:Int = FlxG.height - bottomMargin;
+		var bottomH:Int = FlxG.height - 180;
+		var startY:Int = boxBottom - bottomH;
 		var colW:Int = Std.int((FlxG.width - startX * 2 - gap * 2) / 3);
 
 		// These 3 sections demonstrate the 3 levels of theming:
@@ -68,6 +73,9 @@ class ThemesSubState extends FlxSubState
 		globalGroup.addButton("Switch to Default", switchDefaultGlobally);
 		globalGroup.addButton("Switch to Blue", switchBlueGlobally);
 		globalGroup.addButton("Switch to Red", switchRedGlobally);
+		// Global group should always follow the global theme.
+		globalGroup.buttonUseAnim = null;
+		globalGroup.buttonSkinFps = 0;
 		for (b in globalGroup.getEligibleButtonsOrdered()) b.resize(colW - 32, 38);
 		globalGroup.stack(10);
 
@@ -81,19 +89,43 @@ class ThemesSubState extends FlxSubState
 		groupOnly.addButton("Switch group to Default", switchDefaultGroup);
 		groupOnly.addButton("Switch group to Blue", switchBlueGroup);
 		groupOnly.addButton("Switch group to Red", switchRedGroup);
+		// This group should demonstrate theme objects only, not the core animated default skin.
+		groupOnly.buttonUseAnim = null;
+		groupOnly.buttonSkinFps = 0;
 		for (b in groupOnly.getEligibleButtonsOrdered()) b.resize(colW - 32, 38);
 		groupOnly.stack(10);
 
 		var boxManual = DemoUi.makeBox(startX + (colW + gap) * 2, startY, colW, bottomH, "No theme (manual overrides)");
 		add(boxManual.border);
 		add(boxManual.label);
-		var manualGroup = new FlxUXGroup();
+		manualGroup = new FlxUXGroup();
 		manualGroup.x = boxManual.border.x + 16;
 		manualGroup.y = boxManual.border.y + 50;
 		add(manualGroup);
-		manualGroup.addButton("Make the button text green", makeButtonGreen);
-		manualButton = manualGroup.addButton("This button is modified manually", () -> {});
-		for (b in manualGroup.getEligibleButtonsOrdered()) b.resize(colW - 32, 38);
+		// Ensure manual overrides stay readable and don't change on hover/press.
+		manualGroup.buttonUseAnim = null;
+		manualGroup.buttonSkinFps = 0;
+		manualGroup.buttonLabelColorHover = null;
+		manualGroup.buttonLabelColorDown = null;
+
+		// 1) Different label color (no action)
+		manualButton = manualGroup.addButton("Custom label color", null);
+		manualButton.buttonLabelColor = 0xFF1E7FA8;
+		manualButton.buttonLabelColorHover = 0xFF1E7FA8;
+		manualButton.buttonLabelColorDown = 0xFF1E7FA8;
+		manualButton.applyLabelOptions();
+		manualButton.resize(colW - 32, 38);
+
+		// 2) Larger button
+		var big = manualGroup.addButton("Larger button", null);
+		big.resize(colW - 32, 54);
+
+		// 3) Another property: left-aligned label
+		var left = manualGroup.addButton("Left-aligned label", null);
+		left.buttonLabelAlign = LEFT;
+		left.applyLabelOptions();
+		left.resize(colW - 32, 38);
+
 		manualGroup.stack(10);
 
 		switchDefaultGlobally();
@@ -114,6 +146,10 @@ class ThemesSubState extends FlxSubState
 	{
 		// Global theme: affects every FlxUXGroup / FlxUXButton that doesn't have overrides.
 		FlxUXCore.theme = new FlxUXTheme();
+		// Keep the demo deterministic: the default core theme uses the animated sheet by default.
+		// This substate is about theme objects, so force the core defaults to be static here.
+		FlxUXCore.buttonUseAnim = false;
+		FlxUXCore.buttonSkinFps = 0;
 		setInfo("GLOBAL THEME\nFlxUXCore.theme = new FlxUXTheme();");
 	}
 
@@ -121,6 +157,8 @@ class ThemesSubState extends FlxSubState
 	{
 		// Global theme can be any FlxUXTheme object.
 		FlxUXCore.theme = blueTheme;
+		FlxUXCore.buttonUseAnim = false;
+		FlxUXCore.buttonSkinFps = 0;
 		setInfo("GLOBAL THEME\nFlxUXCore.theme = blueTheme;\n(blueTheme is created in code)");
 	}
 
@@ -128,6 +166,8 @@ class ThemesSubState extends FlxSubState
 	{
 		// JSON themes go through FlxUXTheme.fromJson(...) first.
 		FlxUXCore.theme = redTheme;
+		FlxUXCore.buttonUseAnim = false;
+		FlxUXCore.buttonSkinFps = 0;
 		setInfo("GLOBAL THEME\nFlxUXCore.theme = redTheme;\n(redTheme was loaded from JSON)");
 	}
 
@@ -143,6 +183,8 @@ class ThemesSubState extends FlxSubState
 	{
 		// This group now uses blueTheme, even if the global theme is red/default.
 		groupOnly.theme = blueTheme;
+		groupOnly.buttonUseAnim = false;
+		groupOnly.buttonSkinFps = 0;
 		setInfo("GROUP THEME\ngroupOnly.theme = blueTheme;");
 	}
 
@@ -150,15 +192,9 @@ class ThemesSubState extends FlxSubState
 	{
 		// This group now uses redTheme, even if the global theme is blue/default.
 		groupOnly.theme = redTheme;
+		groupOnly.buttonUseAnim = false;
+		groupOnly.buttonSkinFps = 0;
 		setInfo("GROUP THEME\ngroupOnly.theme = redTheme;");
-	}
-
-	private function makeButtonGreen():Void
-	{
-		// Manual override: no theme involved.
-		manualButton.buttonLabelColor = FlxColor.LIME;
-		manualButton.applyLabelOptions();
-		setInfo("MANUAL OVERRIDE\nmanualButton.buttonLabelColor = FlxColor.LIME;");
 	}
 
 	function makeBlueTheme():FlxUXTheme

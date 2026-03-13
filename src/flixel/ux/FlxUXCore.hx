@@ -9,6 +9,7 @@ import openfl.display.BitmapData;
 import flixel.system.FlxAssets.FlxSoundAsset;
 import flixel.text.FlxText;
 import flixel.text.FlxText.FlxTextAlign;
+import openfl.Assets;
 
 /**
  * Accepts common Flixel-friendly graphic inputs:
@@ -31,9 +32,6 @@ typedef FlxUXLabelFactory = (text:String) -> flixel.FlxSprite;
  */
 class FlxUXCore
 {
-	// Note: FlxUXGraphicInput is declared at file scope (above) as a typedef.
-
-	// --- Built-in defaults (so users can override and easily restore) ---
 	public static inline var DEFAULT_MOUSE_GRAPHIC:String = "flixel-ux/mouse_cursor.png";
 	public static inline var DEFAULT_BUTTON_SKIN_FPS:Int = 10;
 	public static inline var DEFAULT_BUTTON_FRAMES_GRAPHIC:String = "flixel-ux/ux/button.png";
@@ -48,7 +46,6 @@ class FlxUXCore
 	public static var DEFAULT_BUTTON_GRAPHIC_ANIM:FlxUX9Slice =
 		new FlxUX9Slice(DEFAULT_BUTTON_FRAMES_ANIM_GRAPHIC, 16, 16, 3, 7, 3, 7);
 
-	// --- Button look (null => use built-in default procedural skin) ---
 	/**
 	 * Default button skin graphic input.
 	 *
@@ -72,7 +69,6 @@ class FlxUXCore
 	public static var buttonAnimDown:Array<Int> = DEFAULT_BUTTON_ANIM_DOWN;
 	public static var buttonAnimDisabled:Array<Int> = DEFAULT_BUTTON_ANIM_DISABLED;
 
-	// --- Button sounds (optional; default is no sounds) ---
 	/** Sound played when the pointer moves over a button (or it becomes highlighted). Null = no sound. */
 	public static var buttonSoundOver:Null<FlxSoundAsset> = null;
 	/** Sound played when a button is pressed down. Null = no sound. */
@@ -80,7 +76,6 @@ class FlxUXCore
 	/** Sound played when a button click/activation completes (mouse up inside / click). Null = no sound. */
 	public static var buttonSoundClick:Null<FlxSoundAsset> = null;
 
-	// --- Button labels (optional; defaults to FlxText label) ---
 	/** Default label font (asset id). Null uses the default font. */
 	public static var buttonLabelFont:Null<String> = null;
 	/** Default label size. */
@@ -93,11 +88,13 @@ class FlxUXCore
 	public static var buttonLabelColorDown:Null<flixel.util.FlxColor> = 0xFF333333;
 	/** Default label color when disabled. Null => fall back to buttonLabelColor. */
 	public static var buttonLabelColorDisabled:Null<flixel.util.FlxColor> = 0xFF777777;
+	/** Default label color when a FlxUXButton is locked (forced DISABLED). Null => fall back to buttonLabelColorDisabled. */
+	public static var buttonLabelColorLocked:Null<flixel.util.FlxColor> = 0xFF111111;
 	/** Default label alignment (recommended CENTER for buttons). */
 	public static var buttonLabelAlign:FlxTextAlign = CENTER;
 	/** Optional factory for creating custom label sprites (e.g. FlxBitmapText). Null uses FlxText. */
 	public static var buttonLabelFactory:Null<FlxUXLabelFactory> = null;
-	// --- Focus highlight configuration (null => core/group fallback => built-in default) ---
+
 	/** Current focus highlight mode (defaults to FRAME). */
 	public static var focusMode:FlxUXFocusMode = FlxUXFocusMode.FRAME;
 	/** Frames per second for animated focus frame (when focusFrameGraphic is a spritesheet 9-slice). */
@@ -199,6 +196,7 @@ class FlxUXCore
 		buttonLabelColorHover = 0xFF333333;
 		buttonLabelColorDown = 0xFF333333;
 		buttonLabelColorDisabled = 0xFF777777;
+		buttonLabelColorLocked = 0xFF111111;
 		buttonLabelAlign = CENTER;
 		buttonLabelFactory = null;
 		focusMode = FlxUXFocusMode.FRAME;
@@ -234,8 +232,21 @@ class FlxUXCore
 		buttonLabelColorHover = 0xFF333333;
 		buttonLabelColorDown = 0xFF333333;
 		buttonLabelColorDisabled = 0xFF777777;
+		buttonLabelColorLocked = 0xFF111111;
 		buttonLabelAlign = CENTER;
 		buttonLabelFactory = null;
+	}
+
+	/**
+	 * Convenience helper for demos/apps that want to load a theme by asset path.
+	 *
+	 * This sets `FlxUXCore.theme` using JSON loaded from `openfl.Assets.getText(assetId)`.
+	 */
+	public static function loadThemeFromAsset(assetId:String):Void
+	{
+		if (assetId == null) return;
+		var json = Assets.getText(assetId);
+		theme = FlxUXTheme.fromJson(json);
 	}
 
 	/** Forces the built-in static button sheet (no per-state animation playback). */
@@ -336,8 +347,6 @@ class FlxUXCore
 	/** Applies the currently active theme to any core-wide defaults. */
 	public static function applyTheme():Void
 	{
-		// Apply theme values to core-wide defaults.
-		// Sounds are handled separately.
 		if (theme == null)
 			theme = new FlxUXTheme();
 
@@ -426,8 +435,6 @@ class FlxUXCore
 	{
 		if (initialized) return;
 		initialized = true;
-		// FlxUX must not initialize until FlxGame has been constructed.
-		// In some setups FlxUXGroup may be created very early; safely no-op until FlxG.inputs exists.
 		if (flixel.FlxG.inputs == null)
 			return;
 
@@ -497,7 +504,6 @@ class FlxUXCore
 
 		ready = value;
 
-		// When input becomes ready in NAV mode, ensure we have a deterministic focus.
 		if (ready && mode == FlxUXCore.FlxUXInputMode.NAV)
 			tryFocusFirstEligible();
 
@@ -569,7 +575,6 @@ class FlxUXCore
 		if (!initialized) init();
 		if (pendingAutoReady)
 		{
-			// If autoReady is enabled, allow input again once we're updating inside the new state.
 			pendingAutoReady = false;
 			ready = true;
 		}
@@ -579,7 +584,6 @@ class FlxUXCore
 
 		actions.update();
 
-		// Always allow mode switching & cursor handling, independent from NAV capture.
 		#if FLX_NO_MOUSE
 		var mouseInput = false;
 		#else
@@ -590,7 +594,6 @@ class FlxUXCore
 		if (mouseInput || touchInput)
 		{
 			mode = FlxUXCore.FlxUXInputMode.POINTER;
-			// Touch behaves like pointer UX but should not show a mouse cursor.
 			pointerPreferred = mouseInput;
 		}
 		else if (actions.up.triggered || actions.down.triggered || actions.left.triggered || actions.right.triggered
@@ -619,12 +622,9 @@ class FlxUXCore
 		if (!active)
 			return;
 
-		// POINTER: FlxButtons handle mouse clicks themselves.
-
-		// NAV: only if allowed by policy and there are eligible nav targets (AUTO).
 		if (mode == FlxUXCore.FlxUXInputMode.NAV && navEnabled)
 		{
-			var navTargets = getFlattenedEligibleNavButtons(); // groups that capture nav only
+			var navTargets = getFlattenedEligibleNavButtons();
 			var hasTargets = navTargets.length > 0;
 
 			var shouldProcessNav = switch (navCapturePolicy)
@@ -634,43 +634,32 @@ class FlxUXCore
 				case FlxUXNavCapturePolicy.AUTO: hasTargets;
 			};
 
-			if (shouldProcessNav && effectiveNavStyle() == FlxUXNavStyle.LINEAR)
+			if (shouldProcessNav)
 			{
-				// Sync focused button visuals with confirm pressed state.
 				var confirmHeldNow = actions.confirmDown;
-				if (focused != null)
-					focused.setNavPressed(confirmHeldNow);
+				if (focused != null) focused.setNavPressed(confirmHeldNow);
 				navConfirmHeld = confirmHeldNow;
 
-				if (actions.right.triggered || actions.down.triggered)
-					focusNext(navTargets);
-				else if (actions.left.triggered || actions.up.triggered)
-					focusPrev(navTargets);
-
-				// Activate on release (button-up) so holding confirm shows pressed state.
-				if (actions.confirmReleased)
+				if (effectiveNavStyle() == FlxUXNavStyle.LINEAR)
 				{
-					if (focused != null) focused.setNavPressed(false);
-					activateFocused();
+					if (actions.right.triggered || actions.down.triggered)
+						focusNext(navTargets);
+					else if (actions.left.triggered || actions.up.triggered)
+						focusPrev(navTargets);
+				}
+				else
+				{
+					var dirX = 0;
+					var dirY = 0;
+					if (actions.left.triggered) dirX = -1;
+					else if (actions.right.triggered) dirX = 1;
+					else if (actions.up.triggered) dirY = -1;
+					else if (actions.down.triggered) dirY = 1;
+
+					if (dirX != 0 || dirY != 0)
+						focusSpatial(navTargets, dirX, dirY);
 				}
 
-				if (actions.cancel.triggered)
-					cancel();
-			}
-			else if (shouldProcessNav)
-			{
-				// SPATIAL (or future): directionally pick the nearest neighbor.
-				var dirX = 0;
-				var dirY = 0;
-				if (actions.left.triggered) dirX = -1;
-				else if (actions.right.triggered) dirX = 1;
-				else if (actions.up.triggered) dirY = -1;
-				else if (actions.down.triggered) dirY = 1;
-
-				if (dirX != 0 || dirY != 0)
-					focusSpatial(navTargets, dirX, dirY);
-
-				// Activate on release (button-up) so holding confirm shows pressed state.
 				if (actions.confirmReleased)
 				{
 					if (focused != null) focused.setNavPressed(false);
@@ -699,7 +688,6 @@ class FlxUXCore
 		if (focused == null) return;
 		if (list == null || list.length == 0) return;
 
-		// If the focused group requests LINEAR (override), honor it.
 		if (effectiveNavStyle() != FlxUXNavStyle.SPATIAL)
 		{
 			if (dirX > 0 || dirY > 0) focusNext(list);
@@ -717,7 +705,6 @@ class FlxUXCore
 			var dx = cx - origin.x;
 			var dy = cy - origin.y;
 
-			// Direction filter
 			if (dirX < 0 && dx >= 0) return Math.POSITIVE_INFINITY;
 			if (dirX > 0 && dx <= 0) return Math.POSITIVE_INFINITY;
 			if (dirY < 0 && dy >= 0) return Math.POSITIVE_INFINITY;
@@ -728,7 +715,6 @@ class FlxUXCore
 			return primary * 1000 + secondary;
 		}
 
-		// Pass 1: try within current group.
 		var best:FlxUXButton = null;
 		var bestScore = Math.POSITIVE_INFINITY;
 		for (b in list)
@@ -743,16 +729,11 @@ class FlxUXCore
 			}
 		}
 
-		// Pass 2: if no neighbor in-group, allow moving to another group.
-		// We do this in two steps:
-		//  1) choose the best *group* in the intended direction using group bounds
-		//  2) choose the best button within that group using the same scoring
 		if (best == null)
 		{
 			var bestGroup:FlxUXGroup = null;
 			var bestGroupScore = Math.POSITIVE_INFINITY;
 
-			// Find candidate groups (excluding the current one)
 			for (g in groups)
 			{
 				if (g == null || !g.active || !g.capturesNav || !g.uxActive) continue;
@@ -760,7 +741,6 @@ class FlxUXCore
 				var elig = g.getEligibleButtonsOrdered();
 				if (elig == null || elig.length == 0) continue;
 
-				// Use group button-bounds as a representative rectangle
 				var gx0 = g.boundsX;
 				var gy0 = g.boundsY;
 				var gx1 = gx0 + g.width;
@@ -768,9 +748,6 @@ class FlxUXCore
 				var gcx = (gx0 + gx1) * 0.5;
 				var gcy = (gy0 + gy1) * 0.5;
 
-				// Determine if the group is actually in the requested direction.
-				// For LEFT, the group's right edge must be <= origin.x (so it's not above/below-only).
-				// For UP, the group's bottom edge must be <= origin.y, etc.
 				if (dirX < 0 && gx1 > origin.x) continue;
 				if (dirX > 0 && gx0 < origin.x) continue;
 				if (dirY < 0 && gy1 > origin.y) continue;
@@ -805,7 +782,6 @@ class FlxUXCore
 			}
 			else
 			{
-				// Fallback to any button if no group qualifies (should be rare).
 				bestScore = Math.POSITIVE_INFINITY;
 				for (b in list)
 				{
@@ -918,11 +894,9 @@ class FlxUXCore
 		if (focused != null)
 		{
 			focused.setFocused(true);
-			// If confirm is already held while focus changes, keep pressed visuals in sync.
 			focused.setNavPressed(navConfirmHeld);
 		}
 
-		// Update per-group highlighter visuals.
 		if (prev != null)
 		{
 			var gPrev = prev.getUXGroup();
@@ -943,13 +917,14 @@ class FlxUXCore
 		var out:Array<FlxUXButton> = [];
 		for (g in groups)
 		{
-			if (g == null || !g.uxActive || !g.capturesNav) continue;
+			if (g == null) continue;
+			if (!g.exists || !g.alive || !g.visible || !g.active) continue;
+			if (!g.uxActive || !g.capturesNav) continue;
 			var buttons = g.getEligibleButtonsOrdered();
 			for (b in buttons)
 				out.push(b);
 		}
 
-		// keep focused valid
 		if (focused != null && out.indexOf(focused) < 0)
 		{
 			if (focused != null) focused.setFocused(false);
@@ -1008,10 +983,6 @@ enum FlxUXFocusMode
 	DIM_UNFOCUSED;
 }
 
-// -------------------------------------------------------------------------------------------------
-// Enums (kept here so FlxUXCore is the one-stop shop for configuration types)
-// -------------------------------------------------------------------------------------------------
-
 /**
  * Global input mode used by FlxUX.
  *
@@ -1066,5 +1037,3 @@ enum FlxUXNavCapturePolicy
 	/** Never process NAV (mouse/touch-only UX). */
 	NEVER;
 }
-
-// FlxUXFocusMode is declared at the bottom of this file.

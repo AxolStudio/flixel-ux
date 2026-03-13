@@ -12,11 +12,9 @@ class FlxUXTheme
 	/** Default alpha applied to disabled widgets (where applicable). */
 	public var disabledAlpha:Float = 0.4;
 
-	// Core pixel-art defaults
 	public var pixelArtDefaults:Bool = true;
 	public var snapUiToPixels:Bool = true;
 
-	// Button skin defaults
 	public var buttonUseAnim:Bool = false;
 	public var buttonSkinFps:Int = FlxUXCore.DEFAULT_BUTTON_SKIN_FPS;
 	public var buttonGraphic:Null<FlxUXGraphicInput> = null;
@@ -25,21 +23,20 @@ class FlxUXTheme
 	public var buttonAnimDown:Array<Int> = [6, 7, 8, 9];
 	public var buttonAnimDisabled:Array<Int> = [10];
 
-	// Button sounds (optional, default is no sounds)
 	public var buttonSoundOver:Null<FlxSoundAsset> = null;
 	public var buttonSoundDown:Null<FlxSoundAsset> = null;
 	public var buttonSoundClick:Null<FlxSoundAsset> = null;
 
-	// Button label defaults
 	public var buttonLabelFont:Null<String> = null;
 	public var buttonLabelSize:Int = 14;
 	public var buttonLabelColor:FlxColor = 0xFF666666;
 	public var buttonLabelColorHover:Null<FlxColor> = 0xFF333333;
 	public var buttonLabelColorDown:Null<FlxColor> = 0xFF333333;
 	public var buttonLabelColorDisabled:Null<FlxColor> = 0xFF777777;
+	/** Label color when a FlxUXButton is locked (forced DISABLED). Null => fall back to buttonLabelColorDisabled. */
+	public var buttonLabelColorLocked:Null<FlxColor> = null;
 	public var buttonLabelAlign:String = "center";
 
-	// Focus visuals
 	public var focusMode:FlxUXCore.FlxUXFocusMode = FlxUXCore.FlxUXFocusMode.FRAME;
 	public var focusFrameFps:Int = FlxUXCore.DEFAULT_FOCUS_FRAME_FPS;
 	public var focusFrameGraphic:FlxUXGraphicInput = FlxUXCore.DEFAULT_FOCUS_FRAME_GRAPHIC;
@@ -53,7 +50,6 @@ class FlxUXTheme
 	public var focusOverlayOffsetX:Float = -8;
 	public var focusOverlayOffsetY:Float = -8;
 
-	// Group-level focus padding defaults
 	public var highlightPadX:Float = 12;
 	public var highlightPadY:Float = 12;
 
@@ -134,8 +130,6 @@ class FlxUXTheme
 			if (v == null) return null;
 			if (Std.isOfType(v, String))
 				return cast(v, String);
-			// JSON objects come through as anonymous structures; DynamicAccess is an abstract,
-			// so we can't runtime-check it.
 			if (Std.isOfType(v, Array) || Std.isOfType(v, Int) || Std.isOfType(v, Float) || Std.isOfType(v, Bool))
 				return null;
 
@@ -152,10 +146,6 @@ class FlxUXTheme
 			var b:Int = asInt(dm.get("bottom"), 0);
 			var fw:Int = asInt(dm.get("frameWidth"), 0);
 			var fh:Int = asInt(dm.get("frameHeight"), 0);
-
-			// FlxUX9Slice constructor order:
-			// source, frameWidth, frameHeight, left, top, right, bottom
-			// Theme JSON uses matching names.
 			return new flixel.ux.FlxUX9Slice(src, fw, fh, l, top, r, b);
 		}
 
@@ -189,7 +179,6 @@ class FlxUXTheme
 		if (map.exists("buttonAnimDown")) t.buttonAnimDown = asIntArray(map.get("buttonAnimDown"), t.buttonAnimDown);
 		if (map.exists("buttonAnimDisabled")) t.buttonAnimDisabled = asIntArray(map.get("buttonAnimDisabled"), t.buttonAnimDisabled);
 
-		// Button sounds
 		if (map.exists("buttonSoundOver"))
 		{
 			var s:Dynamic = map.get("buttonSoundOver");
@@ -206,7 +195,6 @@ class FlxUXTheme
 			if (Std.isOfType(s, String)) t.buttonSoundClick = cast(s, String);
 		}
 
-		// Button labels
 		if (map.exists("buttonLabelFont")) t.buttonLabelFont = asString(map.get("buttonLabelFont"), t.buttonLabelFont);
 		if (map.exists("buttonLabelSize")) t.buttonLabelSize = asInt(map.get("buttonLabelSize"), t.buttonLabelSize);
 		if (map.exists("buttonLabelColor"))
@@ -232,6 +220,18 @@ class FlxUXTheme
 			var c:Dynamic = map.get("buttonLabelColorDisabled");
 			if (Std.isOfType(c, Int)) t.buttonLabelColorDisabled = (c : Int);
 			else if (Std.isOfType(c, String)) t.buttonLabelColorDisabled = parseColorString(cast c);
+		}
+		if (map.exists("buttonLabelColorLocked"))
+		{
+			var c:Dynamic = map.get("buttonLabelColorLocked");
+			if (Std.isOfType(c, Int)) t.buttonLabelColorLocked = (c : Int);
+			else if (Std.isOfType(c, String)) t.buttonLabelColorLocked = parseColorString(cast c);
+		}
+		else if (map.exists("buttonLabelColorLock"))
+		{
+			var c:Dynamic = map.get("buttonLabelColorLock");
+			if (Std.isOfType(c, Int)) t.buttonLabelColorLocked = (c : Int);
+			else if (Std.isOfType(c, String)) t.buttonLabelColorLocked = parseColorString(cast c);
 		}
 		if (map.exists("buttonLabelAlign")) t.buttonLabelAlign = asString(map.get("buttonLabelAlign"), t.buttonLabelAlign);
 
@@ -295,7 +295,6 @@ class FlxUXTheme
 		var str = StringTools.trim(s);
 		if (StringTools.startsWith(str, "#"))
 			str = str.substr(1);
-		// #RRGGBB => assume alpha FF
 		if (str.length == 6)
 			str = "FF" + str;
 		try

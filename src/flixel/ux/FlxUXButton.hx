@@ -40,6 +40,39 @@ class FlxUXButton extends FlxButton
 	public var uxFocused(default, null):Bool = false;
 	/** Whether this button is currently showing a NAV "pressed" state. */
 	public var uxPressed(default, null):Bool = false;
+	/**
+	 * If true, the button is visually and interactively DISABLED (4th state).
+	 *
+	 * Contract:
+	 * - Does NOT change FlxBasic.active.
+	 * - Prevents focus and activation.
+	 * - Forces the button to stay in the DISABLED visual state until unlocked.
+	 */
+	public var locked(get, set):Bool;
+	private var _locked:Bool = false;
+	private inline function get_locked():Bool return _locked;
+	private function set_locked(v:Bool):Bool
+	{
+		if (_locked == v) return _locked;
+		_locked = v;
+
+		if (_locked)
+		{
+			uxFocused = false;
+			uxPressed = false;
+			if (FlxUXCore.focused == this)
+				FlxUXCore.setFocused(null);
+			status = FlxButtonState.DISABLED;
+		}
+		else
+		{
+			status = FlxButtonState.NORMAL;
+		}
+
+		updateFrameFromStatus();
+		applyLabelStateColor();
+		return _locked;
+	}
 
 	/** Optional back-reference used for asset precedence (button -> group -> core). */
 	@:allow(flixel.ux.FlxUXGroup)
@@ -69,6 +102,7 @@ class FlxUXButton extends FlxButton
 			buttonLabelColorHover = null;
 			buttonLabelColorDown = null;
 			buttonLabelColorDisabled = null;
+			buttonLabelColorLocked = null;
 			buttonLabelAlign = null;
 			buttonLabelFactory = null;
 		}
@@ -90,6 +124,7 @@ class FlxUXButton extends FlxButton
 			buttonLabelColorHover = value.buttonLabelColorHover;
 			buttonLabelColorDown = value.buttonLabelColorDown;
 			buttonLabelColorDisabled = value.buttonLabelColorDisabled;
+			buttonLabelColorLocked = value.buttonLabelColorLocked;
 			buttonLabelAlign = switch (StringTools.trim(value.buttonLabelAlign).toLowerCase())
 			{
 				case "left": flixel.text.FlxText.FlxTextAlign.LEFT;
@@ -113,12 +148,10 @@ class FlxUXButton extends FlxButton
 	public var buttonAnimDown:Null<Array<Int>> = null;
 	public var buttonAnimDisabled:Null<Array<Int>> = null;
 
-	// Button sounds (null => fall back to group/core; default is no sounds)
 	public var buttonSoundOver:Null<FlxSoundAsset> = null;
 	public var buttonSoundDown:Null<FlxSoundAsset> = null;
 	public var buttonSoundClick:Null<FlxSoundAsset> = null;
 
-	// Button labels (null/0 => fall back to group/core)
 	public var buttonLabelFont:Null<String> = null;
 	public var buttonLabelSize:Int = 0;
 	public var buttonLabelColor:Null<flixel.util.FlxColor> = null;
@@ -128,6 +161,8 @@ class FlxUXButton extends FlxButton
 	public var buttonLabelColorDown:Null<flixel.util.FlxColor> = null;
 	/** Optional per-button label color when disabled. */
 	public var buttonLabelColorDisabled:Null<flixel.util.FlxColor> = null;
+	/** Optional per-button label color when locked (forced DISABLED). */
+	public var buttonLabelColorLocked:Null<flixel.util.FlxColor> = null;
 	public var buttonLabelAlign:Null<FlxTextAlign> = null;
 	public var buttonLabelFactory:Null<flixel.ux.FlxUXCore.FlxUXLabelFactory> = null;
 
@@ -218,13 +253,8 @@ class FlxUXButton extends FlxButton
 		this.action = action;
 
 		onUp.callback = () -> activate();
-		// One-time construction pass:
-		// 1) Apply label formatting (no wrapping unless explicit '\n')
-		// 2) Auto-size exactly once (unless the user disables autoSizeToLabel)
 		applyLabelOptions();
 		if (autoSizeToLabel) autosize();
-		// Ensure the background skin is generated at the final size *immediately*.
-		// Otherwise, buttons can start with inconsistent visuals/sizes before any group helper runs.
 		applySkin();
 		constructed = true;
 	}
@@ -251,14 +281,9 @@ class FlxUXButton extends FlxButton
 		if (this.label == null)
 			return;
 
-		// Force label metrics to be up-to-date before measuring.
-		// On some targets/backends, FlxText's underlying TextField hasn't validated yet during create(),
-		// which can yield width/height==0 and produce tiny buttons.
 		if (Std.isOfType(this.label, FlxText))
 		{
 			var t:FlxText = cast this.label;
-			// Ensure the OpenFL TextField has current layout.
-			// Both calls are safe and cheap; they just sync internal bounds.
 			try
 			{
 				t.textField.text = t.text;
@@ -266,12 +291,9 @@ class FlxUXButton extends FlxButton
 				t.textField.height = 1;
 			}
 			catch (e:Dynamic) {}
-			// Let FlxText update its cached size from the text field this frame.
 			t.calcFrame();
 		}
 
-		// Ensure consistent label layout before measuring.
-		// Our contract is: no auto-wrapping; only explicit '\n' creates multiple lines.
 		if (Std.isOfType(this.label, FlxText))
 		{
 			var t:FlxText = cast this.label;
@@ -281,22 +303,17 @@ class FlxUXButton extends FlxButton
 
 		var labelW:Float = this.label.width;
 		var labelH:Float = this.label.height;
-		// FlxText width/height can be misleading during creation depending on when the underlying
-		// OpenFL TextField regenerates. Prefer glyph bounds when available.
 		if (Std.isOfType(this.label, FlxText))
 		{
 			var t:FlxText = cast this.label;
 			try
 			{
-				// textWidth/textHeight are tight bounds; add a small safety pad to avoid clipping.
 				labelW = t.textField.textWidth + 4;
 				labelH = t.textField.textHeight + 4;
 			}
 			catch (e:Dynamic) {}
 		}
 
-		// Final guard: if something was still 0 (common during very early creation), fall back to
-		// calculating from the glyph bounds.
 		if (labelW <= 0 && Std.isOfType(this.label, FlxText))
 		{
 			var t:FlxText = cast this.label;
@@ -313,15 +330,10 @@ class FlxUXButton extends FlxButton
 		if (w < 1) w = 1;
 		if (h < 1) h = 1;
 
-		// Autosize sets an implicit size; it may still be overridden by group helpers later.
 		explicitSizeLocked = false;
-		// Only change if needed.
 		if (Std.int(width) != w || Std.int(height) != h)
 		{
-			// Autosize is the one time we *do* want to change the underlying size based on label.
-			// After this, groups can safely call matchSize()/grid()/etc.
 			makeGraphic(w, h, frameBaseColor, true);
-			// Keep the current skin consistent with the new size.
 			if (usingDefaultSkin)
 				applyDefaultSkin();
 			else
@@ -342,27 +354,13 @@ class FlxUXButton extends FlxButton
 		if (h < 1) h = 1;
 		autoSizeToLabel = false;
 		explicitSizeLocked = true;
-		// IMPORTANT: keep FlxSprite sizing (width/height) and frame sizing (frameWidth/frameHeight)
-		// in sync BEFORE any skin regeneration happens.
-		// If frameWidth changes without width changing (or vice versa), group layout helpers can
-		// position based on one set of dimensions while rendering uses another.
-		// On the next loadGraphic() call, FlxSprite will re-derive frameWidth from the graphic,
-		// causing the "positioned wide but drawn narrow" behavior.
-		// Use setGraphicSize() so we don't fight FlxSprite's internal pixel/frame sizing.
-		// setSize() only affects hitbox and can lead to scale-induced distortion when we later
-		// load 9-slice graphics at a different pixel size during theme swaps.
 		this.setGraphicSize(w, h);
 		this.updateHitbox();
 		this.frameWidth = w;
 		this.frameHeight = h;
-		// Preserve the current skin type.
-		// IMPORTANT: don't rebuild the base graphic with makeGraphic() here unless we're using the
-		// procedural default skin. For 9-slice skins, makeGraphic() can temporarily replace the
-		// sprite's graphic and cause bizarre distortion until the next refresh.
 		if (usingDefaultSkin)
 		{
 			makeGraphic(w, h, frameBaseColor, true);
-			// makeGraphic/loadGraphic can stomp frame size; force consistency again.
 			this.setGraphicSize(w, h);
 			this.updateHitbox();
 			this.frameWidth = w;
@@ -371,10 +369,7 @@ class FlxUXButton extends FlxButton
 		}
 		else
 		{
-			// Just re-apply the skin at the new size.
 			applySkin();
-			// loadGraphic() may have reset frameWidth/frameHeight based on the graphic's frame.
-			// Enforce the explicit size as authoritative.
 			this.setGraphicSize(w, h);
 			this.updateHitbox();
 			this.frameWidth = w;
@@ -387,11 +382,11 @@ class FlxUXButton extends FlxButton
 	public function centerLabel():Void
 	{
 		if (this.label == null) return;
-		// FlxButton's label is a separate object positioned in world coordinates.
 		this.label.x = x + (width - this.label.width) * 0.5;
 		var yOff:Float = 0;
-		// Built-in button art has a 4px "depth"; lift the label when not pressed.
-		if (usingNineSliceSkin && skinInput == FlxUXCore.DEFAULT_BUTTON_GRAPHIC_ANIM && status != FlxButtonState.PRESSED)
+		if (_locked)
+			yOff = 0;
+		else if (usingNineSliceSkin && skinInput == FlxUXCore.DEFAULT_BUTTON_GRAPHIC_ANIM && status != FlxButtonState.PRESSED)
 			yOff = -DEFAULT_BUTTON_DEPTH;
 		else if (usingNineSliceSkin && skinInput == FlxUXCore.DEFAULT_BUTTON_GRAPHIC && status != FlxButtonState.PRESSED)
 			yOff = -DEFAULT_BUTTON_DEPTH;
@@ -401,11 +396,6 @@ class FlxUXButton extends FlxButton
 	/** Applies label options (font/size/color/align and optional label factory) using precedence: button -> group -> core. */
 	public function applyLabelOptions():Void
 	{
-		// Factory choice
-		// NOTE: We intentionally DO NOT auto-apply the factory after construction.
-		// Reason: FlxButton may recreate/reassign its label internally; swapping label objects
-		// post-layout can cause size/layout churn. If the user wants a custom label type,
-		// they should provide it up-front (via generics or manual assignment).
 		if (!constructed)
 		{
 			var factory = (buttonLabelFactory != null) ? buttonLabelFactory : ((uxGroup != null && uxGroup.buttonLabelFactory != null) ? uxGroup.buttonLabelFactory : FlxUXCore.buttonLabelFactory);
@@ -449,15 +439,9 @@ class FlxUXButton extends FlxButton
 		else if (uxGroup != null && uxGroup.buttonLabelAlign != null) align = uxGroup.buttonLabelAlign;
 		else align = FlxUXCore.buttonLabelAlign;
 
-		// Apply formatting if label is a FlxText.
 		if (Std.isOfType(this.label, FlxText))
 		{
 			var t:FlxText = cast this.label;
-			// Contract: no wrapping unless explicit newlines.
-			// IMPORTANT: keep a stable fieldWidth, otherwise the underlying TextField will
-			// re-flow and change its measured width on hover/theme refresh.
-			// For single-line labels we use the current fieldWidth (if any) or a minimal value
-			// to avoid auto-wrapping. The actual rendered alignment is handled by centerLabel().
 			t.wordWrap = false;
 			if (baseLabelText != null && baseLabelText.indexOf("\n") < 0)
 			{
@@ -466,16 +450,13 @@ class FlxUXButton extends FlxButton
 			}
 			else
 			{
-				// Explicit multiline: keep fieldWidth stable too (don't force wrap-to-button).
 				if (t.fieldWidth <= 0)
 					t.fieldWidth = 1;
 			}
 
 			t.setFormat(font, size, colorNormal, align);
-			// Ensure cached bounds are current immediately.
 			t.calcFrame();
 		}
-		// Bitmap labels are user-controlled; we can at least tint.
 		else if (Std.isOfType(this.label, FlxBitmapText))
 		{
 			this.label.color = colorNormal;
@@ -493,7 +474,6 @@ class FlxUXButton extends FlxButton
 	private function applyLabelStateColor():Void
 	{
 		if (this.label == null) return;
-		// Precedence already resolved in applyLabelOptions by storing on fields; here we just pick a state.
 		var normal:flixel.util.FlxColor = (buttonLabelColor != null) ? buttonLabelColor
 			: ((uxGroup != null && uxGroup.buttonLabelColor != null) ? uxGroup.buttonLabelColor : FlxUXCore.buttonLabelColor);
 		var hover:Null<flixel.util.FlxColor> = (buttonLabelColorHover != null) ? buttonLabelColorHover
@@ -502,9 +482,13 @@ class FlxUXButton extends FlxButton
 			: ((uxGroup != null && uxGroup.buttonLabelColorDown != null) ? uxGroup.buttonLabelColorDown : FlxUXCore.buttonLabelColorDown);
 		var dis:Null<flixel.util.FlxColor> = (buttonLabelColorDisabled != null) ? buttonLabelColorDisabled
 			: ((uxGroup != null && uxGroup.buttonLabelColorDisabled != null) ? uxGroup.buttonLabelColorDisabled : FlxUXCore.buttonLabelColorDisabled);
+		var lock:Null<flixel.util.FlxColor> = (buttonLabelColorLocked != null) ? buttonLabelColorLocked
+			: ((uxGroup != null && uxGroup.buttonLabelColorLocked != null) ? uxGroup.buttonLabelColorLocked : FlxUXCore.buttonLabelColorLocked);
 
 		var c = normal;
-		if (!active)
+		if (_locked)
+			c = (lock != null) ? lock : ((dis != null) ? dis : normal);
+		else if (!active)
 			c = (dis != null) ? dis : normal;
 		else
 		{
@@ -525,12 +509,9 @@ class FlxUXButton extends FlxButton
 	@:allow(flixel.ux.FlxUXGroup)
 	private function applySkin():Void
 	{
-		// Apply sound overrides (button -> group -> core). Default is no sounds.
 		var sOver = (buttonSoundOver != null) ? buttonSoundOver : ((uxGroup != null && uxGroup.buttonSoundOver != null) ? uxGroup.buttonSoundOver : FlxUXCore.buttonSoundOver);
 		var sDown = (buttonSoundDown != null) ? buttonSoundDown : ((uxGroup != null && uxGroup.buttonSoundDown != null) ? uxGroup.buttonSoundDown : FlxUXCore.buttonSoundDown);
 		var sClick = (buttonSoundClick != null) ? buttonSoundClick : ((uxGroup != null && uxGroup.buttonSoundClick != null) ? uxGroup.buttonSoundClick : FlxUXCore.buttonSoundClick);
-		// FlxButton's events store a FlxSound instance, not an asset id.
-		// Keep it simple for users: they provide assets, we load/clear the event sounds.
 		if (onOver != null)
 		{
 			if (sOver != null) onOver.sound.loadEmbedded(sOver, false, false);
@@ -546,8 +527,7 @@ class FlxUXButton extends FlxButton
 			if (sClick != null) onUp.sound.loadEmbedded(sClick, false, false);
 			else onUp.sound = null;
 		}
-		// Apply label options (format + optional bitmap label factory)
-		applyLabelOptions();
+		applyLabelColorsForStatus();
 
 		var input:Null<FlxUXGraphicInput> = null;
 		if (buttonGraphic != null)
@@ -573,7 +553,6 @@ class FlxUXButton extends FlxButton
 
 		if (input == null)
 		{
-			// Built-in fallback: choose static/animated default sheet based on core/group settings.
 			var fallback:FlxUXGraphicInput = (useAnim && fps > 0) ? FlxUXCore.DEFAULT_BUTTON_GRAPHIC_ANIM : FlxUXCore.DEFAULT_BUTTON_GRAPHIC;
 			applyGraphicSkin(fallback, (useAnim && fps > 0) ? fps : 0);
 			return;
@@ -584,9 +563,6 @@ class FlxUXButton extends FlxButton
 
 	private inline function syncGraphicSizeFromExplicit():Void
 	{
-		// When a group helper (matchSize/resize) sets width/height, we must keep the
-		// underlying graphic sizing in sync or later skin refreshes can regenerate at
-		// stale dimensions.
 		if (explicitSizeLocked)
 		{
 			this.frameWidth = Std.int(Math.max(1, width));
@@ -607,9 +583,6 @@ class FlxUXButton extends FlxButton
 		lastSkinAnimFrameIndex = -1;
 
 		syncGraphicSizeFromExplicit();
-		// When explicit sizing is locked (usually by a group layout helper), width/height are the
-		// authoritative size. Using frameWidth/frameHeight here can drift if some previous code set
-		// frame* without updating width/height, or if loadGraphic() later re-derives frame size.
 		var w:Int = Std.int(Math.max(1, width));
 		var h:Int = Std.int(Math.max(1, height));
 
@@ -620,17 +593,8 @@ class FlxUXButton extends FlxButton
 			var gfx:FlxGraphic = FlxUX9Slice.get(ns, w, h, 0);
 			if (gfx != null)
 			{
-				// IMPORTANT:
-				// FlxUX9Slice.get() returns a *single* rendered bitmap of size (w,h).
-				// If we call loadGraphic(gfx) without explicit frame sizing, FlxSprite can
-				// end up with frameWidth/frameHeight derived from whatever metadata is on the
-				// FlxGraphic (or previous frames), which is exactly the kind of drift that
-				// caused theme swaps to show the wrong portion / whole sheet.
-				// Loading with explicit (w,h) forces a 1-frame spritesheet contract.
 				loadGraphic(gfx, true, w, h);
 			}
-			// If we're configured for animated skins, start a sequence immediately so it can loop
-			// even if the user never hovers/presses the button.
 			if (skinAnimFps > 0)
 			{
 				lastSkinStateIndex = 0;
@@ -638,8 +602,6 @@ class FlxUXButton extends FlxButton
 				animFrameIndex = 0;
 				animTime = 0;
 			}
-			// Force regenerate the correct state frame immediately.
-			// Reset state + animation tracking so we don't early-out when switching skins.
 			lastSkinStateIndex = -1;
 			lastSkinAnimFrameIndex = -1;
 			updateFrameFromStatus();
@@ -649,16 +611,12 @@ class FlxUXButton extends FlxButton
 			var g:FlxGraphic = flixel.ux.FlxUX9Slice.toGraphic(input);
 			if (g != null)
 			{
-				// Expect a 4-frame vertical spritesheet for FlxButton.
 				loadGraphic(g, true, w, h);
 				updateFrameFromStatus();
 			}
 		}
 
 		antialiasing = false;
-		// Ensure our *rendered* size and hitbox remain the explicit size after loadGraphic().
-		// Using setSize() here can leave the sprite scaled unexpectedly or with mismatched frame sizes
-		// across theme swaps. setGraphicSize() keeps visual pixels consistent.
 		if (explicitSizeLocked)
 		{
 			this.setGraphicSize(w, h);
@@ -667,6 +625,74 @@ class FlxUXButton extends FlxButton
 			this.frameHeight = h;
 		}
 		centerLabel();
+	}
+
+	private function applyLabelColorsForStatus():Void
+	{
+		if (this.label == null) return;
+
+		var c:Null<FlxColor> = null;
+		if (!active)
+			c = getEffectiveLabelColorDisabled();
+		else
+		{
+			switch (status)
+			{
+				case FlxButtonState.HIGHLIGHT:
+					c = getEffectiveLabelColorHover();
+				case FlxButtonState.PRESSED:
+					c = getEffectiveLabelColorDown();
+				default:
+					c = getEffectiveLabelColorUp();
+			}
+		}
+		if (c != null) this.label.color = c;
+	}
+
+	private inline function getEffectiveLabelColorUp():Null<FlxColor>
+	{
+		if (buttonLabelColor != null) return buttonLabelColor;
+		if (uxGroup != null && uxGroup.buttonLabelColor != null) return uxGroup.buttonLabelColor;
+		return FlxUXCore.buttonLabelColor;
+	}
+
+	private inline function getEffectiveLabelColorHover():Null<FlxColor>
+	{
+		if (buttonLabelColorHover != null) return buttonLabelColorHover;
+		if (uxGroup != null && uxGroup.buttonLabelColorHover != null) return uxGroup.buttonLabelColorHover;
+		return FlxUXCore.buttonLabelColorHover;
+	}
+
+	private inline function getEffectiveLabelColorDown():Null<FlxColor>
+	{
+		if (buttonLabelColorDown != null) return buttonLabelColorDown;
+		if (uxGroup != null && uxGroup.buttonLabelColorDown != null) return uxGroup.buttonLabelColorDown;
+		return FlxUXCore.buttonLabelColorDown;
+	}
+
+	private inline function getEffectiveLabelColorDisabled():Null<FlxColor>
+	{
+		if (_locked)
+		{
+			if (buttonLabelColorLocked != null) return buttonLabelColorLocked;
+			if (uxGroup != null && uxGroup.buttonLabelColorLocked != null) return uxGroup.buttonLabelColorLocked;
+			if (FlxUXCore.buttonLabelColorLocked != null) return FlxUXCore.buttonLabelColorLocked;
+			if (buttonLabelColorDisabled != null) return buttonLabelColorDisabled;
+			if (uxGroup != null && uxGroup.buttonLabelColorDisabled != null) return uxGroup.buttonLabelColorDisabled;
+			return FlxUXCore.buttonLabelColorDisabled;
+		}
+		if (buttonLabelColorDisabled != null) return buttonLabelColorDisabled;
+		if (uxGroup != null && uxGroup.buttonLabelColorDisabled != null) return uxGroup.buttonLabelColorDisabled;
+		return FlxUXCore.buttonLabelColorDisabled;
+	}
+
+	/**
+	 * Called by groups when core/group defaults have changed and the button needs to re-evaluate
+	 * its effective skin input + animation settings.
+	 */
+	public function refreshSkinFromDefaults():Void
+	{
+		applySkin();
 	}
 
 	private function getAnimSequenceForState(stateIndex:Int):Array<Int>
@@ -706,8 +732,6 @@ class FlxUXButton extends FlxButton
 		pixels.fillRect(new openfl.geom.Rectangle(0, h * 2, w, h), DEFAULT_DOWN);
 		pixels.fillRect(new openfl.geom.Rectangle(0, h * 3, w, h), DEFAULT_DISABLED);
 		dirty = true;
-		// makeGraphic already assigned the pixels/graphic. Calling loadGraphic(pixels) can make us hold a
-		// BitmapData reference we don't actually own (and it may get destroyed), causing runtime crashes.
 		loadGraphic(graphic, true, w, h);
 		centerLabel();
 		updateFrameFromStatus();
@@ -716,7 +740,7 @@ class FlxUXButton extends FlxButton
 	private function updateFrameFromStatus():Void
 	{
 		var stateIndex:Int = 0;
-		if (!active)
+		if (_locked)
 			stateIndex = 3;
 		else
 		{
@@ -731,16 +755,18 @@ class FlxUXButton extends FlxButton
 			}
 		}
 
-		// Default procedural skin uses a 4-frame vertical sheet.
 		if (usingDefaultSkin)
 		{
 			animation.frameIndex = stateIndex;
 			return;
 		}
 
-		// Non-default: if it's a nine-slice skin, regenerate per state.
 		if (usingNineSliceSkin && skinInput != null)
 		{
+			var w:Int = Std.int(Math.max(1, width));
+			var h:Int = Std.int(Math.max(1, height));
+			var ns:flixel.ux.FlxUX9Slice = cast skinInput;
+
 			if (skinAnimFps > 0)
 			{
 				if (lastSkinStateIndex != stateIndex)
@@ -751,37 +777,32 @@ class FlxUXButton extends FlxButton
 					animTime = 0;
 					lastSkinAnimFrameIndex = -1;
 				}
-			}
-			else
-			{
-				if (lastSkinStateIndex == stateIndex)
-					return;
-				lastSkinStateIndex = stateIndex;
-				animSequence = null;
-			}
 
-			var frame:Int = stateIndex;
-			var seqIndex:Int = -1;
-			if (skinAnimFps > 0 && animSequence != null && animSequence.length > 0)
-			{
-				seqIndex = animFrameIndex % animSequence.length;
-				frame = animSequence[seqIndex];
-				// If we're still on the same state and same animation cell as last time, nothing to do.
-				if (lastSkinStateIndex == stateIndex && lastSkinAnimFrameIndex == seqIndex)
+				var seqIndex:Int = 0;
+				if (animSequence != null && animSequence.length > 0)
+					seqIndex = animFrameIndex % animSequence.length;
+
+				if (lastSkinAnimFrameIndex == seqIndex)
 					return;
 				lastSkinAnimFrameIndex = seqIndex;
+
+				var gfxAnim:FlxGraphic = FlxUX9Slice.get(ns, w, h, 0);
+				if (gfxAnim != null)
+					loadGraphic(gfxAnim, true, w, h);
+				return;
 			}
 
-			var w:Int = Std.int(Math.max(1, width));
-			var h:Int = Std.int(Math.max(1, height));
-			var ns:flixel.ux.FlxUX9Slice = cast skinInput;
-			var gfx:FlxGraphic = FlxUX9Slice.get(ns, w, h, frame);
+			if (lastSkinStateIndex == stateIndex)
+				return;
+			lastSkinStateIndex = stateIndex;
+			animSequence = null;
+
+			var gfx:FlxGraphic = FlxUX9Slice.get(ns, w, h, stateIndex);
 			if (gfx != null)
 				loadGraphic(gfx, true, w, h);
 			return;
 		}
 
-		// Non-default: if using an image spritesheet, assume it's already a 4-frame vertical sheet.
 		if (animation != null && animation.numFrames >= 4)
 			animation.frameIndex = stateIndex;
 	}
@@ -815,7 +836,6 @@ class FlxUXButton extends FlxButton
 
 		if (!enabled)
 		{
-			// Keep a plain graphic so we don't shift visuals unexpectedly.
 			makeGraphic(w, h, base, true);
 			return;
 		}
@@ -835,28 +855,35 @@ class FlxUXButton extends FlxButton
 	 */
 	public function setNavPressed(pressed:Bool):Void
 	{
+		if (_locked)
+			return;
 		if (uxPressed == pressed)
 			return;
 
 		uxPressed = pressed;
 
-		// Keep it simple: drive FlxButton's status so default skins/graphics react.
-		// Pointer clicks continue to work normally through FlxButton's own input handling.
 		status = uxPressed ? FlxButtonState.PRESSED : FlxButtonState.NORMAL;
 		updateFrameFromStatus();
 	}
 
 	override public function update(elapsed:Float):Void
 	{
+		if (_locked)
+		{
+			super.update(elapsed);
+			status = FlxButtonState.DISABLED;
+			updateFrameFromStatus();
+			applyLabelStateColor();
+			centerLabel();
+			return;
+		}
+
 		super.update(elapsed);
 
-		// Advance 9-slice animation time. We do NOT want to reset the state's sequence on every tick;
-		// we just want the next sequence index to be rendered.
 		if (usingNineSliceSkin && skinInput != null && skinAnimFps > 0)
 		{
 			if (animSequence == null)
 			{
-				// Ensure the sequence exists for the current state.
 				var stateIndex:Int = 0;
 				if (!active) stateIndex = 3;
 				else
@@ -874,7 +901,6 @@ class FlxUXButton extends FlxButton
 				animSequence = getAnimSequenceForState(stateIndex);
 			}
 
-			// Only advance if this state actually has a multi-frame sequence.
 			if (animSequence != null && animSequence.length > 1)
 			{
 				animTime += elapsed;
@@ -883,13 +909,11 @@ class FlxUXButton extends FlxButton
 				{
 					animTime -= frameDur;
 					animFrameIndex++;
-					// Force redraw for the new frame cell.
 					lastSkinAnimFrameIndex = -1;
 				}
 			}
 		}
 
-		// Pointer UX: treat hover as focus so the group's highlighter follows the mouse.
 		if (FlxUXCore.mode == flixel.ux.FlxUXCore.FlxUXInputMode.POINTER)
 		{
 			if (status == FlxButtonState.HIGHLIGHT && FlxUXCore.focused != this)
@@ -906,7 +930,7 @@ class FlxUXButton extends FlxButton
 	 */
 	public inline function isUXEligible():Bool
 	{
-		return exists && alive && visible && active;
+		return exists && alive && visible && active && !_locked;
 	}
 
 	/**
