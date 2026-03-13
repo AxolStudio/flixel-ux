@@ -129,6 +129,7 @@ class FlxUXMouse
 
 		if (cursorFps > 0 && seq.length > 1)
 		{
+			if (cursorFps <= 0) cursorFps = 1;
 			animTime += elapsed;
 			var frameDur:Float = 1.0 / cursorFps;
 			while (animTime >= frameDur)
@@ -174,9 +175,13 @@ class FlxUXMouse
 		var split = detectSpriteSheet(bd);
 		cursorFrameW = split.frameWidth;
 		cursorFrameH = split.frameHeight;
+		if (cursorFrameW <= 0) cursorFrameW = bd.width;
+		if (cursorFrameH <= 0) cursorFrameH = bd.height;
+		if (cursorFrameW > bd.width) cursorFrameW = bd.width;
+		if (cursorFrameH > bd.height) cursorFrameH = bd.height;
 
-		var cols:Int = Std.int(bd.width / cursorFrameW);
-		var rows:Int = Std.int(bd.height / cursorFrameH);
+		var cols:Int = (cursorFrameW > 0) ? Std.int(bd.width / cursorFrameW) : 1;
+		var rows:Int = (cursorFrameH > 0) ? Std.int(bd.height / cursorFrameH) : 1;
 		if (cols < 1) cols = 1;
 		if (rows < 1) rows = 1;
 		var total = cols * rows;

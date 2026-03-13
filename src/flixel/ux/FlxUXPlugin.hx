@@ -17,6 +17,7 @@ class FlxUXPlugin extends FlxBasic
 
 	override public function update(elapsed:Float):Void
 	{
+		if (!exists || !active) return;
 		super.update(elapsed);
 		FlxUXCore.internalUpdate(elapsed);
 	}

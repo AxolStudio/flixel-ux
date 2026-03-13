@@ -786,7 +786,10 @@ class FlxUXButton extends FlxButton
 					return;
 				lastSkinAnimFrameIndex = seqIndex;
 
-				var gfxAnim:FlxGraphic = FlxUX9Slice.get(ns, w, h, 0);
+				var fi:Int = 0;
+				if (animSequence != null && animSequence.length > 0)
+					fi = animSequence[seqIndex];
+				var gfxAnim:FlxGraphic = FlxUX9Slice.get(ns, w, h, fi);
 				if (gfxAnim != null)
 					loadGraphic(gfxAnim, true, w, h);
 				return;
@@ -904,6 +907,7 @@ class FlxUXButton extends FlxButton
 			if (animSequence != null && animSequence.length > 1)
 			{
 				animTime += elapsed;
+				if (skinAnimFps <= 0) skinAnimFps = 1;
 				var frameDur:Float = 1.0 / skinAnimFps;
 				while (animTime >= frameDur)
 				{

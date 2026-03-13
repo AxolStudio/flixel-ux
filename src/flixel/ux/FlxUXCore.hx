@@ -468,6 +468,7 @@ class FlxUXCore
 	public static function rebindInputs():Void
 	{
 		if (!initialized) init();
+		if (actions == null) return;
 
 		actions.rebind(
 			keyboardArrows,
@@ -573,6 +574,7 @@ class FlxUXCore
 	private static function internalUpdate(elapsed:Float):Void
 	{
 		if (!initialized) init();
+		if (actions == null) return;
 		if (pendingAutoReady)
 		{
 			pendingAutoReady = false;
@@ -606,7 +608,7 @@ class FlxUXCore
 		#if FLX_NO_MOUSE
 		mouse.enabled = false;
 		#else
-		if (cursorEnabled)
+		if (cursorEnabled && mouse != null)
 		{
 			mouse.enabled = true;
 			FlxG.mouse.visible = pointerPreferred;
@@ -614,7 +616,7 @@ class FlxUXCore
 		}
 		else
 		{
-			mouse.enabled = false;
+			if (mouse != null) mouse.enabled = false;
 			FlxG.mouse.visible = false;
 		}
 		#end

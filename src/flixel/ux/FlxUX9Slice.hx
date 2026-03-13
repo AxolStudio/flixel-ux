@@ -180,7 +180,8 @@ class FlxUX9Slice
 		var srcKey = stableSourceKey(nine.source);
 		if (!cacheBySource.exists(srcKey))
 			cacheBySource.set(srcKey, []);
-		cacheBySource.get(srcKey).push(key);
+		var keys = cacheBySource.get(srcKey);
+		if (keys.indexOf(key) < 0) keys.push(key);
 		return gfx;
 	}
 
@@ -211,7 +212,6 @@ class FlxUX9Slice
 		if (Std.isOfType(input, BitmapData))
 		{
 			var bd:BitmapData = cast input;
-			// BitmapData doesn't come with a canonical asset id; assign a stable key.
 			var key = 'uxbd|' + stableSourceKey(cast bd);
 			var g:FlxGraphic = FlxGraphic.fromBitmapData(bd, false, key);
 			g.persist = true;
@@ -299,11 +299,14 @@ class FlxUX9Slice
 	{
 		if (frameW <= 0) frameW = src.width;
 		if (frameH <= 0) frameH = src.height;
+		if (frameW > src.width) frameW = src.width;
+		if (frameH > src.height) frameH = src.height;
 		var cols:Int = Std.int(src.width / frameW);
 		if (cols < 1) cols = 1;
 		var rows:Int = Std.int(src.height / frameH);
 		if (rows < 1) rows = 1;
 		var total:Int = cols * rows;
+		if (total < 1) total = 1;
 		var fi:Int = frameIndex;
 		if (fi < 0) fi = 0;
 		if (fi >= total) fi = total - 1;

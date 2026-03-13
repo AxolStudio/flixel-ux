@@ -222,8 +222,8 @@ class FlxUXActions
 	/** Updates derived state like "held" and "released" from Flixel's per-frame triggers. */
 	public function update():Void
 	{
-		confirmDown = confirmHeld.triggered;
-		confirmReleased = confirmUp.triggered;
-		pointerPressDown = pointerPressHeld.triggered;
+		confirmDown = (confirmHeld != null) ? confirmHeld.triggered : false;
+		confirmReleased = (confirmUp != null) ? confirmUp.triggered : false;
+		pointerPressDown = (pointerPressHeld != null) ? pointerPressHeld.triggered : false;
 	}
 }

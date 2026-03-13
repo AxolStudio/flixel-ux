@@ -697,14 +697,6 @@ class FlxUXGroup extends FlxGroup
 	}
 
 	/**
-	 * Backward compatible alias for `stack()`.
-	 */
-	public inline function stackVertical(gap:Float):Void
-	{
-		stack(gap);
-	}
-
-	/**
 	 * Layout buttons horizontally.
 	 *
 	 * @param gap Space between buttons.
@@ -841,7 +833,7 @@ class FlxUXGroup extends FlxGroup
 
 	override public function update(elapsed:Float):Void
 	{
-		if (!exists || !active) return;
+		if (!exists || !alive || !visible || !active) return;
 		if (focusHighlighter != null) focusHighlighter.update(elapsed);
 		updateFocusGraphics();
 		super.update(elapsed);

@@ -227,12 +227,6 @@ class FlxUXTheme
 			if (Std.isOfType(c, Int)) t.buttonLabelColorLocked = (c : Int);
 			else if (Std.isOfType(c, String)) t.buttonLabelColorLocked = parseColorString(cast c);
 		}
-		else if (map.exists("buttonLabelColorLock"))
-		{
-			var c:Dynamic = map.get("buttonLabelColorLock");
-			if (Std.isOfType(c, Int)) t.buttonLabelColorLocked = (c : Int);
-			else if (Std.isOfType(c, String)) t.buttonLabelColorLocked = parseColorString(cast c);
-		}
 		if (map.exists("buttonLabelAlign")) t.buttonLabelAlign = asString(map.get("buttonLabelAlign"), t.buttonLabelAlign);
 
 		if (map.exists("focusMode"))
