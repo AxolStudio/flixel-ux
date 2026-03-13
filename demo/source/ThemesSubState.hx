@@ -4,7 +4,6 @@ import demo.DemoUi;
 import flixel.FlxG;
 import flixel.FlxSubState;
 import flixel.text.FlxText;
-import flixel.util.FlxColor;
 import flixel.ux.FlxUXButton;
 import flixel.ux.FlxUXCore;
 import flixel.ux.FlxUXGroup;
@@ -20,14 +19,12 @@ class ThemesSubState extends FlxSubState
 	private var groupOnly:FlxUXGroup;
 	private var manualButton:FlxUXButton;
 	private var manualGroup:FlxUXGroup;
+	private var animExample:FlxUXButton;
 
 	override public function create():Void
 	{
 		super.create();
-		/**
-		 *  Demo setup - you can ignore this section
-		 * =====================================================================
-		 **/
+		// Demo setup (visuals + theme objects used by the demo).
 		themeBefore = FlxUXCore.theme;
 		blueTheme = makeBlueTheme();
 		redTheme = FlxUXTheme.fromJson(themeRedJson());
@@ -43,10 +40,7 @@ class ThemesSubState extends FlxSubState
 		info = new FlxText(24, 86, FlxG.width - 48, "");
 		info.setFormat(null, 12, 0xFFB9C0D0, LEFT);
 		add(info);
-		/** 
-		 * END OF DEMO SETUP
-		 * =====================================================================
-		 **/
+		// End demo setup.
 
 		var gap:Int = 12;
 		var startX:Int = 16;
@@ -58,10 +52,10 @@ class ThemesSubState extends FlxSubState
 		var startY:Int = boxBottom - bottomH;
 		var colW:Int = Std.int((FlxG.width - startX * 2 - gap * 2) / 3);
 
-		// These 3 sections demonstrate the 3 levels of theming:
-		// - Global: affects everything (FlxUXCore.theme)
-		// - Group: affects only a specific FlxUXGroup (group.theme)
-		// - Manual: no theme at all, just override a property on a single button
+		// This screen demonstrates the 3 places you can apply style:
+		// 1) Core (global): FlxUXCore.theme affects every group/button without overrides.
+		// 2) A single group: group.theme affects only that one menu.
+		// 3) Manual per-button overrides: no theme at all, just set properties on a button.
 
 		var boxGlobal = DemoUi.makeBox(startX, startY, colW, bottomH, "Set theme globally");
 		add(boxGlobal.border);
@@ -73,7 +67,7 @@ class ThemesSubState extends FlxSubState
 		globalGroup.addButton("Switch to Default", switchDefaultGlobally);
 		globalGroup.addButton("Switch to Blue", switchBlueGlobally);
 		globalGroup.addButton("Switch to Red", switchRedGlobally);
-		// Global group should always follow the global theme.
+		// This group follows FlxUXCore.theme, so we don't set group.theme here.
 		globalGroup.buttonUseAnim = null;
 		globalGroup.buttonSkinFps = 0;
 		for (b in globalGroup.getEligibleButtonsOrdered()) b.resize(colW - 32, 38);
@@ -89,7 +83,7 @@ class ThemesSubState extends FlxSubState
 		groupOnly.addButton("Switch group to Default", switchDefaultGroup);
 		groupOnly.addButton("Switch group to Blue", switchBlueGroup);
 		groupOnly.addButton("Switch group to Red", switchRedGroup);
-		// This group should demonstrate theme objects only, not the core animated default skin.
+		// This column is about group theming, so we keep button skins static for consistency.
 		groupOnly.buttonUseAnim = null;
 		groupOnly.buttonSkinFps = 0;
 		for (b in groupOnly.getEligibleButtonsOrdered()) b.resize(colW - 32, 38);
@@ -108,6 +102,9 @@ class ThemesSubState extends FlxSubState
 		manualGroup.buttonLabelColorHover = null;
 		manualGroup.buttonLabelColorDown = null;
 
+		// Manual overrides can be great for one-off buttons.
+		// Here are a few examples.
+
 		// 1) Different label color (no action)
 		manualButton = manualGroup.addButton("Custom label color", null);
 		manualButton.buttonLabelColor = 0xFF1E7FA8;
@@ -125,6 +122,26 @@ class ThemesSubState extends FlxSubState
 		left.buttonLabelAlign = LEFT;
 		left.applyLabelOptions();
 		left.resize(colW - 32, 38);
+
+		// 4) Animated button skin (demo-local spritesheet)
+		//
+		// This is the most common pattern for animation:
+		// - Provide an animated spritesheet (a 9-slice sheet with multiple frames)
+		// - Set an FPS > 0
+		// - Provide frame sequences for each button state (up/over/down/disabled)
+		//
+		// Note: FlxUX does *not* ship a default animated button skin anymore.
+		// This example uses demo assets: demo/assets/ux/button_anim.png.
+		animExample = manualGroup.addButton("Animated skin", null);
+		animExample.setButtonSkin(new flixel.ux.FlxUX9Slice("assets/ux/button_anim.png", 16, 16, 3, 7, 3, 7), 18);
+		animExample.buttonUseAnim = true;
+		animExample.setButtonAnimSequences(
+			[0, 1],
+			[2, 3],
+			[4, 5],
+			[6]
+		);
+		animExample.resize(colW - 32, 38);
 
 		manualGroup.stack(10);
 
@@ -146,10 +163,7 @@ class ThemesSubState extends FlxSubState
 	{
 		// Global theme: affects every FlxUXGroup / FlxUXButton that doesn't have overrides.
 		FlxUXCore.theme = new FlxUXTheme();
-		// Keep the demo deterministic: the default core theme uses the animated sheet by default.
-		// This substate is about theme objects, so force the core defaults to be static here.
-		FlxUXCore.buttonUseAnim = false;
-		FlxUXCore.buttonSkinFps = 0;
+		keepCoreButtonsStatic();
 		setInfo("GLOBAL THEME\nFlxUXCore.theme = new FlxUXTheme();");
 	}
 
@@ -157,8 +171,7 @@ class ThemesSubState extends FlxSubState
 	{
 		// Global theme can be any FlxUXTheme object.
 		FlxUXCore.theme = blueTheme;
-		FlxUXCore.buttonUseAnim = false;
-		FlxUXCore.buttonSkinFps = 0;
+		keepCoreButtonsStatic();
 		setInfo("GLOBAL THEME\nFlxUXCore.theme = blueTheme;\n(blueTheme is created in code)");
 	}
 
@@ -166,9 +179,16 @@ class ThemesSubState extends FlxSubState
 	{
 		// JSON themes go through FlxUXTheme.fromJson(...) first.
 		FlxUXCore.theme = redTheme;
+		keepCoreButtonsStatic();
+		setInfo("GLOBAL THEME\nFlxUXCore.theme = redTheme;\n(redTheme was loaded from JSON)");
+	}
+
+	private function keepCoreButtonsStatic():Void
+	{
+		// This demo screen is about theme objects and override precedence.
+		// The animated button example is configured manually in the right column.
 		FlxUXCore.buttonUseAnim = false;
 		FlxUXCore.buttonSkinFps = 0;
-		setInfo("GLOBAL THEME\nFlxUXCore.theme = redTheme;\n(redTheme was loaded from JSON)");
 	}
 
 	private function switchDefaultGroup():Void

@@ -35,7 +35,6 @@ class FlxUXCore
 	public static inline var DEFAULT_MOUSE_GRAPHIC:String = "flixel-ux/mouse_cursor.png";
 	public static inline var DEFAULT_BUTTON_SKIN_FPS:Int = 10;
 	public static inline var DEFAULT_BUTTON_FRAMES_GRAPHIC:String = "flixel-ux/ux/button.png";
-	public static inline var DEFAULT_BUTTON_FRAMES_ANIM_GRAPHIC:String = "flixel-ux/ux/button_anim.png";
 	public static inline var DEFAULT_FOCUS_FRAME_FPS:Int = 6;
 	public static var DEFAULT_FOCUS_FRAME_GRAPHIC:FlxUX9Slice =
 		new FlxUX9Slice("flixel-ux/highlight_frame_9s_anim.png", 40, 40, 14, 17, 15, 18);
@@ -43,14 +42,12 @@ class FlxUXCore
 	public static inline var DEFAULT_FOCUS_OVERLAY_GRAPHIC:String = "flixel-ux/highlight_on.png";
 	public static var DEFAULT_BUTTON_GRAPHIC:FlxUX9Slice =
 		new FlxUX9Slice(DEFAULT_BUTTON_FRAMES_GRAPHIC, 16, 16, 3, 7, 3, 7);
-	public static var DEFAULT_BUTTON_GRAPHIC_ANIM:FlxUX9Slice =
-		new FlxUX9Slice(DEFAULT_BUTTON_FRAMES_ANIM_GRAPHIC, 16, 16, 3, 7, 3, 7);
 
 	/**
 	 * Default button skin graphic input.
 	 *
 	 * Precedence: button -> group -> core.
-	 * If `null`, buttons use the built-in defaults (DEFAULT_BUTTON_GRAPHIC / DEFAULT_BUTTON_GRAPHIC_ANIM).
+	 * If `null`, buttons use the built-in default (DEFAULT_BUTTON_GRAPHIC).
 	 */
 	public static var buttonGraphic:Null<FlxUXGraphicInput> = null;
 
@@ -58,7 +55,6 @@ class FlxUXCore
 	public static var buttonSkinFps:Int = DEFAULT_BUTTON_SKIN_FPS;
 	public static inline var DEFAULT_BUTTON_USE_ANIM:Bool = false;
 	public static var buttonUseAnim:Bool = DEFAULT_BUTTON_USE_ANIM;
-
 	public static var DEFAULT_BUTTON_ANIM_UP:Array<Int> = [0, 1];
 	public static var DEFAULT_BUTTON_ANIM_OVER:Array<Int> = [2, 3, 4, 5];
 	public static var DEFAULT_BUTTON_ANIM_DOWN:Array<Int> = [6, 7, 8, 9];
@@ -257,18 +253,6 @@ class FlxUXCore
 		buttonSkinFps = 0;
 	}
 
-	/** Forces the built-in animated button sheet + uses the default sequences. */
-	public static function useDefaultButtonSkinAnim(fps:Int = DEFAULT_BUTTON_SKIN_FPS):Void
-	{
-		buttonGraphic = null;
-		buttonUseAnim = true;
-		buttonSkinFps = (fps > 0) ? fps : DEFAULT_BUTTON_SKIN_FPS;
-		buttonAnimUp = DEFAULT_BUTTON_ANIM_UP;
-		buttonAnimOver = DEFAULT_BUTTON_ANIM_OVER;
-		buttonAnimDown = DEFAULT_BUTTON_ANIM_DOWN;
-		buttonAnimDisabled = DEFAULT_BUTTON_ANIM_DISABLED;
-	}
-
 	/**
 	 * Sets a custom button skin graphic for all buttons (can be overridden per-group/per-button).
 	 *
@@ -280,7 +264,7 @@ class FlxUXCore
 		buttonSkinFps = (fps > 0) ? fps : 0;
 	}
 
-	/** Overrides the per-state animation sequences used by the animated default (and any 9-slice anim skin). */
+	/** Overrides the per-state animation sequences used by any animated 9-slice button skin. */
 	public static function setButtonAnimSequences(up:Array<Int>, over:Array<Int>, down:Array<Int>, disabled:Array<Int>):Void
 	{
 		buttonAnimUp = up;

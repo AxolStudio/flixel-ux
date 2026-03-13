@@ -12,31 +12,31 @@ class LayoutHelpersSubState extends FlxSubState
 	override public function create():Void
 	{
 		super.create();
-		/**
-		 *  Demo setup - you can ignore this section
-		 * =====================================================================
-		 **/
+		// This screen demonstrates the three layout helpers you’ll use most often:
+		// - stack(gap): vertical column
+		// - spread(gap): horizontal row
+		// - grid(columns, gapX, gapY): fixed column count
+		//
+		// These helpers position buttons based on their current size.
+		// If you want “neat” columns/rows, call matchSize() first.
 		add(DemoUi.makeSolidBackdrop());
 		DemoUi.addBackButton(this);
 		add(DemoUi.makeHeader(
 			"Layout helpers",
 			"These helpers place buttons based on their current sizes: stack (vertical), spread (horizontal), grid (cells).")
 		);
-		/** 
-		 * END OF DEMO SETUP
-		 * =====================================================================
-		 **/
 
 		var padX = 12;
 		var topY = 120;
 		var gap = 10;
 
-		// Left column: STACK (full height)
+		// Left column: stack(gap)
 		var stackW = 210;
 		var stackBox = DemoUi.makeBox(padX, topY, stackW, FlxG.height - topY - 34, "stack(gap)");
 		add(stackBox.border);
 		add(stackBox.label);
 		var gStack = new FlxUXGroup();
+		// Keep styling simple in layout demos so you can focus on placement.
 		gStack.buttonLabelColor = 0xFF666666;
 		gStack.buttonLabelColorHover = 0xFF333333;
 		gStack.buttonLabelColorDown = 0xFF333333;
@@ -46,6 +46,7 @@ class LayoutHelpersSubState extends FlxSubState
 			var b = gStack.addButton(name, () -> {});
 			b.resize(160, 34);
 		}
+		// stack(gap) places buttons top-to-bottom.
 		gStack.stack(10);
 		gStack.x = padX + (stackW - gStack.width) * 0.5;
 		gStack.y = topY + 44;
@@ -54,45 +55,47 @@ class LayoutHelpersSubState extends FlxSubState
 		var rightX = padX + stackW + gap;
 		var rightW = FlxG.width - rightX - padX;
 
-		// Top-right: SPREAD
+		// Top-right: spread(gap)
 		var spreadBox = DemoUi.makeBox(rightX, topY, rightW, 110, "spread(gap)");
 		add(spreadBox.border);
 		add(spreadBox.label);
 		{
-			var g = new FlxUXGroup();
-			g.buttonLabelColor = 0xFF666666;
-			g.buttonLabelColorHover = 0xFF333333;
-			g.buttonLabelColorDown = 0xFF333333;
-			add(g);
+			var gSpread = new FlxUXGroup();
+			gSpread.buttonLabelColor = 0xFF666666;
+			gSpread.buttonLabelColorHover = 0xFF333333;
+			gSpread.buttonLabelColorDown = 0xFF333333;
+			add(gSpread);
 			for (i in 0...4)
 			{
-				var b = g.addButton(Std.string(i + 1), () -> {});
+				var b = gSpread.addButton(Std.string(i + 1), () -> {});
 				b.resize(76, 34);
 			}
-			g.spread(8);
-			g.x = rightX + (rightW - g.width) * 0.5;
-			g.y = topY + 50;
+			// spread(gap) places buttons left-to-right.
+			gSpread.spread(8);
+			gSpread.x = rightX + (rightW - gSpread.width) * 0.5;
+			gSpread.y = topY + 50;
 		}
 
-		// Bottom-right: GRID
+		// Bottom-right: grid(columns, gapX, gapY)
 		var gridY = topY + 110 + gap;
 		var gridBox = DemoUi.makeBox(rightX, gridY, rightW, FlxG.height - gridY - 34, "grid(columns, gapX, gapY)");
 		add(gridBox.border);
 		add(gridBox.label);
 		{
-			var g = new FlxUXGroup();
-			g.buttonLabelColor = 0xFF666666;
-			g.buttonLabelColorHover = 0xFF333333;
-			g.buttonLabelColorDown = 0xFF333333;
-			add(g);
+			var gGrid = new FlxUXGroup();
+			gGrid.buttonLabelColor = 0xFF666666;
+			gGrid.buttonLabelColorHover = 0xFF333333;
+			gGrid.buttonLabelColorDown = 0xFF333333;
+			add(gGrid);
 			for (i in 0...9)
 			{
-				var b = g.addButton(Std.string(i + 1), () -> {});
+				var b = gGrid.addButton(Std.string(i + 1), () -> {});
 				b.resize(44, 28);
 			}
-			g.grid(3, 8, 8, FlxUXGridLastRowAlign.CENTER);
-			g.x = rightX + (rightW - g.width) * 0.5;
-			g.y = gridY + 44;
+			// grid(3, ...) = 3 columns. The last row is centered if it isn't full.
+			gGrid.grid(3, 8, 8, FlxUXGridLastRowAlign.CENTER);
+			gGrid.x = rightX + (rightW - gGrid.width) * 0.5;
+			gGrid.y = gridY + 44;
 		}
 
 		var hint = new FlxText(24, FlxG.height - 26, FlxG.width - 48, "Tip: you can call matchSize() first for tidy columns.");

@@ -201,15 +201,6 @@ class FlxUXButton extends FlxButton
 		applySkin();
 	}
 
-	/** Forces the built-in animated default sheet for this button. */
-	public function useDefaultButtonSkinAnim(fps:Int = 0):Void
-	{
-		buttonGraphic = null;
-		buttonUseAnim = true;
-		buttonSkinFps = fps;
-		applySkin();
-	}
-
 	/** Sets a custom skin just for this button. */
 	public function setButtonSkin(graphic:FlxUXGraphicInput, fps:Int = 0):Void
 	{
@@ -386,9 +377,7 @@ class FlxUXButton extends FlxButton
 		var yOff:Float = 0;
 		if (_locked)
 			yOff = 0;
-		else if (usingNineSliceSkin && skinInput == FlxUXCore.DEFAULT_BUTTON_GRAPHIC_ANIM && status != FlxButtonState.PRESSED)
-			yOff = -DEFAULT_BUTTON_DEPTH;
-		else if (usingNineSliceSkin && skinInput == FlxUXCore.DEFAULT_BUTTON_GRAPHIC && status != FlxButtonState.PRESSED)
+		else if (usingNineSliceSkin && status != FlxButtonState.PRESSED)
 			yOff = -DEFAULT_BUTTON_DEPTH;
 		this.label.y = y + (height - this.label.height) * 0.5 + yOff;
 	}
@@ -553,8 +542,7 @@ class FlxUXButton extends FlxButton
 
 		if (input == null)
 		{
-			var fallback:FlxUXGraphicInput = (useAnim && fps > 0) ? FlxUXCore.DEFAULT_BUTTON_GRAPHIC_ANIM : FlxUXCore.DEFAULT_BUTTON_GRAPHIC;
-			applyGraphicSkin(fallback, (useAnim && fps > 0) ? fps : 0);
+			applyGraphicSkin(FlxUXCore.DEFAULT_BUTTON_GRAPHIC, 0);
 			return;
 		}
 

@@ -27,8 +27,7 @@ haxelib git flixel-ux https://github.com/AxolStudio/flixel-ux
 
 Then add the library to your project:
 
-- `Project.xml`: `<haxelib name="flixel-ux" />`
-- `.hxml`: `-lib flixel-ux`
+`<haxelib name="flixel-ux" />`
 
 ## Quick start
 
@@ -61,6 +60,67 @@ class MenuState extends FlxState
 }
 ```
 
+## Basic usage patterns
+
+### A typical state lifecycle
+
+In most states, you:
+
+1) Create one or more `FlxUXGroup`s
+2) `add(group)` them to the state
+3) Add buttons with `addButton()` (or `addUXButton()` for existing buttons)
+4) Lay them out with `stack()`, `spread()`, `grid()`, then position the group
+
+You usually do not need to call `FlxUXCore.init()` yourself; creating a `FlxUXGroup` auto-initializes FlxUX.
+
+### Vertical menus (stack)
+
+```haxe
+var menu = new FlxUXGroup();
+add(menu);
+
+menu.addButton("New Game", onNewGame);
+menu.addButton("Continue", onContinue);
+menu.addButton("Options", onOptions);
+
+menu.stack(6);
+menu.alignCenter();
+```
+
+### Grid menus
+
+```haxe
+import flixel.ux.FlxUXCore.FlxUXGridLastRowAlign;
+
+var grid = new FlxUXGroup();
+add(grid);
+
+grid.addButton("A", onA);
+grid.addButton("B", onB);
+grid.addButton("C", onC);
+grid.addButton("D", onD);
+grid.addButton("E", onE);
+
+grid.grid(3, 8, 8, FlxUXGridLastRowAlign.CENTER);
+grid.alignCenter();
+```
+
+### Explicit sizing and matchSize()
+
+Buttons default to `autoSizeToLabel = true`. If you want consistent-sized buttons, you typically do one of these:
+
+```haxe
+var g = new FlxUXGroup();
+add(g);
+
+g.addButton("Short", onShort);
+g.addButton("A much longer label", onLong);
+
+g.matchSize();
+g.stack(6);
+g.alignCenter();
+```
+
 ## Customization (core → group → button)
 
 FlxUX configuration follows a simple override chain:
@@ -82,6 +142,23 @@ FlxUXCore.buttonUseAnim = true;
 FlxUXCore.buttonSkinFps = 18;
 ```
 
+### Common settings users tweak
+
+```haxe
+import flixel.ux.FlxUXCore;
+import flixel.ux.FlxUXCore.FlxUXNavCapturePolicy;
+import flixel.ux.FlxUXCore.FlxUXNavStyle;
+
+FlxUXCore.pixelArtDefaults = true;
+FlxUXCore.snapUiToPixels = true;
+
+FlxUXCore.navEnabled = true;
+FlxUXCore.navStyle = FlxUXNavStyle.LINEAR;
+FlxUXCore.navCapturePolicy = FlxUXNavCapturePolicy.AUTO;
+
+FlxUXCore.cursorEnabled = true;
+```
+
 ### 2) Themes (recommended)
 
 Themes bundle the common defaults into one object and can be swapped at runtime.
@@ -92,6 +169,17 @@ import flixel.ux.FlxUXTheme;
 import openfl.Assets;
 
 FlxUXCore.theme = FlxUXTheme.fromJson(Assets.getText("themes/default.json"));
+```
+
+### Changing styles at runtime
+
+FlxUX is designed for runtime style swaps. Assigning `FlxUXCore.theme` clears the 9-slice cache and refreshes any registered groups.
+
+```haxe
+FlxUXCore.theme = FlxUXTheme.fromJson(Assets.getText("themes/light.json"));
+
+// Later...
+FlxUXCore.theme = FlxUXTheme.fromJson(Assets.getText("themes/dark.json"));
 ```
 
 ### 3) Group and per-button overrides
@@ -139,3 +227,9 @@ b.buttonLabelColorLocked = 0xFF111111;
 ```
 
 See `FlxUXTheme` for the full list of supported fields.
+
+## Demo project
+
+There’s a runnable HaxeFlixel demo project in `demo/` that showcases focus modes, themes, and layout helpers.
+
+See `demo/README.md` for how to run it and what it covers.

@@ -17,13 +17,14 @@ If you prefer HTML5:
 The main menu opens a few substates. Each one is focused on a couple FlxUX features.
 
 - **Focus modes**
-  - Shows different focus behaviors (frame / next-to / on / hover / dim).
-  - Uses `FlxUXGroup` boxes with borders + labels.
+  - Shows three focus highlight strategies: FRAME / NEXT_TO / OVERLAY.
+  - Demonstrates per-group focus overrides via `group.focusMode`.
 
 - **Themes + overrides**
   - Swaps between themes at runtime by assigning `FlxUXCore.theme`.
   - Demonstrates how overrides work:
     - Core defaults → Group overrides → Button overrides.
+  - Includes an example of an animated button skin using the demo spritesheet `assets/ux/button_anim.png`.
 
 - **Layout helpers**
   - Shows `stack()`, `spread()`, and `grid()`.
@@ -31,4 +32,4 @@ The main menu opens a few substates. Each one is focused on a couple FlxUX featu
 
 - **Advanced examples**
   - A simple “slide-in panel” tween (demo-only).
-  - Also shows label overrides (group defaults + one button override).
+  - Shows reordering buttons with `FlxUXGroup.reverse()` and then re-running layout helpers.

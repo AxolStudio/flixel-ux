@@ -19,10 +19,11 @@ class NavigationModesSubState extends FlxSubState
 	override public function create():Void
 	{
 		super.create();
-		/**
-		 *  Demo setup - you can ignore this section
-		 * =====================================================================
-		 **/
+		// This screen demonstrates the two NAV traversal styles:
+		// - LINEAR: next/previous traversal in the group's ordered list
+		// - SPATIAL: direction-based navigation (nearest neighbor in the direction you pressed)
+		//
+		// Tip: in SPATIAL mode, the grid layout makes the behavior feel natural.
 		add(DemoUi.makeSolidBackdrop());
 		DemoUi.addBackButton(this);
 
@@ -35,16 +36,13 @@ class NavigationModesSubState extends FlxSubState
 		info = new FlxText(24, 86, FlxG.width - 48, "");
 		info.setFormat(null, 12, 0xFFB9C0D0, LEFT);
 		add(info);
-		/**
-		 * END OF DEMO SETUP
-		 * =====================================================================
-		 **/
 
 		var box = DemoUi.makeBox(24, 120, FlxG.width - 48, FlxG.height - 160, "LINEAR vs SPATIAL");
 		add(box.border);
 		add(box.label);
 
-		// Toggle group (separate from the grid)
+		// Controls menu (separate group from the grid).
+		// Keeping it separate makes sure it doesn't interfere with spatial selection in the grid.
 		var controls = new FlxUXGroup();
 		controls.x = box.border.x + 16;
 		controls.y = box.border.y + 34;
@@ -52,7 +50,8 @@ class NavigationModesSubState extends FlxSubState
 		toggleButton = controls.addButton("Nav: LINEAR (toggle)", toggleNav);
 		toggleButton.resize(260, 36);
 
-		// Grid group
+		// Grid menu.
+		// We use button labels like "1,1" so it's easy to see which cell you landed on.
 		grid = new FlxUXGroup();
 		grid.x = box.border.x + 16;
 		grid.y = controls.y + 58;
@@ -66,10 +65,11 @@ class NavigationModesSubState extends FlxSubState
 				b.resize(76, 34);
 			}
 		}
+		// grid(columns, gapX, gapY) lays the buttons out visually.
 		grid.grid(4, 12, 12);
 
+		// Apply starting nav style.
 		applyNavStyle();
-
 	}
 
 	private function toggleNav():Void
@@ -84,7 +84,14 @@ class NavigationModesSubState extends FlxSubState
 
 	private function applyNavStyle():Void
 	{
-		// Set globally, and also set the group explicitly so it stays stable even if other demo pages change core state.
+		// navStyle can be set globally (FlxUXCore) and/or per-group (FlxUXGroup).
+		//
+		// In a real game, you'd usually pick one:
+		// - global default for your whole UI
+		// - group override for special menus
+		//
+		// In this demo, we set BOTH so this screen always behaves consistently,
+		// even if other demo screens changed the core defaults.
 		FlxUXCore.navStyle = navStyle;
 		grid.navStyle = navStyle;
 		info.text = 'FlxUXCore.navStyle = ' + ((navStyle == LINEAR) ? "LINEAR" : "SPATIAL") + ';\n(grid.navStyle is also set)';

@@ -204,14 +204,6 @@ class FlxUXGroup extends FlxGroup
 		buttonSkinFps = 0;
 	}
 
-	/** Forces the built-in animated default sheet for this group. */
-	public function useDefaultButtonSkinAnim(fps:Int = 0):Void
-	{
-		buttonGraphic = null;
-		buttonUseAnim = true;
-		buttonSkinFps = (fps > 0) ? fps : 0;
-	}
-
 	/** Sets a custom skin for all buttons in this group. */
 	public function setButtonSkin(graphic:FlxUXGraphicInput, fps:Int = 0):Void
 	{

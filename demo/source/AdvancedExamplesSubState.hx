@@ -2,31 +2,23 @@ package;
 
 import demo.DemoUi;
 import flixel.FlxG;
-import flixel.FlxSprite;
 import flixel.FlxSubState;
-import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import flixel.ux.FlxUXGroup;
 
 class AdvancedExamplesSubState extends FlxSubState
 {
-	private var slideContainer:FlxSprite;
-	private var containerXTarget:Float;
-
 	override public function create():Void
 	{
 		super.create();
-		/**
-		 *  Demo setup - you can ignore this section
-		 * =====================================================================
-		 **/
+		// This screen demonstrates a common “advanced menu” pattern:
+		// 1) You have a group of buttons.
+		// 2) You change the order of those buttons at runtime.
+		// 3) You call a layout helper again (spread/stack/grid) to re-position them.
+		//
+		// The important idea: layout helpers operate on the group’s current button order.
 		add(DemoUi.makeSolidBackdrop());
-
-		slideContainer = new FlxSprite();
-		slideContainer.scrollFactor.set();
-		slideContainer.exists = false;
-		add(slideContainer);
 
 		var back = DemoUi.addBackButton(this);
 		back.x += FlxG.width;
@@ -39,29 +31,33 @@ class AdvancedExamplesSubState extends FlxSubState
 
 		var box = DemoUi.makeBox(24 + FlxG.width, 140, FlxG.width - 48, FlxG.height - 180, "");
 		add(box.border);
-		/** 
-		 * END OF DEMO SETUP
-		 * =====================================================================
-		 **/
+		// box.label intentionally unused on this screen.
 
 		var contentTop = 168;
 		var topRow = new FlxUXGroup();
 		topRow.y = contentTop;
 		add(topRow);
+		// Create 5 buttons and add them to the same group.
+		// These buttons will participate in NAV focus and also support the normal pointer clicks.
 
 		for (t in ["1", "2", "3", "4", "5"])
 		{
 			var b = topRow.addButton(t, null);
 			b.resize(80, 38);
 		}
+		// spread(gap) lays them out left-to-right with a consistent space between each.
 		topRow.spread(12);
-		topRow.x = 24 + (FlxG.width - 48 - topRow.width) * 0.5;
+		// Start off-screen to the right so we can slide the whole group in.
+		topRow.x = 24 + FlxG.width + (FlxG.width - 48 - topRow.width) * 0.5;
 
 		var reverseBtnW = 340;
 		var reverseBtn = new flixel.ux.FlxUXButton(24 + FlxG.width + (FlxG.width - 48 - reverseBtnW) * 0.5, contentTop + 58, "Reverse", () ->
 		{
+			// reverse() changes the group’s internal ordering.
+			// Re-run spread() so the positions update to match the new order.
 			topRow.reverse();
 			topRow.spread(12);
+			// After the slide-in, this re-centers the group on screen.
 			topRow.x = 24 + (FlxG.width - 48 - topRow.width) * 0.5;
 		});
 		reverseBtn.resize(reverseBtnW, 40);
@@ -79,14 +75,15 @@ class AdvancedExamplesSubState extends FlxSubState
 		enabledBtn.resize(pairBtnW, 40);
 		var disabledBtn = enabledDisabled.addButton("Disabled", null);
 		disabledBtn.resize(pairBtnW, 40);
+		// locked = the 4th Flixel button state (disabled) but with FlxUX semantics:
+		// it can’t be focused or activated, but it still updates normally.
 		disabledBtn.locked = true;
 		enabledDisabled.spread(pairGap);
 
-		// Slide everything in.
+		// Slide everything in from right to left.
 		FlxTween.tween(back, { x: back.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
 		FlxTween.tween(header, { x: header.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
 		FlxTween.tween(box.border, { x: box.border.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
-		// box.label intentionally not used on this screen.
 		FlxTween.tween(topRow, { x: topRow.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
 		FlxTween.tween(reverseBtn, { x: reverseBtn.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
 		FlxTween.tween(enabledDisabled, { x: enabledDisabled.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
