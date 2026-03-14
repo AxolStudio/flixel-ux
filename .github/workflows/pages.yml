@@ -1,0 +1,74 @@
+name: Demo (HTML5) → GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'demo/**'
+      - 'assets/**'
+      - 'include.xml'
+      - 'haxelib.json'
+      - 'build.hxml'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: '4.3.6'
+
+      - name: Install haxelibs (demo)
+        working-directory: demo
+        run: |
+          haxelib setup "${HOME}/haxelib"
+          haxelib install flixel 6.1.2
+          haxelib install openfl
+          haxelib install lime
+          haxelib install actuate
+          haxelib dev flixel-ux "${GITHUB_WORKSPACE}"
+
+      - name: Build demo (HTML5)
+        working-directory: demo
+        run: |
+          haxelib run lime build html5 -release
+
+      - name: Prepare Pages artifact (root)
+        run: |
+          rm -rf _site
+          mkdir -p _site
+          cp -r demo/export/html5/bin/* _site/
+          touch _site/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

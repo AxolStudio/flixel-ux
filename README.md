@@ -2,20 +2,43 @@
 
 FlxUX is a small UX layer for HaxeFlixel that makes menus and button-based UI work well across mouse, touch, keyboard, and gamepad.
 
-You keep using buttons like normal. FlxUX adds:
+## Demo Project
 
-- Automatic switching between pointer input and keyboard or gamepad navigation
-- Focus management (which button is selected)
-- Consistent confirm and cancel handling
-- Default UI assets that work out of the box, with simple ways to override them with your own assets
+There’s a runnable HaxeFlixel demo project in `demo/` that showcases focus modes, themes, and layout helpers.
 
-## Key concepts
+See `demo/README.md` for how to run it and what it covers.
 
-- `FlxUXCore` is the global manager. It reads input and keeps track of focus.
-- `FlxUXGroup` is a container for UI buttons that should participate in navigation.
-- `FlxUXButton` is a button that supports FlxUX focus and skins.
+Play the demo in your browser:
 
-In most games, you create one or more `FlxUXGroup`s in each `FlxState`, add those groups to the state, and then add `FlxUXButton`s to each group.
+- https://axolstudio.github.io/flixel-ux/
+
+![FlxUX demo screenshot](demo/screenshot.png)
+
+## Features
+
+- **Single “menu UX layer” that works across mouse + keyboard + gamepad**
+	- Automatically switches between pointer input and navigation input.
+- **Navigation + focus management**
+	- Keeps track of which button is focused.
+	- Navigation styles: LINEAR and SPATIAL.
+	- Configurable input capture policy (AUTO/ALWAYS/NEVER).
+- **A clean override chain: core → group → button**
+	- Set app-wide defaults in `FlxUXCore`.
+	- Override per-menu in `FlxUXGroup`.
+	- Override per-button in `FlxUXButton`.
+- **Skinnable buttons (static or animated)**
+	- 9-slice button skins by default.
+	- Optional animated skins via sprite sheets + named animation sequences.
+- **Themes you can swap at runtime**
+	- Load from JSON (`FlxUXTheme.fromJson(...)`) or set up in code.
+	- Applying a theme refreshes registered groups and clears cached 9-slice graphics.
+- **Layout helpers for common menu patterns**
+	- `stack()`, `spread()`, and `grid()`.
+	- Last-row alignment options for short grid rows.
+	- `matchSize()` for consistent button sizing.
+- **Cursor + highlight visuals**
+	- Optional mouse cursor sprite.
+	- Multiple focus highlight modes (FRAME / NEXT_TO / OVERLAY).
 
 ## Installation
 
@@ -61,6 +84,12 @@ class MenuState extends FlxState
 ```
 
 ## Basic usage patterns
+
+### Core System Overview
+
+- `FlxUXCore` is the global manager. It reads input and keeps track of focus.
+- `FlxUXGroup` is a container for UI buttons that should participate in navigation.
+- `FlxUXButton` is a button that supports FlxUX focus and skins.
 
 ### A typical state lifecycle
 
@@ -121,115 +150,150 @@ g.stack(6);
 g.alignCenter();
 ```
 
-## Customization (core → group → button)
+## Navigation
 
-FlxUX configuration follows a simple override chain:
+FlxUX supports two navigation styles: **LINEAR** and **SPATIAL**.
 
-1) `FlxUXCore` (global defaults)
-2) `FlxUXGroup` (menu-level defaults)
-3) `FlxUXButton` (single-button overrides)
-
-### 1) Global defaults
-
-Adjust the built-in defaults anywhere (commonly in `create()` before you build your menus). Calling `FlxUXCore.init()` is optional; groups auto-init.
+You can set the default navigation style globally:
 
 ```haxe
-import flixel.ux.FlxUXCore;
-import flixel.ux.FlxUXFocusMode;
-
-FlxUXCore.focusMode = FlxUXFocusMode.FRAME;
-FlxUXCore.buttonUseAnim = true;
-FlxUXCore.buttonSkinFps = 18;
-```
-
-### Common settings users tweak
-
-```haxe
-import flixel.ux.FlxUXCore;
-import flixel.ux.FlxUXCore.FlxUXNavCapturePolicy;
-import flixel.ux.FlxUXCore.FlxUXNavStyle;
-
-FlxUXCore.pixelArtDefaults = true;
-FlxUXCore.snapUiToPixels = true;
-
-FlxUXCore.navEnabled = true;
 FlxUXCore.navStyle = FlxUXNavStyle.LINEAR;
-FlxUXCore.navCapturePolicy = FlxUXNavCapturePolicy.AUTO;
 
-FlxUXCore.cursorEnabled = true;
+// or
+FlxUXCore.navStyle = FlxUXNavStyle.SPATIAL;
 ```
 
-### 2) Themes (recommended)
+### LINEAR navigation
 
-Themes bundle the common defaults into one object and can be swapped at runtime.
+LINEAR navigation is essentially a "next / previous" list.
+
+- Pressing **DOWN** or **RIGHT** moves to the next eligible button in the order it was added.
+- Pressing **UP** or **LEFT** moves to the previous eligible button.
+- When FlxUX reaches the last eligible button in a group, it continues to the next eligible group in the state.
+- When it reaches the end of the final eligible group, selection wraps back to the start.
+
+LINEAR is great for simple menus because the behavior is predictable and doesn't depend on button positions.
+
+### SPATIAL navigation
+
+SPATIAL navigation tries to move focus based on where buttons are on screen.
+
+- Pressing a direction searches for the "best" next button in that direction.
+- This is typically what you want for grids and irregular layouts.
+
+Because SPATIAL is position-based, your layout matters: if you move buttons around, the navigation results will change.
+
+## Styling
+
+FlxUX styling is based on a simple override chain:
+
+1) **`FlxUXCore`** (global defaults for your whole project)
+2) **`FlxUXGroup`** (menu-level defaults)
+3) **`FlxUXButton`** (per-button overrides)
+
+The easiest way to think about it is: set a good-looking global default in `FlxUXCore`, then override only where you need to.
+
+### Global button skin (applies to every button)
+
+Set a graphic on `FlxUXCore` and every new `FlxUXButton` will use it unless a group or button overrides it.
+
+#### A basic 4-frame button graphic
+
+This is the classic Flixel button layout: a single spritesheet with 4 frames:
+
+1) UP
+2) OVER
+3) DOWN
+4) LOCKED (disabled)
 
 ```haxe
-import flixel.ux.FlxUXCore;
-import flixel.ux.FlxUXTheme;
-import openfl.Assets;
+// Applies to all FlxUXButtons (unless overridden)
+FlxUXCore.buttonGraphic = "assets/images/ui/button_4frame.png";
+```
 
+#### A 4-frame 9-slice button graphic
+
+If your buttons are 9-slice skins, you can still use the same 4-frame idea. Each frame is treated as its own 9-slice source.
+
+```haxe
+FlxUXCore.buttonGraphic = "assets/images/ui/button_4frame_9slice.png";
+
+// Optional: set the 9-slice corner sizes (in pixels) to match your art.
+// (If you don't set these, FlxUX will use its defaults.)
+FlxUXCore.buttonSlices = [6, 6, 6, 6];
+```
+
+Animations are also supported (sprite sheets + named sequences), but for most menus a static 4-frame skin is the simplest starting point.
+
+### Global label styling
+
+```haxe
+FlxUXCore.buttonLabelColor = 0xFFFFFFFF;
+FlxUXCore.buttonLabelColorLocked = 0xFF777777;
+```
+
+### Override per menu (group)
+
+If one menu needs a different look, set the same properties on the `FlxUXGroup`. This overrides the core defaults for buttons in that group.
+
+```haxe
+var menu = new FlxUXGroup();
+add(menu);
+
+menu.buttonGraphic = "assets/images/ui/pause_button_4frame.png";
+menu.buttonLabelColor = 0xFFFFE7B0;
+```
+
+### Override a single button
+
+For one-off special cases, set it directly on the button. This overrides both the group and the core.
+
+```haxe
+var danger = menu.addButton("Delete Save", onDelete);
+danger.buttonGraphic = "assets/images/ui/danger_button_4frame.png";
+danger.buttonLabelColor = 0xFFFF4B4B;
+```
+
+## Themes
+
+Themes are the “bundle everything” version of the same override chain. Instead of setting lots of individual properties, you can package them into a `FlxUXTheme` and apply it.
+
+### Create a theme in code
+
+```haxe
+var myTheme = new FlxUXTheme({
+	buttonGraphic: "assets/images/ui/button_4frame_9slice.png",
+	buttonSlices: [6, 6, 6, 6],
+	buttonLabelColor: 0xFFFFFFFF,
+	buttonLabelColorLocked: 0xFF777777
+});
+
+FlxUXCore.theme = myTheme;
+```
+
+### Group and button theme overrides
+
+The same override chain still applies:
+
+- `FlxUXCore.theme` sets the default theme
+- `group.theme` overrides it for that menu
+- `button.theme` overrides it for that one button
+
+```haxe
+menu.theme = new FlxUXTheme({
+	buttonLabelColor: 0xFFFFE7B0
+});
+
+var special = menu.addButton("Special", onSpecial);
+special.theme = new FlxUXTheme({
+	buttonLabelColor: 0xFF00E5FF
+});
+```
+
+### Load a theme from JSON
+
+```haxe
 FlxUXCore.theme = FlxUXTheme.fromJson(Assets.getText("themes/default.json"));
 ```
 
-### Changing styles at runtime
-
-FlxUX is designed for runtime style swaps. Assigning `FlxUXCore.theme` clears the 9-slice cache and refreshes any registered groups.
-
-```haxe
-FlxUXCore.theme = FlxUXTheme.fromJson(Assets.getText("themes/light.json"));
-
-// Later...
-FlxUXCore.theme = FlxUXTheme.fromJson(Assets.getText("themes/dark.json"));
-```
-
-### 3) Group and per-button overrides
-
-```haxe
-import flixel.ux.FlxUX9Slice;
-import flixel.ux.FlxUXTheme;
-
-group.theme = FlxUXTheme.fromJson(Assets.getText("themes/pauseMenu.json"));
-
-var button = group.addButton("Special", onSpecial);
-button.theme = FlxUXTheme.fromJson(Assets.getText("themes/specialButton.json"));
-```
-
-## Locked state (4th button state)
-
-Flixel internally calls the 4th button state `DISABLED`. In FlxUX, the public API name is **locked**.
-
-When a button is locked:
-
-- It uses the 4th skin state (disabled graphic / animation frames)
-- It cannot be focused or activated
-- It keeps updating (it does not toggle `active`)
-
-```haxe
-var b = group.addButton("Can't click this", onClick);
-b.locked = true;
-```
-
-### Locked label color
-
-You can style locked labels separately from normal disabled labels.
-
-Precedence is the same as everything else: **button → group → core**.
-
-```haxe
-// Global default for all locked buttons
-FlxUXCore.buttonLabelColorLocked = 0xFF444444;
-
-// Group override
-group.buttonLabelColorLocked = 0xFF222222;
-
-// Per-button override
-b.buttonLabelColorLocked = 0xFF111111;
-```
-
-See `FlxUXTheme` for the full list of supported fields.
-
-## Demo project
-
-There’s a runnable HaxeFlixel demo project in `demo/` that showcases focus modes, themes, and layout helpers.
-
-See `demo/README.md` for how to run it and what it covers.
+See `FlxUXTheme` for the full list of supported settings.
