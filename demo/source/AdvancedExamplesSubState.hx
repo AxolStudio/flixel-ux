@@ -38,7 +38,7 @@ class AdvancedExamplesSubState extends FlxSubState
 		topRow.y = contentTop;
 		add(topRow);
 		// Create 5 buttons and add them to the same group.
-		// These buttons will participate in NAV focus and also support the normal pointer clicks.
+		// These buttons participate in NAV focus and still support normal pointer clicks.
 
 		for (t in ["1", "2", "3", "4", "5"])
 		{
@@ -51,7 +51,10 @@ class AdvancedExamplesSubState extends FlxSubState
 		topRow.x = 24 + FlxG.width + (FlxG.width - 48 - topRow.width) * 0.5;
 
 		var reverseBtnW = 340;
-		var reverseBtn = new flixel.ux.FlxUXButton(24 + FlxG.width + (FlxG.width - 48 - reverseBtnW) * 0.5, contentTop + 58, "Reverse", () ->
+		var reverseGroup = new FlxUXGroup();
+		reverseGroup.y = contentTop + 58;
+		add(reverseGroup);
+		var reverseBtn = reverseGroup.addButton("Reverse", () ->
 		{
 			// reverse() changes the group’s internal ordering.
 			// Re-run spread() so the positions update to match the new order.
@@ -61,7 +64,7 @@ class AdvancedExamplesSubState extends FlxSubState
 			topRow.x = 24 + (FlxG.width - 48 - topRow.width) * 0.5;
 		});
 		reverseBtn.resize(reverseBtnW, 40);
-		add(reverseBtn);
+		reverseGroup.x = 24 + FlxG.width + (FlxG.width - 48 - reverseBtnW) * 0.5;
 
 		var enabledDisabled = new FlxUXGroup();
 		var pairTotalW = 520;
@@ -85,7 +88,7 @@ class AdvancedExamplesSubState extends FlxSubState
 		FlxTween.tween(header, { x: header.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
 		FlxTween.tween(box.border, { x: box.border.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
 		FlxTween.tween(topRow, { x: topRow.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
-		FlxTween.tween(reverseBtn, { x: reverseBtn.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
+		FlxTween.tween(reverseGroup, { x: reverseGroup.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
 		FlxTween.tween(enabledDisabled, { x: enabledDisabled.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
 	}
 

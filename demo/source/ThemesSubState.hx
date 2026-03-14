@@ -55,7 +55,7 @@ class ThemesSubState extends FlxSubState
 		// This screen demonstrates the 3 places you can apply style:
 		// 1) Core (global): FlxUXCore.theme affects every group/button without overrides.
 		// 2) A single group: group.theme affects only that one menu.
-		// 3) Manual per-button overrides: no theme at all, just set properties on a button.
+		// 3) Manual per-button overrides: no theme at all, just set button properties.
 
 		var boxGlobal = DemoUi.makeBox(startX, startY, colW, bottomH, "Set theme globally");
 		add(boxGlobal.border);
@@ -130,7 +130,7 @@ class ThemesSubState extends FlxSubState
 		// - Set an FPS > 0
 		// - Provide frame sequences for each button state (up/over/down/disabled)
 		//
-		// Note: FlxUX does *not* ship a default animated button skin anymore.
+		// Note: FlxUX doesn't ship a default animated button skin.
 		// This example uses demo assets: demo/assets/ux/button_anim.png.
 		animExample = manualGroup.addButton("Animated skin", null);
 		animExample.setButtonSkin(new flixel.ux.FlxUX9Slice("assets/ux/button_anim.png", 16, 16, 3, 7, 3, 7), 18);

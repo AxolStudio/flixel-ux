@@ -11,10 +11,7 @@ class PlayState extends FlxState
 {
 	override public function create():Void
 	{
-		/**
-		 *  Initializing the screen for the demo - you can ignore this section
-		 * =====================================================================
-		 **/
+		// Demo-only setup: background + header text.
 		bgColor = FlxColor.BLACK;
 
 		var title = new FlxText(0, 20, FlxG.width, "flixel-ux demo");
@@ -24,16 +21,13 @@ class PlayState extends FlxState
 		var subtitle = new FlxText(0, 54, FlxG.width, "A small showcase of FlxUX features that you can use as a guide.");
 		subtitle.setFormat(null, 14, 0xFFB9C0D0, CENTER);
 		add(subtitle);
-		/** 
-		 * END OF DEMO SETUP
-		 * =====================================================================
-		 **/
 
-		// Create and add a new FlxUXGroup to your state
+		// Create a FlxUXGroup and add it to the state.
+		// This matters: in NAV mode, FlxUX only navigates buttons that Flixel is updating.
 		var menu = new FlxUXGroup();
 		add(menu);
 
-		// Add the buttons that open different substates to the FlxUXGroup
+		// Add buttons to the group. These automatically participate in pointer + NAV focus.
 		menu.addButton("Focus modes", () -> openSubState(new FocusModesSubState()));
 		menu.addButton("Themes + overrides", () -> openSubState(new ThemesSubState()));
 		menu.addButton("Layout helpers", () -> openSubState(new LayoutHelpersSubState()));
@@ -45,14 +39,14 @@ class PlayState extends FlxState
 			menu.addButton("Quit", () -> Sys.exit(0));
 		#end
 		
-		// Make all buttons in the group the same size, based on the largest button.
+		// Make all buttons the same size based on the largest label.
 		menu.matchSize();
 			
 		// Arrange in a 2-column grid.
 		// With 5 buttons, the final row has 1 button, and we center-align that last row.
 		menu.grid(2, 18, 14, FlxUXGridLastRowAlign.CENTER);
 		
-		// using the combined relative positions and sizes of the buttons in this group, center the entire group on the screen
+		// Center the whole group based on its button bounds.
 		menu.alignCenter(); 
 
 		super.create();

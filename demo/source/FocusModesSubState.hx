@@ -26,7 +26,7 @@ class FocusModesSubState extends FlxSubState
 		);
 
 		// We’ll build three columns, each backed by its own FlxUXGroup.
-		// Those groups all contain identical buttons, but each group uses a different focusMode.
+		// Each group contains the same buttons, but uses a different focusMode.
 
 		var labels = [
 			{ name: "FRAME", mode: FlxUXFocusMode.FRAME },

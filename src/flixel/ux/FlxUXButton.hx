@@ -859,6 +859,7 @@ class FlxUXButton extends FlxButton
 
 	override public function update(elapsed:Float):Void
 	{
+		FlxUXCore.markNavButtonUpdatedThisFrame(this);
 		if (_locked)
 		{
 			super.update(elapsed);

@@ -23,7 +23,7 @@ class NavigationModesSubState extends FlxSubState
 		// - LINEAR: next/previous traversal in the group's ordered list
 		// - SPATIAL: direction-based navigation (nearest neighbor in the direction you pressed)
 		//
-		// Tip: in SPATIAL mode, the grid layout makes the behavior feel natural.
+		// Tip: SPATIAL makes the most sense when the layout is spatial (like a grid).
 		add(DemoUi.makeSolidBackdrop());
 		DemoUi.addBackButton(this);
 

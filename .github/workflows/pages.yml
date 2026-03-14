@@ -48,7 +48,7 @@ jobs:
       - name: Build demo (HTML5)
         working-directory: demo
         run: |
-          haxelib run lime build html5 -release
+          haxelib run lime build html5 -release -final -clean
 
       - name: Prepare Pages artifact (root)
         run: |

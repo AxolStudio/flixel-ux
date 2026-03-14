@@ -406,6 +406,8 @@ class FlxUXCore
 
 	private static var initialized:Bool = false;
 	private static var pendingAutoReady:Bool = false;
+	private static var lastStateKey:String = "";
+	private static var navButtonsUpdatedThisFrame:Map<FlxUXButton, Bool> = new Map();
 
 	/**
 	 * Initializes FlxUX.
@@ -478,8 +480,10 @@ class FlxUXCore
 	private static function onStateTransition():Void
 	{
 		clearGroups();
+		setFocused(null);
 		ready = false;
 		pendingAutoReady = autoReady;
+		lastStateKey = "";
 	}
 
 	private static function set_ready(value:Bool):Bool
@@ -488,6 +492,19 @@ class FlxUXCore
 			return value;
 
 		ready = value;
+		if (!ready)
+		{
+			setFocused(null);
+			navConfirmHeld = false;
+			clearNavButtonsUpdatedThisFrame();
+			if (groups != null)
+			{
+				for (g in groups)
+					if (g != null)
+						g.updateFocusGraphics();
+			}
+			return value;
+		}
 
 		if (ready && mode == FlxUXCore.FlxUXInputMode.NAV)
 			tryFocusFirstEligible();
@@ -559,6 +576,23 @@ class FlxUXCore
 	{
 		if (!initialized) init();
 		if (actions == null) return;
+
+		var stateKey = stateTickKey();
+		var changedLayer = (stateKey != lastStateKey);
+		if (changedLayer)
+		{
+			lastStateKey = stateKey;
+			setFocused(null);
+			navConfirmHeld = false;
+			if (groups != null)
+			{
+				for (g in groups)
+					if (g != null)
+						g.updateFocusGraphics();
+			}
+			ready = false;
+			pendingAutoReady = autoReady;
+		}
 		if (pendingAutoReady)
 		{
 			pendingAutoReady = false;
@@ -585,8 +619,14 @@ class FlxUXCore
 		else if (actions.up.triggered || actions.down.triggered || actions.left.triggered || actions.right.triggered
 			|| actions.confirm.triggered || actions.cancel.triggered)
 		{
+			var hadNoFocus = (focused == null);
+			var navWasTriggered = (actions.up.triggered || actions.down.triggered || actions.left.triggered || actions.right.triggered);
 			mode = FlxUXCore.FlxUXInputMode.NAV;
 			pointerPreferred = false;
+			if (focused == null)
+				tryFocusFirstEligible();
+			if (hadNoFocus && navWasTriggered)
+				return;
 		}
 
 		#if FLX_NO_MOUSE
@@ -646,6 +686,9 @@ class FlxUXCore
 						focusSpatial(navTargets, dirX, dirY);
 				}
 
+				if (focused == null && navTargets != null && navTargets.length > 0)
+					setFocused(navTargets[0]);
+
 				if (actions.confirmReleased)
 				{
 					if (focused != null) focused.setNavPressed(false);
@@ -655,6 +698,7 @@ class FlxUXCore
 				if (actions.cancel.triggered)
 					cancel();
 			}
+			clearNavButtonsUpdatedThisFrame();
 		}
 	}
 
@@ -837,20 +881,38 @@ class FlxUXCore
 
 	private static function focusNext(list:Array<FlxUXButton>):Void
 	{
-		if (list.length == 0) return;
+		if (list == null || list.length == 0) return;
+		if (focused == null)
+		{
+			setFocused(list[0]);
+			return;
+		}
 
 		var idx = list.indexOf(focused);
-		if (idx < 0) idx = -1;
+		if (idx < 0)
+		{
+			setFocused(list[0]);
+			return;
+		}
 
 		setFocused(list[(idx + 1) % list.length]);
 	}
 
 	private static function focusPrev(list:Array<FlxUXButton>):Void
 	{
-		if (list.length == 0) return;
+		if (list == null || list.length == 0) return;
+		if (focused == null)
+		{
+			setFocused(list[0]);
+			return;
+		}
 
 		var idx = list.indexOf(focused);
-		if (idx < 0) idx = 0;
+		if (idx < 0)
+		{
+			setFocused(list[0]);
+			return;
+		}
 
 		var prevIndex = idx - 1;
 		if (prevIndex < 0) prevIndex = list.length - 1;
@@ -908,19 +970,27 @@ class FlxUXCore
 			if (!g.uxActive || !g.capturesNav) continue;
 			var buttons = g.getEligibleButtonsOrdered();
 			for (b in buttons)
+			{
+				if (b == null) continue;
+				if (!navButtonsUpdatedThisFrame.exists(b)) continue;
 				out.push(b);
+			}
 		}
-
-		if (focused != null && out.indexOf(focused) < 0)
-		{
-			if (focused != null) focused.setFocused(false);
-			focused = null;
-		}
-
-		if (focused == null && out.length > 0)
-			setFocused(out[0]);
 
 		return out;
+	}
+
+	@:allow(flixel.ux.FlxUXButton)
+	private static function markNavButtonUpdatedThisFrame(b:FlxUXButton):Void
+	{
+		if (b == null) return;
+		navButtonsUpdatedThisFrame.set(b, true);
+	}
+
+	private static function clearNavButtonsUpdatedThisFrame():Void
+	{
+		for (b in navButtonsUpdatedThisFrame.keys())
+			navButtonsUpdatedThisFrame.remove(b);
 	}
 
 	private static function hasTouchPointerInput():Bool
@@ -941,6 +1011,16 @@ class FlxUXCore
 
 		return false;
 		#end
+	}
+
+	private static function stateTickKey():String
+	{
+		if (FlxG.state == null)
+			return "";
+		var hx:Dynamic = Reflect.field(FlxG.state, "hashCode");
+		if (hx != null)
+			return Std.string(hx);
+		return Std.string(FlxG.state);
 	}
 }
 

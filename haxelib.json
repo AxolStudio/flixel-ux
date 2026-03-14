@@ -11,7 +11,7 @@
     "buttons"
   ],
   "description": "A library providing UX utilities for HaxeFlixel.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "classPath": "src/",
   "contributors": [
     "AxolStudio",

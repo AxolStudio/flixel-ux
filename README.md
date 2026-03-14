@@ -183,6 +183,20 @@ SPATIAL navigation tries to move focus based on where buttons are on screen.
 
 Because SPATIAL is position-based, your layout matters: if you move buttons around, the navigation results will change.
 
+### What is Navigable in FlxUX?
+
+In **NAV mode** (keyboard/gamepad), FlxUX only considers buttons that are being **updated by Flixel**.
+
+In practice, a button can be focused if:
+
+- Its `FlxUXButton.update()` is getting called this frame, and
+- The button is eligible (`exists`, `alive`, `visible`, `active`, and not `locked`), and
+- Its `FlxUXGroup` is eligible (`exists`, `alive`, `visible`, `active`, `uxActive = true`, `capturesNav = true`).
+
+This matches how Flixel “modal” UI works: when you open a `subState`, the underlying state typically stops updating, so those hidden buttons automatically become non-navigable.
+
+If you intentionally keep underlying UI updating (for example, by customizing substate behavior), those buttons will remain navigable too — FlxUX simply follows whatever Flixel is updating.
+
 ## Styling
 
 FlxUX styling is based on a simple override chain:
@@ -216,11 +230,14 @@ FlxUXCore.buttonGraphic = "assets/images/ui/button_4frame.png";
 If your buttons are 9-slice skins, you can still use the same 4-frame idea. Each frame is treated as its own 9-slice source.
 
 ```haxe
-FlxUXCore.buttonGraphic = "assets/images/ui/button_4frame_9slice.png";
-
-// Optional: set the 9-slice corner sizes (in pixels) to match your art.
-// (If you don't set these, FlxUX will use its defaults.)
-FlxUXCore.buttonSlices = [6, 6, 6, 6];
+FlxUXCore.buttonGraphic = new FlxUX9Slice(
+	"assets/images/ui/button_4frame_9slice.png",
+	16,
+	16,
+	6,
+	6,
+	6,
+	6);
 ```
 
 Animations are also supported (sprite sheets + named sequences), but for most menus a static 4-frame skin is the simplest starting point.
@@ -262,8 +279,7 @@ Themes are the “bundle everything” version of the same override chain. Inste
 
 ```haxe
 var myTheme = new FlxUXTheme({
-	buttonGraphic: "assets/images/ui/button_4frame_9slice.png",
-	buttonSlices: [6, 6, 6, 6],
+	buttonGraphic: new FlxUX9Slice("assets/images/ui/button_4frame_9slice.png", 16, 16, 6, 6, 6, 6),
 	buttonLabelColor: 0xFFFFFFFF,
 	buttonLabelColorLocked: 0xFF777777
 });
