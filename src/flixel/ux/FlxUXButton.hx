@@ -1,18 +1,30 @@
 package flixel.ux;
 
-import flixel.util.FlxColor;
 import flixel.FlxSprite;
-import flixel.ui.FlxButton;
-import flixel.ui.FlxButton.FlxButtonState;
-import flixel.ux.FlxUXCore.FlxUXGraphicInput;
 import flixel.graphics.FlxGraphic;
 import flixel.system.FlxAssets.FlxSoundAsset;
-import flixel.text.FlxText;
-import flixel.text.FlxText.FlxTextAlign;
 import flixel.text.FlxBitmapText;
+import flixel.text.FlxText.FlxTextAlign;
+import flixel.text.FlxText;
+import flixel.ui.FlxBitmapTextButton;
+import flixel.ui.FlxButton.FlxButtonState;
+import flixel.util.FlxColor;
+import flixel.ux.FlxUXCore.FlxUXGraphicInput;
 
-class FlxUXButton extends FlxButton
+class FlxUXButton extends FlxBitmapTextButton
 {
+	public var text(get, set):String;
+	
+	private inline function get_text():String
+	{
+		return label != null ? label.text : null;
+	}
+
+	private function set_text(value:String):String
+	{
+		setLabelText(value);
+		return value;
+	}
 	
 	private static inline var DEFAULT_BUTTON_DEPTH:Int = 4;
 	private static inline var DEFAULT_UP:FlxColor = 0xFF3A3E4A;
@@ -271,6 +283,12 @@ class FlxUXButton extends FlxButton
 	{
 		if (this.label == null)
 			return;
+		if (Std.isOfType(this.label, FlxBitmapText))
+		{
+			var text:FlxBitmapText = cast this.label;
+			text.autoSize = true;
+			text.fieldWidth = 0;
+		}
 
 		if (Std.isOfType(this.label, FlxText))
 		{
@@ -373,6 +391,13 @@ class FlxUXButton extends FlxButton
 	public function centerLabel():Void
 	{
 		if (this.label == null) return;
+		if (Std.isOfType(this.label, FlxBitmapText))
+		{
+			var text:FlxBitmapText = cast this.label;
+			text.alignment = CENTER;
+			text.autoSize = false;
+			text.fieldWidth = Std.int(width);
+		}
 		this.label.x = x + (width - this.label.width) * 0.5;
 		var yOff:Float = 0;
 		if (_locked)
