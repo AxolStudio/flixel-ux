@@ -399,12 +399,7 @@ class FlxUXButton extends FlxBitmapTextButton
 			text.fieldWidth = Std.int(width);
 		}
 		this.label.x = x + (width - this.label.width) * 0.5;
-		var yOff:Float = 0;
-		if (_locked)
-			yOff = 0;
-		else if (usingNineSliceSkin && status != FlxButtonState.PRESSED)
-			yOff = -DEFAULT_BUTTON_DEPTH;
-		this.label.y = y + (height - this.label.height) * 0.5 + yOff;
+		this.label.y = y + (height - this.label.height) * 0.5;
 	}
 
 	/** Applies label options (font/size/color/align and optional label factory) using precedence: button -> group -> core. */
