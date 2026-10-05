@@ -400,6 +400,25 @@ class FlxUXButton extends FlxBitmapTextButton
 		}
 		this.label.x = x + (width - this.label.width) * 0.5;
 		this.label.y = y + (height - this.label.height) * 0.5;
+		if (Std.isOfType(this.label, FlxBitmapText))
+		{
+			var text:FlxBitmapText = cast this.label;
+			var top:Float = Math.POSITIVE_INFINITY;
+			var bottom:Float = Math.NEGATIVE_INFINITY;
+			for (index in 0...text.text.length)
+			{
+				var frame:flixel.graphics.frames.FlxFrame = text.font.getCharFrame(text.text.charCodeAt(index));
+				if (frame == null || frame.frame.height == 0)
+					continue;
+				top = Math.min(top, frame.offset.y);
+				bottom = Math.max(bottom, frame.offset.y + frame.frame.height);
+			}
+			if (top != Math.POSITIVE_INFINITY)
+			{
+				bottom += (text.numLines - 1) * (text.font.lineHeight + text.lineSpacing);
+				text.y = y + height * 0.5 - (top + bottom) * text.scale.y * 0.5;
+			}
+		}
 	}
 
 	/** Applies label options (font/size/color/align and optional label factory) using precedence: button -> group -> core. */
@@ -875,6 +894,21 @@ class FlxUXButton extends FlxBitmapTextButton
 
 		status = uxPressed ? FlxButtonState.PRESSED : FlxButtonState.NORMAL;
 		updateFrameFromStatus();
+	}
+
+	/** Suppresses stale pointer hover while keyboard/gamepad navigation is active. */
+	override function updateButton():Void
+	{
+		var actions:FlxUXActions = FlxUXCore.actions;
+		if (FlxUXCore.mode == flixel.ux.FlxUXCore.FlxUXInputMode.NAV
+			&& actions != null
+			&& !actions.moveMouse.triggered
+			&& !actions.pointerPressHeld.triggered)
+		{
+			status = uxPressed ? FlxButtonState.PRESSED : FlxButtonState.NORMAL;
+			return;
+		}
+		super.updateButton();
 	}
 
 	override public function update(elapsed:Float):Void
