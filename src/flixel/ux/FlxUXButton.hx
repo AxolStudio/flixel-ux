@@ -2,6 +2,7 @@ package flixel.ux;
 
 import flixel.FlxSprite;
 import flixel.graphics.FlxGraphic;
+import flixel.sound.FlxSound;
 import flixel.system.FlxAssets.FlxSoundAsset;
 import flixel.text.FlxBitmapText;
 import flixel.text.FlxText.FlxTextAlign;
@@ -273,7 +274,12 @@ class FlxUXButton extends FlxBitmapTextButton
 	public function setLabelText(text:String):Void
 	{
 		baseLabelText = text;
-		if (this.label != null) this.label.text = text;
+		if (this.label != null)
+		{
+			this.label.text = text;
+			this.label.autoSize = true;
+			this.label.updateHitbox();
+		}
 		applyLabelOptions();
 		if (autoSizeToLabel) autosize();
 	}
@@ -397,6 +403,7 @@ class FlxUXButton extends FlxBitmapTextButton
 			text.alignment = CENTER;
 			text.autoSize = false;
 			text.fieldWidth = Std.int(width);
+			text.updateHitbox();
 		}
 		this.label.x = x + (width - this.label.width) * 0.5;
 		this.label.y = y + (height - this.label.height) * 0.5;
@@ -542,17 +549,32 @@ class FlxUXButton extends FlxBitmapTextButton
 		var sClick = (buttonSoundClick != null) ? buttonSoundClick : ((uxGroup != null && uxGroup.buttonSoundClick != null) ? uxGroup.buttonSoundClick : FlxUXCore.buttonSoundClick);
 		if (onOver != null)
 		{
-			if (sOver != null) onOver.sound.loadEmbedded(sOver, false, false);
+			if (sOver != null)
+			{
+				if (onOver.sound == null)
+					onOver.sound = new FlxSound();
+				onOver.sound.loadEmbedded(sOver, false, false);
+			}
 			else onOver.sound = null;
 		}
 		if (onDown != null)
 		{
-			if (sDown != null) onDown.sound.loadEmbedded(sDown, false, false);
+			if (sDown != null)
+			{
+				if (onDown.sound == null)
+					onDown.sound = new FlxSound();
+				onDown.sound.loadEmbedded(sDown, false, false);
+			}
 			else onDown.sound = null;
 		}
 		if (onUp != null)
 		{
-			if (sClick != null) onUp.sound.loadEmbedded(sClick, false, false);
+			if (sClick != null)
+			{
+				if (onUp.sound == null)
+					onUp.sound = new FlxSound();
+				onUp.sound.loadEmbedded(sClick, false, false);
+			}
 			else onUp.sound = null;
 		}
 		applyLabelColorsForStatus();
