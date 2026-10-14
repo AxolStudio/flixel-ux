@@ -22,16 +22,25 @@ class FocusModesSubState extends FlxSubState
 		DemoUi.addBackButton(this);
 		add(DemoUi.makeHeader(
 			"Focus modes",
-			"FlxUX has 5 focus modes. The highlight graphics are customizable (and can be disabled).")
-		);
+			"FlxUX has 5 focus modes. The highlight graphics are customizable (and can be disabled)."
+		));
 
 		// We’ll build three columns, each backed by its own FlxUXGroup.
 		// Each group contains the same buttons, but uses a different focusMode.
 
 		var labels = [
-			{ name: "FRAME", mode: FlxUXFocusMode.FRAME },
-			{ name: "NEXT_TO", mode: FlxUXFocusMode.NEXT_TO },
-			{ name: "OVERLAY", mode: FlxUXFocusMode.OVERLAY },
+			{
+				name: "FRAME",
+				mode: FlxUXFocusMode.FRAME
+			},
+			{
+				name: "NEXT_TO",
+				mode: FlxUXFocusMode.NEXT_TO
+			},
+			{
+				name: "OVERLAY",
+				mode: FlxUXFocusMode.OVERLAY
+			},
 		];
 
 		var topY = 120;

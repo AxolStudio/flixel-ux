@@ -37,11 +37,16 @@ class FlxUXGroup extends FlxGroup
 	 * This is a propagation convenience: it sets `button.locked` for all currently tracked buttons.
 	 */
 	public var locked(get, set):Bool;
+
 	private var _locked:Bool = false;
-	private inline function get_locked():Bool return _locked;
+
+	private inline function get_locked():Bool
+		return _locked;
+
 	private function set_locked(v:Bool):Bool
 	{
-		if (_locked == v) return _locked;
+		if (_locked == v)
+			return _locked;
 		_locked = v;
 		applyLockedToButtons();
 		return _locked;
@@ -53,11 +58,14 @@ class FlxUXGroup extends FlxGroup
 	 * Setting this copies theme fields onto the group's override variables and calls `refreshTheme()`.
 	 */
 	public var theme(get, set):Null<FlxUXTheme>;
+
 	private var currentTheme:Null<FlxUXTheme> = null;
+
 	private function get_theme():Null<FlxUXTheme>
 	{
 		return currentTheme;
 	}
+
 	private function set_theme(value:Null<FlxUXTheme>):Null<FlxUXTheme>
 	{
 		currentTheme = value;
@@ -85,6 +93,8 @@ class FlxUXGroup extends FlxGroup
 			focusOverlayGraphic = null;
 			focusOverlayOffsetX = null;
 			focusOverlayOffsetY = null;
+			highlightPadX = 12;
+			highlightPadY = 12;
 		}
 		else
 		{
@@ -149,14 +159,19 @@ class FlxUXGroup extends FlxGroup
 	public var onCancel:Void->Void;
 
 	public var focusMode:Null<FlxUXFocusMode> = null;
+
 	/** Default button skin graphic input for buttons in this group (null => FlxUXCore.buttonGraphic). */
 	public var buttonGraphic:Null<FlxUXGraphicInput> = null;
+
 	/** Optional animated skin FPS for buttons in this group (<= 0 => FlxUXCore.buttonSkinFps). */
 	public var buttonSkinFps:Int = 0;
+
 	/** Optional override for whether buttons in this group use the animated default sheet when no custom graphic is set. */
 	public var buttonUseAnim:Null<Bool> = null;
+
 	/** Optional per-state sequences when using the animated default sheet. */
 	public var buttonAnimUp:Null<Array<Int>> = null;
+
 	public var buttonAnimOver:Null<Array<Int>> = null;
 	public var buttonAnimDown:Null<Array<Int>> = null;
 	public var buttonAnimDisabled:Null<Array<Int>> = null;
@@ -171,8 +186,10 @@ class FlxUXGroup extends FlxGroup
 	public var buttonLabelColorHover:Null<flixel.util.FlxColor> = null;
 	public var buttonLabelColorDown:Null<flixel.util.FlxColor> = null;
 	public var buttonLabelColorDisabled:Null<flixel.util.FlxColor> = null;
+
 	/** Optional per-group label color when a FlxUXButton is locked (forced DISABLED). */
 	public var buttonLabelColorLocked:Null<flixel.util.FlxColor> = null;
+
 	public var buttonLabelAlign:Null<flixel.text.FlxText.FlxTextAlign> = null;
 	public var buttonLabelFactory:Null<flixel.ux.FlxUXCore.FlxUXLabelFactory> = null;
 
@@ -241,7 +258,8 @@ class FlxUXGroup extends FlxGroup
 				for (i in 0...members.length)
 				{
 					var b = members[i];
-					if (b == null) continue;
+					if (b == null)
+						continue;
 					b.uxGroup = this;
 					b.locked = _locked;
 					b.refreshSkinFromDefaults();
@@ -257,6 +275,7 @@ class FlxUXGroup extends FlxGroup
 	{
 		orderedButtons.reverse();
 	}
+
 	public var focusFrameGraphic:Null<FlxUXGraphicInput> = null;
 	public var focusNextToGraphic:Null<FlxUXGraphicInput> = null;
 	public var focusNextToMirrored:Null<Bool> = null;
@@ -273,9 +292,9 @@ class FlxUXGroup extends FlxGroup
 
 	/** Padding (in pixels) added around the focused button when drawing the focus FRAME. */
 	public var highlightPadX:Float = 12;
+
 	/** Padding (in pixels) added around the focused button when drawing the focus FRAME. */
 	public var highlightPadY:Float = 12;
-
 
 	/**
 	 * Group position (moves all tracked children).
@@ -284,23 +303,26 @@ class FlxUXGroup extends FlxGroup
 	 * transform so you can tween/animate a menu/popup as a single unit.
 	 */
 	public var x(default, set):Float = 0;
+
 	public var y(default, set):Float = 0;
 
 	/** Left-most x among buttons (world-space). Read-only. */
 	public var boundsX(get, never):Float;
+
 	/** Top-most y among buttons (world-space). Read-only. */
 	public var boundsY(get, never):Float;
+
 	/** Width of the button bounds. Read-only. */
 	public var width(get, never):Float;
+
 	/** Height of the button bounds. Read-only. */
 	public var height(get, never):Float;
 
-
 	/** Buttons layer. */
 	public var buttons(default, null):FlxTypedGroup<FlxUXButton>;
+
 	/** Sprite layer for focus/highlight visuals. */
 	public var sprites(default, null):FlxTypedGroup<FlxSprite>;
-
 
 	private var orderedButtons:Array<FlxUXButton> = [];
 	private var buttonBasePos:Map<FlxUXButton, FlxPoint> = new Map();
@@ -309,10 +331,13 @@ class FlxUXGroup extends FlxGroup
 
 	/** Per-group focus highlighter (optional). */
 	public var focusHighlighter:FlxSprite = null;
+
 	/** Optional focus sprite shown next to the focused button (left). */
 	public var focusSideLeft:FlxSprite = null;
+
 	/** Optional focus sprite shown next to the focused button (right). */
 	public var focusSideRight:FlxSprite = null;
+
 	/** Optional focus sprite shown on top of the focused button. */
 	public var focusOverlay:FlxSprite = null;
 
@@ -357,15 +382,9 @@ class FlxUXGroup extends FlxGroup
 	}
 
 	/**
-	 * Adds an existing button to this group at an optional dense order.
+	 * Adds an existing button to this group and registers its navigation order.
 	 *
 	 * @return The same button that was provided (for chaining).
-	 */
-	/**
-	 * Adds a UX button to this group (and registers it for navigation ordering).
-	 *
-	 * Named differently from FlxGroup.add() so users can still use normal group add/remove
-	 * for their own extensions.
 	 */
 	public function addUXButton(button:FlxUXButton, ?order:Int):FlxUXButton
 	{
@@ -407,18 +426,26 @@ class FlxUXGroup extends FlxGroup
 	 * @param order Optional dense order index to insert at.
 	 * @return The created buttons in the same order as `items`.
 	 */
-	public function addButtons(items:Array<{ label:String, x:Float, y:Float, action:Void->Void }>, ?order:Int):Array<FlxUXButton>
+	public function addButtons(items:Array<
+		{
+			label:String,
+			x:Float,
+			y:Float,
+			action:Void->Void
+		}>, ?order:Int):Array<FlxUXButton>
 	{
 		var out:Array<FlxUXButton> = [];
 		var insertAt = order;
 		for (i in 0...items.length)
 		{
 			var it = items[i];
-			if (it == null) continue;
+			if (it == null)
+				continue;
 			var b = new FlxUXButton(it.x, it.y, it.label, it.action);
 			b.uxGroup = this;
 			out.push(addUXButton(b, insertAt));
-			if (insertAt != null) insertAt++;
+			if (insertAt != null)
+				insertAt++;
 		}
 		return out;
 	}
@@ -434,7 +461,8 @@ class FlxUXGroup extends FlxGroup
 		if (idx >= 0)
 		{
 			orderedButtons.splice(idx, 1);
-			if (buttons != null) buttons.remove(button, true);
+			if (buttons != null)
+				buttons.remove(button, true);
 			untrackButton(button);
 			return true;
 		}
@@ -455,7 +483,8 @@ class FlxUXGroup extends FlxGroup
 	public function setButtonOrder(button:FlxUXButton, newOrder:Int):Void
 	{
 		var idx = orderedButtons.indexOf(button);
-		if (idx < 0) return;
+		if (idx < 0)
+			return;
 
 		orderedButtons.splice(idx, 1);
 		insertDense(orderedButtons, button, newOrder);
@@ -468,8 +497,10 @@ class FlxUXGroup extends FlxGroup
 	 */
 	public function getEligibleButtonsOrdered():Array<FlxUXButton>
 	{
-		if (!uxActive || _locked) return [];
-		if (!exists || !alive || !visible || !active) return [];
+		if (!uxActive || _locked)
+			return [];
+		if (!exists || !alive || !visible || !active)
+			return [];
 
 		var out:Array<FlxUXButton> = [];
 		for (b in orderedButtons)
@@ -482,12 +513,14 @@ class FlxUXGroup extends FlxGroup
 
 	private function applyLockedToButtons():Void
 	{
-		if (buttons == null || buttons.members == null) return;
+		if (buttons == null || buttons.members == null)
+			return;
 		var members = buttons.members;
 		for (i in 0...members.length)
 		{
 			var b = members[i];
-			if (b == null) continue;
+			if (b == null)
+				continue;
 			b.locked = _locked;
 		}
 		if (_locked && FlxUXCore.focused != null && containsButton(FlxUXCore.focused))
@@ -503,8 +536,10 @@ class FlxUXGroup extends FlxGroup
 			pos = maxIndex;
 		else
 		{
-			if (pos < 0) pos = 0;
-			if (pos > maxIndex) pos = maxIndex;
+			if (pos < 0)
+				pos = 0;
+			if (pos > maxIndex)
+				pos = maxIndex;
 		}
 
 		arr.insert(pos, item);
@@ -512,7 +547,8 @@ class FlxUXGroup extends FlxGroup
 
 	private function trackButton(child:FlxUXButton):Void
 	{
-		if (child == null) return;
+		if (child == null)
+			return;
 		buttonBasePos.set(child, FlxPoint.get(child.x, child.y));
 		child.x = x + buttonBasePos.get(child).x;
 		child.y = y + buttonBasePos.get(child).y;
@@ -520,15 +556,18 @@ class FlxUXGroup extends FlxGroup
 
 	private function untrackButton(child:FlxUXButton):Void
 	{
-		if (child == null) return;
+		if (child == null)
+			return;
 		var p = buttonBasePos.get(child);
-		if (p != null) p.put();
+		if (p != null)
+			p.put();
 		buttonBasePos.remove(child);
 	}
 
 	private function set_x(v:Float):Float
 	{
-		if (x == v) return v;
+		if (x == v)
+			return v;
 		x = v;
 		applyContainerOffset();
 		return v;
@@ -536,7 +575,8 @@ class FlxUXGroup extends FlxGroup
 
 	private function set_y(v:Float):Float
 	{
-		if (y == v) return v;
+		if (y == v)
+			return v;
 		y = v;
 		applyContainerOffset();
 		return v;
@@ -546,13 +586,15 @@ class FlxUXGroup extends FlxGroup
 	{
 		for (child => base in buttonBasePos)
 		{
-			if (child == null || base == null) continue;
+			if (child == null || base == null)
+				continue;
 			child.x = x + base.x;
 			child.y = y + base.y;
 		}
 		for (child => base in spriteBasePos)
 		{
-			if (child == null || base == null) continue;
+			if (child == null || base == null)
+				continue;
 			child.x = x + base.x;
 			child.y = y + base.y;
 		}
@@ -562,9 +604,10 @@ class FlxUXGroup extends FlxGroup
 	public function get_boundsX():Float
 	{
 		var minX:Float = Math.POSITIVE_INFINITY;
-			for (b in orderedButtons)
+		for (b in orderedButtons)
 		{
-			if (b == null) continue;
+			if (b == null)
+				continue;
 			minX = Math.min(minX, b.x);
 		}
 		return (minX == Math.POSITIVE_INFINITY) ? 0 : minX;
@@ -574,9 +617,10 @@ class FlxUXGroup extends FlxGroup
 	public function get_boundsY():Float
 	{
 		var minY:Float = Math.POSITIVE_INFINITY;
-			for (b in orderedButtons)
+		for (b in orderedButtons)
 		{
-			if (b == null) continue;
+			if (b == null)
+				continue;
 			minY = Math.min(minY, b.y);
 		}
 		return (minY == Math.POSITIVE_INFINITY) ? 0 : minY;
@@ -587,13 +631,15 @@ class FlxUXGroup extends FlxGroup
 	{
 		var minX:Float = Math.POSITIVE_INFINITY;
 		var maxX:Float = Math.NEGATIVE_INFINITY;
-			for (b in orderedButtons)
+		for (b in orderedButtons)
 		{
-			if (b == null) continue;
+			if (b == null)
+				continue;
 			minX = Math.min(minX, b.x);
 			maxX = Math.max(maxX, b.x + b.width);
 		}
-		if (minX == Math.POSITIVE_INFINITY) return 0;
+		if (minX == Math.POSITIVE_INFINITY)
+			return 0;
 		return maxX - minX;
 	}
 
@@ -602,13 +648,15 @@ class FlxUXGroup extends FlxGroup
 	{
 		var minY:Float = Math.POSITIVE_INFINITY;
 		var maxY:Float = Math.NEGATIVE_INFINITY;
-			for (b in orderedButtons)
+		for (b in orderedButtons)
 		{
-			if (b == null) continue;
+			if (b == null)
+				continue;
 			minY = Math.min(minY, b.y);
 			maxY = Math.max(maxY, b.y + b.height);
 		}
-		if (minY == Math.POSITIVE_INFINITY) return 0;
+		if (minY == Math.POSITIVE_INFINITY)
+			return 0;
 		return maxY - minY;
 	}
 
@@ -616,9 +664,10 @@ class FlxUXGroup extends FlxGroup
 	public function matchWidth():Void
 	{
 		var maxW:Float = 0;
-			for (b in orderedButtons)
-			if (b != null) maxW = Math.max(maxW, b.width);
-			for (b in orderedButtons)
+		for (b in orderedButtons)
+			if (b != null)
+				maxW = Math.max(maxW, b.width);
+		for (b in orderedButtons)
 			if (b != null)
 			{
 				b.resize(Std.int(maxW), Std.int(b.height));
@@ -629,9 +678,10 @@ class FlxUXGroup extends FlxGroup
 	public function matchHeight():Void
 	{
 		var maxH:Float = 0;
-			for (b in orderedButtons)
-			if (b != null) maxH = Math.max(maxH, b.height);
-			for (b in orderedButtons)
+		for (b in orderedButtons)
+			if (b != null)
+				maxH = Math.max(maxH, b.height);
+		for (b in orderedButtons)
 			if (b != null)
 			{
 				b.resize(Std.int(b.width), Std.int(maxH));
@@ -673,9 +723,10 @@ class FlxUXGroup extends FlxGroup
 	public function stack(gap:Float):Void
 	{
 		var yCursor:Float = 0;
-			for (b in orderedButtons)
+		for (b in orderedButtons)
 		{
-			if (b == null) continue;
+			if (b == null)
+				continue;
 			setChildBasePos(b, 0, yCursor);
 			b.x = x + 0;
 			b.y = y + yCursor;
@@ -698,7 +749,8 @@ class FlxUXGroup extends FlxGroup
 		var xCursor:Float = 0;
 		for (b in orderedButtons)
 		{
-			if (b == null) continue;
+			if (b == null)
+				continue;
 			setChildBasePos(b, xCursor, 0);
 			b.x = x + xCursor;
 			b.y = y + 0;
@@ -723,24 +775,29 @@ class FlxUXGroup extends FlxGroup
 	 */
 	public function grid(columns:Int, gapX:Float, gapY:Float, lastRowAlign:FlxUXGridLastRowAlign = LEFT):Void
 	{
-		if (columns < 1) columns = 1;
+		if (columns < 1)
+			columns = 1;
 		var cellW:Float = 0;
 		var cellH:Float = 0;
 		for (b in orderedButtons)
 		{
-			if (b == null) continue;
+			if (b == null)
+				continue;
 			cellW = Math.max(cellW, b.width);
 			cellH = Math.max(cellH, b.height);
 		}
 		var count:Int = 0;
 		for (b in orderedButtons)
-			if (b != null) count++;
-		if (count <= 0) return;
+			if (b != null)
+				count++;
+		if (count <= 0)
+			return;
 
 		var rows:Int = Std.int(Math.ceil(count / columns));
 		var fullRows:Int = Std.int(count / columns);
 		var lastRowCount:Int = count - fullRows * columns;
-		if (lastRowCount <= 0) lastRowCount = columns;
+		if (lastRowCount <= 0)
+			lastRowCount = columns;
 
 		var lastRowOffsetX:Float = 0;
 		if (lastRowCount < columns)
@@ -749,17 +806,20 @@ class FlxUXGroup extends FlxGroup
 			var fullW:Float = columns * cellW + (columns - 1) * gapX;
 			switch (lastRowAlign)
 			{
-				case CENTER: lastRowOffsetX = (fullW - rowW) * 0.5;
-				case RIGHT: lastRowOffsetX = (fullW - rowW);
-				case LEFT: lastRowOffsetX = 0;
+				case CENTER:
+					lastRowOffsetX = (fullW - rowW) * 0.5;
+				case RIGHT:
+					lastRowOffsetX = (fullW - rowW);
+				case LEFT:
+					lastRowOffsetX = 0;
 			}
 		}
 
-		var i:Int = 0;
 		var logicalIndex:Int = 0;
 		for (b in orderedButtons)
 		{
-			if (b == null) continue;
+			if (b == null)
+				continue;
 			var col:Int = logicalIndex % columns;
 			var row:Int = Std.int(logicalIndex / columns);
 			var bx:Float = col * (cellW + gapX);
@@ -775,13 +835,13 @@ class FlxUXGroup extends FlxGroup
 				b.y = Std.int(b.y);
 			}
 			logicalIndex++;
-			i++;
 		}
 	}
 
 	private function setChildBaseX(child:FlxUXButton, baseX:Float):Void
 	{
-		if (child == null) return;
+		if (child == null)
+			return;
 		var p = buttonBasePos.get(child);
 		if (p == null)
 		{
@@ -793,7 +853,8 @@ class FlxUXGroup extends FlxGroup
 
 	private function setChildBaseY(child:FlxUXButton, baseY:Float):Void
 	{
-		if (child == null) return;
+		if (child == null)
+			return;
 		var p = buttonBasePos.get(child);
 		if (p == null)
 		{
@@ -805,7 +866,8 @@ class FlxUXGroup extends FlxGroup
 
 	private function setChildBasePos(child:FlxUXButton, baseX:Float, baseY:Float):Void
 	{
-		if (child == null) return;
+		if (child == null)
+			return;
 		var p = buttonBasePos.get(child);
 		if (p == null)
 		{
@@ -818,15 +880,18 @@ class FlxUXGroup extends FlxGroup
 
 	private function trackSprite(child:FlxSprite):Void
 	{
-		if (child == null) return;
+		if (child == null)
+			return;
 		if (!spriteBasePos.exists(child))
 			spriteBasePos.set(child, FlxPoint.get(child.x - x, child.y - y));
 	}
 
 	override public function update(elapsed:Float):Void
 	{
-		if (!exists || !alive || !visible || !active) return;
-		if (focusHighlighter != null) focusHighlighter.update(elapsed);
+		if (!exists || !alive || !visible || !active)
+			return;
+		if (focusHighlighter != null)
+			focusHighlighter.update(elapsed);
 		updateFocusGraphics();
 		super.update(elapsed);
 	}
@@ -836,14 +901,18 @@ class FlxUXGroup extends FlxGroup
 	 */
 	public function updateFocusGraphics():Void
 	{
-		if (focusHighlighter == null) return;
+		if (focusHighlighter == null)
+			return;
 
 		if (FlxUXCore.mode != flixel.ux.FlxUXCore.FlxUXInputMode.NAV)
 		{
 			focusHighlighter.visible = false;
-			if (focusSideLeft != null) focusSideLeft.visible = false;
-			if (focusSideRight != null) focusSideRight.visible = false;
-			if (focusOverlay != null) focusOverlay.visible = false;
+			if (focusSideLeft != null)
+				focusSideLeft.visible = false;
+			if (focusSideRight != null)
+				focusSideRight.visible = false;
+			if (focusOverlay != null)
+				focusOverlay.visible = false;
 			lastHighlightKey = null;
 			return;
 		}
@@ -852,9 +921,12 @@ class FlxUXGroup extends FlxGroup
 		if (focused == null || focused.getUXGroup() != this)
 		{
 			focusHighlighter.visible = false;
-			if (focusSideLeft != null) focusSideLeft.visible = false;
-			if (focusSideRight != null) focusSideRight.visible = false;
-			if (focusOverlay != null) focusOverlay.visible = false;
+			if (focusSideLeft != null)
+				focusSideLeft.visible = false;
+			if (focusSideRight != null)
+				focusSideRight.visible = false;
+			if (focusOverlay != null)
+				focusOverlay.visible = false;
 			lastHighlightKey = null;
 			return;
 		}
@@ -879,37 +951,48 @@ class FlxUXGroup extends FlxGroup
 		var ty = focused.y - padY;
 		var tw = Std.int(Math.ceil(focused.width + padX * 2));
 		var th = Std.int(Math.ceil(focused.height + padY * 2));
-		if (tw < 1) tw = 1;
-		if (th < 1) th = 1;
+		if (tw < 1)
+			tw = 1;
+		if (th < 1)
+			th = 1;
 
 		switch (mode)
 		{
 			case FRAME:
 				focusHighlighter.visible = (frameInput != null);
 				if (focusHighlighter.visible)
-				applyFocusFrameGraphic(frameInput, tw, th);
-				if (focusSideLeft != null) focusSideLeft.visible = false;
-				if (focusSideRight != null) focusSideRight.visible = false;
-				if (focusOverlay != null) focusOverlay.visible = false;
+					applyFocusFrameGraphic(frameInput, tw, th);
+				if (focusSideLeft != null)
+					focusSideLeft.visible = false;
+				if (focusSideRight != null)
+					focusSideRight.visible = false;
+				if (focusOverlay != null)
+					focusOverlay.visible = false;
 
 			case NEXT_TO:
 				focusHighlighter.visible = false;
-				if (focusOverlay != null) focusOverlay.visible = false;
+				if (focusOverlay != null)
+					focusOverlay.visible = false;
 				applyFocusNextTo(nextToInput, nextToRightInput, nextToMirrored, nextToFlipRight, nextToGap, nextToOffY, focused);
 
 			case OVERLAY:
 				focusHighlighter.visible = false;
-				if (focusSideLeft != null) focusSideLeft.visible = false;
-				if (focusSideRight != null) focusSideRight.visible = false;
+				if (focusSideLeft != null)
+					focusSideLeft.visible = false;
+				if (focusSideRight != null)
+					focusSideRight.visible = false;
 				applyFocusOverlay(overlayInput, overlayOffX, overlayOffY, focused);
 
 			default:
 				focusHighlighter.visible = false;
-				if (focusSideLeft != null) focusSideLeft.visible = false;
-				if (focusSideRight != null) focusSideRight.visible = false;
-				if (focusOverlay != null) focusOverlay.visible = false;
+				if (focusSideLeft != null)
+					focusSideLeft.visible = false;
+				if (focusSideRight != null)
+					focusSideRight.visible = false;
+				if (focusOverlay != null)
+					focusOverlay.visible = false;
 				lastHighlightKey = null;
-			return;
+				return;
 		}
 
 		if (focusHighlighter.visible)
@@ -926,9 +1009,7 @@ class FlxUXGroup extends FlxGroup
 				bpH.y = ty - y;
 			}
 		}
-
 	}
-
 
 	private function applyFocusFrameGraphic(input:FlxUXGraphicInput, tw:Int, th:Int):Void
 	{
@@ -939,7 +1020,7 @@ class FlxUXGroup extends FlxGroup
 		{
 			if (lastHighlightKey == k)
 				return false;
-				lastHighlightKey = k;
+			lastHighlightKey = k;
 			return true;
 		}
 
@@ -953,16 +1034,27 @@ class FlxUXGroup extends FlxGroup
 				if (bd != null)
 				{
 					var cols = Std.int(bd.width / ns.frameWidth);
-					if (cols < 1) cols = 1;
+					if (cols < 1)
+						cols = 1;
 					var rows = Std.int(bd.height / ns.frameHeight);
-					if (rows < 1) rows = 1;
+					if (rows < 1)
+						rows = 1;
 					frames = cols * rows;
 				}
 			}
 
 			if (frames <= 1)
 			{
-				var k = 'ux9frame|' + flixel.ux.FlxUX9Slice.sourceKey(ns.source) + '|' + ns.frameWidth + 'x' + ns.frameHeight + '|to' + tw + 'x' + th;
+				var k = 'ux9frame|'
+					+ flixel.ux.FlxUX9Slice.sourceKey(ns.source)
+					+ '|'
+					+ ns.frameWidth
+					+ 'x'
+					+ ns.frameHeight
+					+ '|to'
+					+ tw
+					+ 'x'
+					+ th;
 				if (!setKey(k))
 					return;
 				var gfx = FlxUX9Slice.get(ns, tw, th, 0);
@@ -971,20 +1063,23 @@ class FlxUXGroup extends FlxGroup
 			}
 			else
 			{
-				var key = 'ux9frameanim|' + flixel.ux.FlxUX9Slice.sourceKey(ns.source) + '|' + ns.frameWidth + 'x' + ns.frameHeight + '|to' + tw + 'x' + th + '|n' + frames;
+				var key = 'ux9frameanim|' + flixel.ux.FlxUX9Slice.sourceKey(ns.source) + '|' + ns.frameWidth + 'x' + ns.frameHeight + '|to' + tw + 'x' + th
+					+ '|n' + frames;
 				if (!setKey(key))
 					return;
 				var out = new BitmapData(tw, th * frames, true, 0x00000000);
 				for (i in 0...frames)
 				{
 					var g = FlxUX9Slice.get(ns, tw, th, i);
-					if (g == null || g.bitmap == null) continue;
+					if (g == null || g.bitmap == null)
+						continue;
 					out.copyPixels(g.bitmap, new Rectangle(0, 0, tw, th), new Point(0, i * th), null, null, true);
 				}
 				var sheet = FlxGraphic.fromBitmapData(out, false, key);
 				focusHighlighter.loadGraphic(sheet, true, tw, th);
 				var idx:Array<Int> = [];
-				for (i in 0...frames) idx.push(i);
+				for (i in 0...frames)
+					idx.push(i);
 				focusHighlighter.animation.add("idle", idx, FlxUXCore.focusFrameFps, true);
 				focusHighlighter.animation.play("idle", true);
 			}
@@ -1003,9 +1098,11 @@ class FlxUXGroup extends FlxGroup
 		focusHighlighter.antialiasing = false;
 	}
 
-	private function applyFocusNextTo(leftInput:FlxUXGraphicInput, rightInput:FlxUXGraphicInput, mirrored:Bool, flipRight:Bool, gap:Float, offY:Float, focused:FlxUXButton):Void
+	private function applyFocusNextTo(leftInput:FlxUXGraphicInput, rightInput:FlxUXGraphicInput, mirrored:Bool, flipRight:Bool, gap:Float, offY:Float,
+			focused:FlxUXButton):Void
 	{
-		if (focusSideLeft == null || focusSideRight == null) return;
+		if (focusSideLeft == null || focusSideRight == null)
+			return;
 		if (focused == null || leftInput == null)
 		{
 			focusSideLeft.visible = false;
@@ -1015,7 +1112,8 @@ class FlxUXGroup extends FlxGroup
 
 		focusSideLeft.visible = true;
 		var gL = flixel.ux.FlxUX9Slice.toGraphic(leftInput);
-		if (gL != null) focusSideLeft.loadGraphic(gL);
+		if (gL != null)
+			focusSideLeft.loadGraphic(gL);
 		focusSideLeft.antialiasing = false;
 		focusSideLeft.x = focused.x - focusSideLeft.width - gap;
 		focusSideLeft.y = focused.y + (focused.height - focusSideLeft.height) * 0.5 + offY;
@@ -1025,7 +1123,8 @@ class FlxUXGroup extends FlxGroup
 			focusSideRight.visible = true;
 			var rIn = (rightInput != null) ? rightInput : leftInput;
 			var gR = flixel.ux.FlxUX9Slice.toGraphic(rIn);
-			if (gR != null) focusSideRight.loadGraphic(gR);
+			if (gR != null)
+				focusSideRight.loadGraphic(gR);
 			focusSideRight.antialiasing = false;
 			focusSideRight.x = focused.x + focused.width + gap;
 			focusSideRight.y = focused.y + (focused.height - focusSideRight.height) * 0.5 + offY;
@@ -1039,7 +1138,8 @@ class FlxUXGroup extends FlxGroup
 
 	private function applyFocusOverlay(input:FlxUXGraphicInput, offX:Float, offY:Float, focused:FlxUXButton):Void
 	{
-		if (focusOverlay == null) return;
+		if (focusOverlay == null)
+			return;
 		if (focused == null || input == null)
 		{
 			focusOverlay.visible = false;
@@ -1048,11 +1148,10 @@ class FlxUXGroup extends FlxGroup
 
 		focusOverlay.visible = true;
 		var g = flixel.ux.FlxUX9Slice.toGraphic(input);
-		if (g != null) focusOverlay.loadGraphic(g);
+		if (g != null)
+			focusOverlay.loadGraphic(g);
 		focusOverlay.antialiasing = false;
 		focusOverlay.x = focused.x + focused.width + offX;
 		focusOverlay.y = focused.y + focused.height + offY;
 	}
-
-
 }

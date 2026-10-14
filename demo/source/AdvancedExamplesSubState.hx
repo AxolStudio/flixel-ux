@@ -25,7 +25,8 @@ class AdvancedExamplesSubState extends FlxSubState
 
 		var header = DemoUi.makeHeader(
 			"Advanced examples",
-			"A common menu pattern: reordering a list of buttons, then re-applying layout helpers.");
+			"A common menu pattern: reordering a list of buttons, then re-applying layout helpers."
+		);
 		header.x += FlxG.width;
 		add(header);
 
@@ -84,12 +85,41 @@ class AdvancedExamplesSubState extends FlxSubState
 		enabledDisabled.spread(pairGap);
 
 		// Slide everything in from right to left.
-		FlxTween.tween(back, { x: back.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
-		FlxTween.tween(header, { x: header.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
-		FlxTween.tween(box.border, { x: box.border.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
-		FlxTween.tween(topRow, { x: topRow.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
-		FlxTween.tween(reverseGroup, { x: reverseGroup.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
-		FlxTween.tween(enabledDisabled, { x: enabledDisabled.x - FlxG.width }, 0.55, { ease: FlxEase.backOut });
+		FlxTween.tween(
+			back,
+			{x: back.x - FlxG.width},
+			0.55,
+			{ease: FlxEase.backOut}
+		);
+		FlxTween.tween(
+			header,
+			{x: header.x - FlxG.width},
+			0.55,
+			{ease: FlxEase.backOut}
+		);
+		FlxTween.tween(
+			box.border,
+			{x: box.border.x - FlxG.width},
+			0.55,
+			{ease: FlxEase.backOut}
+		);
+		FlxTween.tween(
+			topRow,
+			{x: topRow.x - FlxG.width},
+			0.55,
+			{ease: FlxEase.backOut}
+		);
+		FlxTween.tween(
+			reverseGroup,
+			{x: reverseGroup.x - FlxG.width},
+			0.55,
+			{ease: FlxEase.backOut}
+		);
+		FlxTween.tween(
+			enabledDisabled,
+			{x: enabledDisabled.x - FlxG.width},
+			0.55,
+			{ease: FlxEase.backOut}
+		);
 	}
-
 }

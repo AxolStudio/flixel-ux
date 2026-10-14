@@ -15,7 +15,7 @@ import flixel.ux.FlxUXCore.FlxUXGraphicInput;
 class FlxUXButton extends FlxBitmapTextButton
 {
 	public var text(get, set):String;
-	
+
 	private inline function get_text():String
 	{
 		return label != null ? label.text : null;
@@ -26,7 +26,7 @@ class FlxUXButton extends FlxBitmapTextButton
 		setLabelText(value);
 		return value;
 	}
-	
+
 	private static inline var DEFAULT_BUTTON_DEPTH:Int = 4;
 	private static inline var DEFAULT_UP:FlxColor = 0xFF3A3E4A;
 	private static inline var DEFAULT_HOVER:FlxColor = 0xFF4A5060;
@@ -42,17 +42,24 @@ class FlxUXButton extends FlxBitmapTextButton
 	private var animTime:Float = 0;
 	private var animFrameIndex:Int = 0;
 	private var animSequence:Array<Int> = null;
+
 	/** Padding around the label used when auto-sizing. */
 	public var marginX:Float = 10;
+
 	public var marginY:Float = 6;
+
 	/** If true (default), button `makeGraphic` size is computed from label size. */
 	public var autoSizeToLabel:Bool = true;
+
 	/** Optional activation callback invoked when this button is activated via POINTER or NAV. */
 	public var action:Void->Void;
+
 	/** Whether this button is currently focused for NAV purposes. */
 	public var uxFocused(default, null):Bool = false;
+
 	/** Whether this button is currently showing a NAV "pressed" state. */
 	public var uxPressed(default, null):Bool = false;
+
 	/**
 	 * If true, the button is visually and interactively DISABLED (4th state).
 	 *
@@ -62,11 +69,16 @@ class FlxUXButton extends FlxBitmapTextButton
 	 * - Forces the button to stay in the DISABLED visual state until unlocked.
 	 */
 	public var locked(get, set):Bool;
+
 	private var _locked:Bool = false;
-	private inline function get_locked():Bool return _locked;
+
+	private inline function get_locked():Bool
+		return _locked;
+
 	private function set_locked(v:Bool):Bool
 	{
-		if (_locked == v) return _locked;
+		if (_locked == v)
+			return _locked;
 		_locked = v;
 
 		if (_locked)
@@ -97,11 +109,14 @@ class FlxUXButton extends FlxBitmapTextButton
 	 * Setting this copies theme fields onto the button's override variables and calls `applySkin()`.
 	 */
 	public var theme(get, set):Null<FlxUXTheme>;
+
 	private var currentTheme:Null<FlxUXTheme> = null;
+
 	private function get_theme():Null<FlxUXTheme>
 	{
 		return currentTheme;
 	}
+
 	private function set_theme(value:Null<FlxUXTheme>):Null<FlxUXTheme>
 	{
 		currentTheme = value;
@@ -145,18 +160,23 @@ class FlxUXButton extends FlxBitmapTextButton
 				default: flixel.text.FlxText.FlxTextAlign.CENTER;
 			};
 		}
+		applyLabelOptions();
 		applySkin();
 		return currentTheme;
 	}
 
 	/** Optional per-button skin override (null => group/core/default). */
 	public var buttonGraphic:Null<FlxUXGraphicInput> = null;
+
 	/** Optional per-button animated skin FPS (<= 0 => group/core fallback). */
 	public var buttonSkinFps:Int = 0;
+
 	/** Optional per-button override for whether to use animated default skin when no custom graphic is set. */
 	public var buttonUseAnim:Null<Bool> = null;
+
 	/** Optional per-button per-state animation sequences (only used for the animated default sheet). */
 	public var buttonAnimUp:Null<Array<Int>> = null;
+
 	public var buttonAnimOver:Null<Array<Int>> = null;
 	public var buttonAnimDown:Null<Array<Int>> = null;
 	public var buttonAnimDisabled:Null<Array<Int>> = null;
@@ -168,14 +188,19 @@ class FlxUXButton extends FlxBitmapTextButton
 	public var buttonLabelFont:Null<String> = null;
 	public var buttonLabelSize:Int = 0;
 	public var buttonLabelColor:Null<flixel.util.FlxColor> = null;
+
 	/** Optional per-button label color when hovered/highlighted. */
 	public var buttonLabelColorHover:Null<flixel.util.FlxColor> = null;
+
 	/** Optional per-button label color when pressed. */
 	public var buttonLabelColorDown:Null<flixel.util.FlxColor> = null;
+
 	/** Optional per-button label color when disabled. */
 	public var buttonLabelColorDisabled:Null<flixel.util.FlxColor> = null;
+
 	/** Optional per-button label color when locked (forced DISABLED). */
 	public var buttonLabelColorLocked:Null<flixel.util.FlxColor> = null;
+
 	public var buttonLabelAlign:Null<FlxTextAlign> = null;
 	public var buttonLabelFactory:Null<flixel.ux.FlxUXCore.FlxUXLabelFactory> = null;
 
@@ -258,7 +283,8 @@ class FlxUXButton extends FlxBitmapTextButton
 
 		onUp.callback = () -> activate();
 		applyLabelOptions();
-		if (autoSizeToLabel) autosize();
+		if (autoSizeToLabel)
+			autosize();
 		applySkin();
 		constructed = true;
 	}
@@ -281,7 +307,8 @@ class FlxUXButton extends FlxBitmapTextButton
 			this.label.updateHitbox();
 		}
 		applyLabelOptions();
-		if (autoSizeToLabel) autosize();
+		if (autoSizeToLabel)
+			autosize();
 	}
 
 	/** Recomputes the button size from the label + margins and rebuilds the base graphic. */
@@ -342,8 +369,10 @@ class FlxUXButton extends FlxBitmapTextButton
 
 		var w = Std.int(Math.ceil(labelW + marginX * 2));
 		var h = Std.int(Math.ceil(labelH + marginY * 2));
-		if (w < 1) w = 1;
-		if (h < 1) h = 1;
+		if (w < 1)
+			w = 1;
+		if (h < 1)
+			h = 1;
 
 		explicitSizeLocked = false;
 		if (Std.int(width) != w || Std.int(height) != h)
@@ -365,8 +394,10 @@ class FlxUXButton extends FlxBitmapTextButton
 	 */
 	public function resize(w:Int, h:Int):Void
 	{
-		if (w < 1) w = 1;
-		if (h < 1) h = 1;
+		if (w < 1)
+			w = 1;
+		if (h < 1)
+			h = 1;
 		autoSizeToLabel = false;
 		explicitSizeLocked = true;
 		this.setGraphicSize(w, h);
@@ -396,7 +427,8 @@ class FlxUXButton extends FlxBitmapTextButton
 	/** Centers the label within the current button size (does not resize). */
 	public function centerLabel():Void
 	{
-		if (this.label == null) return;
+		if (this.label == null)
+			return;
 		if (Std.isOfType(this.label, FlxBitmapText))
 		{
 			var text:FlxBitmapText = cast this.label;
@@ -443,36 +475,54 @@ class FlxUXButton extends FlxBitmapTextButton
 		}
 
 		var font:Null<String> = null;
-		if (buttonLabelFont != null) font = buttonLabelFont;
-		else if (uxGroup != null && uxGroup.buttonLabelFont != null) font = uxGroup.buttonLabelFont;
-		else font = FlxUXCore.buttonLabelFont;
+		if (buttonLabelFont != null)
+			font = buttonLabelFont;
+		else if (uxGroup != null && uxGroup.buttonLabelFont != null)
+			font = uxGroup.buttonLabelFont;
+		else
+			font = FlxUXCore.buttonLabelFont;
 
 		var size:Int = 0;
-		if (buttonLabelSize > 0) size = buttonLabelSize;
-		else if (uxGroup != null && uxGroup.buttonLabelSize > 0) size = uxGroup.buttonLabelSize;
-		else size = FlxUXCore.buttonLabelSize;
-		if (size <= 0) size = 14;
+		if (buttonLabelSize > 0)
+			size = buttonLabelSize;
+		else if (uxGroup != null && uxGroup.buttonLabelSize > 0)
+			size = uxGroup.buttonLabelSize;
+		else
+			size = FlxUXCore.buttonLabelSize;
+		if (size <= 0)
+			size = 14;
 
 		var colorNormal:flixel.util.FlxColor = FlxUXCore.buttonLabelColor;
-		if (buttonLabelColor != null) colorNormal = buttonLabelColor;
-		else if (uxGroup != null && uxGroup.buttonLabelColor != null) colorNormal = uxGroup.buttonLabelColor;
+		if (buttonLabelColor != null)
+			colorNormal = buttonLabelColor;
+		else if (uxGroup != null && uxGroup.buttonLabelColor != null)
+			colorNormal = uxGroup.buttonLabelColor;
 
 		var colorHover = FlxUXCore.buttonLabelColorHover;
-		if (buttonLabelColorHover != null) colorHover = buttonLabelColorHover;
-		else if (uxGroup != null && uxGroup.buttonLabelColorHover != null) colorHover = uxGroup.buttonLabelColorHover;
+		if (buttonLabelColorHover != null)
+			colorHover = buttonLabelColorHover;
+		else if (uxGroup != null && uxGroup.buttonLabelColorHover != null)
+			colorHover = uxGroup.buttonLabelColorHover;
 
 		var colorDown = FlxUXCore.buttonLabelColorDown;
-		if (buttonLabelColorDown != null) colorDown = buttonLabelColorDown;
-		else if (uxGroup != null && uxGroup.buttonLabelColorDown != null) colorDown = uxGroup.buttonLabelColorDown;
+		if (buttonLabelColorDown != null)
+			colorDown = buttonLabelColorDown;
+		else if (uxGroup != null && uxGroup.buttonLabelColorDown != null)
+			colorDown = uxGroup.buttonLabelColorDown;
 
 		var colorDisabled = FlxUXCore.buttonLabelColorDisabled;
-		if (buttonLabelColorDisabled != null) colorDisabled = buttonLabelColorDisabled;
-		else if (uxGroup != null && uxGroup.buttonLabelColorDisabled != null) colorDisabled = uxGroup.buttonLabelColorDisabled;
+		if (buttonLabelColorDisabled != null)
+			colorDisabled = buttonLabelColorDisabled;
+		else if (uxGroup != null && uxGroup.buttonLabelColorDisabled != null)
+			colorDisabled = uxGroup.buttonLabelColorDisabled;
 
 		var align:FlxTextAlign = CENTER;
-		if (buttonLabelAlign != null) align = buttonLabelAlign;
-		else if (uxGroup != null && uxGroup.buttonLabelAlign != null) align = uxGroup.buttonLabelAlign;
-		else align = FlxUXCore.buttonLabelAlign;
+		if (buttonLabelAlign != null)
+			align = buttonLabelAlign;
+		else if (uxGroup != null && uxGroup.buttonLabelAlign != null)
+			align = uxGroup.buttonLabelAlign;
+		else
+			align = FlxUXCore.buttonLabelAlign;
 
 		if (Std.isOfType(this.label, FlxText))
 		{
@@ -508,17 +558,16 @@ class FlxUXButton extends FlxBitmapTextButton
 
 	private function applyLabelStateColor():Void
 	{
-		if (this.label == null) return;
-		var normal:flixel.util.FlxColor = (buttonLabelColor != null) ? buttonLabelColor
-			: ((uxGroup != null && uxGroup.buttonLabelColor != null) ? uxGroup.buttonLabelColor : FlxUXCore.buttonLabelColor);
-		var hover:Null<flixel.util.FlxColor> = (buttonLabelColorHover != null) ? buttonLabelColorHover
-			: ((uxGroup != null && uxGroup.buttonLabelColorHover != null) ? uxGroup.buttonLabelColorHover : FlxUXCore.buttonLabelColorHover);
-		var down:Null<flixel.util.FlxColor> = (buttonLabelColorDown != null) ? buttonLabelColorDown
-			: ((uxGroup != null && uxGroup.buttonLabelColorDown != null) ? uxGroup.buttonLabelColorDown : FlxUXCore.buttonLabelColorDown);
-		var dis:Null<flixel.util.FlxColor> = (buttonLabelColorDisabled != null) ? buttonLabelColorDisabled
-			: ((uxGroup != null && uxGroup.buttonLabelColorDisabled != null) ? uxGroup.buttonLabelColorDisabled : FlxUXCore.buttonLabelColorDisabled);
-		var lock:Null<flixel.util.FlxColor> = (buttonLabelColorLocked != null) ? buttonLabelColorLocked
-			: ((uxGroup != null && uxGroup.buttonLabelColorLocked != null) ? uxGroup.buttonLabelColorLocked : FlxUXCore.buttonLabelColorLocked);
+		if (this.label == null)
+			return;
+		var normal:flixel.util.FlxColor = (buttonLabelColor != null) ? buttonLabelColor : ((uxGroup != null && uxGroup.buttonLabelColor != null) ? uxGroup.buttonLabelColor : FlxUXCore.buttonLabelColor);
+		var hover:Null<flixel.util.FlxColor> = (buttonLabelColorHover != null) ? buttonLabelColorHover : ((uxGroup != null
+			&& uxGroup.buttonLabelColorHover != null) ? uxGroup.buttonLabelColorHover : FlxUXCore.buttonLabelColorHover);
+		var down:Null<flixel.util.FlxColor> = (buttonLabelColorDown != null) ? buttonLabelColorDown : ((uxGroup != null && uxGroup.buttonLabelColorDown != null) ? uxGroup.buttonLabelColorDown : FlxUXCore.buttonLabelColorDown);
+		var dis:Null<flixel.util.FlxColor> = (buttonLabelColorDisabled != null) ? buttonLabelColorDisabled : ((uxGroup != null
+			&& uxGroup.buttonLabelColorDisabled != null) ? uxGroup.buttonLabelColorDisabled : FlxUXCore.buttonLabelColorDisabled);
+		var lock:Null<flixel.util.FlxColor> = (buttonLabelColorLocked != null) ? buttonLabelColorLocked : ((uxGroup != null
+			&& uxGroup.buttonLabelColorLocked != null) ? uxGroup.buttonLabelColorLocked : FlxUXCore.buttonLabelColorLocked);
 
 		var c = normal;
 		if (_locked)
@@ -555,7 +604,8 @@ class FlxUXButton extends FlxBitmapTextButton
 					onOver.sound = new FlxSound();
 				onOver.sound.loadEmbedded(sOver, false, false);
 			}
-			else onOver.sound = null;
+			else
+				onOver.sound = null;
 		}
 		if (onDown != null)
 		{
@@ -565,7 +615,8 @@ class FlxUXButton extends FlxBitmapTextButton
 					onDown.sound = new FlxSound();
 				onDown.sound.loadEmbedded(sDown, false, false);
 			}
-			else onDown.sound = null;
+			else
+				onDown.sound = null;
 		}
 		if (onUp != null)
 		{
@@ -575,7 +626,8 @@ class FlxUXButton extends FlxBitmapTextButton
 					onUp.sound = new FlxSound();
 				onUp.sound.loadEmbedded(sClick, false, false);
 			}
-			else onUp.sound = null;
+			else
+				onUp.sound = null;
 		}
 		applyLabelColorsForStatus();
 
@@ -678,7 +730,8 @@ class FlxUXButton extends FlxBitmapTextButton
 
 	private function applyLabelColorsForStatus():Void
 	{
-		if (this.label == null) return;
+		if (this.label == null)
+			return;
 
 		var c:Null<FlxColor> = null;
 		if (!active)
@@ -695,27 +748,34 @@ class FlxUXButton extends FlxBitmapTextButton
 					c = getEffectiveLabelColorUp();
 			}
 		}
-		if (c != null) this.label.color = c;
+		if (c != null)
+			this.label.color = c;
 	}
 
 	private inline function getEffectiveLabelColorUp():Null<FlxColor>
 	{
-		if (buttonLabelColor != null) return buttonLabelColor;
-		if (uxGroup != null && uxGroup.buttonLabelColor != null) return uxGroup.buttonLabelColor;
+		if (buttonLabelColor != null)
+			return buttonLabelColor;
+		if (uxGroup != null && uxGroup.buttonLabelColor != null)
+			return uxGroup.buttonLabelColor;
 		return FlxUXCore.buttonLabelColor;
 	}
 
 	private inline function getEffectiveLabelColorHover():Null<FlxColor>
 	{
-		if (buttonLabelColorHover != null) return buttonLabelColorHover;
-		if (uxGroup != null && uxGroup.buttonLabelColorHover != null) return uxGroup.buttonLabelColorHover;
+		if (buttonLabelColorHover != null)
+			return buttonLabelColorHover;
+		if (uxGroup != null && uxGroup.buttonLabelColorHover != null)
+			return uxGroup.buttonLabelColorHover;
 		return FlxUXCore.buttonLabelColorHover;
 	}
 
 	private inline function getEffectiveLabelColorDown():Null<FlxColor>
 	{
-		if (buttonLabelColorDown != null) return buttonLabelColorDown;
-		if (uxGroup != null && uxGroup.buttonLabelColorDown != null) return uxGroup.buttonLabelColorDown;
+		if (buttonLabelColorDown != null)
+			return buttonLabelColorDown;
+		if (uxGroup != null && uxGroup.buttonLabelColorDown != null)
+			return uxGroup.buttonLabelColorDown;
 		return FlxUXCore.buttonLabelColorDown;
 	}
 
@@ -723,15 +783,22 @@ class FlxUXButton extends FlxBitmapTextButton
 	{
 		if (_locked)
 		{
-			if (buttonLabelColorLocked != null) return buttonLabelColorLocked;
-			if (uxGroup != null && uxGroup.buttonLabelColorLocked != null) return uxGroup.buttonLabelColorLocked;
-			if (FlxUXCore.buttonLabelColorLocked != null) return FlxUXCore.buttonLabelColorLocked;
-			if (buttonLabelColorDisabled != null) return buttonLabelColorDisabled;
-			if (uxGroup != null && uxGroup.buttonLabelColorDisabled != null) return uxGroup.buttonLabelColorDisabled;
+			if (buttonLabelColorLocked != null)
+				return buttonLabelColorLocked;
+			if (uxGroup != null && uxGroup.buttonLabelColorLocked != null)
+				return uxGroup.buttonLabelColorLocked;
+			if (FlxUXCore.buttonLabelColorLocked != null)
+				return FlxUXCore.buttonLabelColorLocked;
+			if (buttonLabelColorDisabled != null)
+				return buttonLabelColorDisabled;
+			if (uxGroup != null && uxGroup.buttonLabelColorDisabled != null)
+				return uxGroup.buttonLabelColorDisabled;
 			return FlxUXCore.buttonLabelColorDisabled;
 		}
-		if (buttonLabelColorDisabled != null) return buttonLabelColorDisabled;
-		if (uxGroup != null && uxGroup.buttonLabelColorDisabled != null) return uxGroup.buttonLabelColorDisabled;
+		if (buttonLabelColorDisabled != null)
+			return buttonLabelColorDisabled;
+		if (uxGroup != null && uxGroup.buttonLabelColorDisabled != null)
+			return uxGroup.buttonLabelColorDisabled;
 		return FlxUXCore.buttonLabelColorDisabled;
 	}
 
@@ -741,6 +808,7 @@ class FlxUXButton extends FlxBitmapTextButton
 	 */
 	public function refreshSkinFromDefaults():Void
 	{
+		applyLabelOptions();
 		applySkin();
 	}
 
@@ -749,25 +817,31 @@ class FlxUXButton extends FlxBitmapTextButton
 		switch (stateIndex)
 		{
 			case 0:
-				if (buttonAnimUp != null) return buttonAnimUp;
-				if (uxGroup != null && uxGroup.buttonAnimUp != null) return uxGroup.buttonAnimUp;
+				if (buttonAnimUp != null)
+					return buttonAnimUp;
+				if (uxGroup != null && uxGroup.buttonAnimUp != null)
+					return uxGroup.buttonAnimUp;
 				return FlxUXCore.buttonAnimUp;
 			case 1:
-				if (buttonAnimOver != null) return buttonAnimOver;
-				if (uxGroup != null && uxGroup.buttonAnimOver != null) return uxGroup.buttonAnimOver;
+				if (buttonAnimOver != null)
+					return buttonAnimOver;
+				if (uxGroup != null && uxGroup.buttonAnimOver != null)
+					return uxGroup.buttonAnimOver;
 				return FlxUXCore.buttonAnimOver;
 			case 2:
-				if (buttonAnimDown != null) return buttonAnimDown;
-				if (uxGroup != null && uxGroup.buttonAnimDown != null) return uxGroup.buttonAnimDown;
+				if (buttonAnimDown != null)
+					return buttonAnimDown;
+				if (uxGroup != null && uxGroup.buttonAnimDown != null)
+					return uxGroup.buttonAnimDown;
 				return FlxUXCore.buttonAnimDown;
 			default:
-				if (buttonAnimDisabled != null) return buttonAnimDisabled;
-				if (uxGroup != null && uxGroup.buttonAnimDisabled != null) return uxGroup.buttonAnimDisabled;
+				if (buttonAnimDisabled != null)
+					return buttonAnimDisabled;
+				if (uxGroup != null && uxGroup.buttonAnimDisabled != null)
+					return uxGroup.buttonAnimDisabled;
 				return FlxUXCore.buttonAnimDisabled;
 		}
 	}
-
-
 
 	private function applyDefaultSkin():Void
 	{
@@ -880,7 +954,8 @@ class FlxUXButton extends FlxBitmapTextButton
 	private function applyFrame(enabled:Bool, color:FlxColor, thickness:Int):Void
 	{
 		var t = thickness;
-		if (t < 1) t = 1;
+		if (t < 1)
+			t = 1;
 
 		var w = Std.int(Math.max(1, width));
 		var h = Std.int(Math.max(1, height));
@@ -953,7 +1028,8 @@ class FlxUXButton extends FlxBitmapTextButton
 			if (animSequence == null)
 			{
 				var stateIndex:Int = 0;
-				if (!active) stateIndex = 3;
+				if (!active)
+					stateIndex = 3;
 				else
 				{
 					switch (status)
@@ -972,7 +1048,8 @@ class FlxUXButton extends FlxBitmapTextButton
 			if (animSequence != null && animSequence.length > 1)
 			{
 				animTime += elapsed;
-				if (skinAnimFps <= 0) skinAnimFps = 1;
+				if (skinAnimFps <= 0)
+					skinAnimFps = 1;
 				var frameDur:Float = 1.0 / skinAnimFps;
 				while (animTime >= frameDur)
 				{

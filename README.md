@@ -296,20 +296,17 @@ The same override chain still applies:
 - `button.theme` overrides it for that one button
 
 ```haxe
-menu.theme = new FlxUXTheme({
-	buttonLabelColor: 0xFFFFE7B0
-});
+menu.theme = new FlxUXTheme({ buttonLabelColor: 0xFFFFE7B0 });
 
 var special = menu.addButton("Special", onSpecial);
-special.theme = new FlxUXTheme({
-	buttonLabelColor: 0xFF00E5FF
-});
+special.theme = new FlxUXTheme({ buttonLabelColor: 0xFF00E5FF });
 ```
 
 ### Load a theme from JSON
 
 ```haxe
-FlxUXCore.theme = FlxUXTheme.fromJson(Assets.getText("themes/default.json"));
+var themeJson = Assets.getText("themes/default.json");
+FlxUXCore.theme = FlxUXTheme.fromJson(themeJson);
 ```
 
-See `FlxUXTheme` for the full list of supported settings.
+You can also pass the JSON string directly to the constructor: `new FlxUXTheme(themeJson)`. `FlxUXTheme.fromObject()` remains available when you prefer the factory-method style. See `FlxUXTheme` for the full list of supported settings.

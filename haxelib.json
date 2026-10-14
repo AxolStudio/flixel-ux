@@ -11,7 +11,7 @@
     "buttons"
   ],
   "description": "A library providing UX utilities for HaxeFlixel.",
-  "version": "0.1.1",
+  "version": "0.2.0-beta",
   "classPath": "src/",
   "contributors": [
     "AxolStudio",
@@ -20,5 +20,5 @@
   "dependencies": {
     "flixel": "6.1.2"
   },
-  "releasenote": "Initial release of Flixel-UX with basic UI components and utilities."
+  "releasenote": "0.2.0-beta: adds themes, navigation modes, layout helpers, and expanded focus and skin options."
 }

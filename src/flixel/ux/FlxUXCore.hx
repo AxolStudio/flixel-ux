@@ -36,12 +36,10 @@ class FlxUXCore
 	public static inline var DEFAULT_BUTTON_SKIN_FPS:Int = 10;
 	public static inline var DEFAULT_BUTTON_FRAMES_GRAPHIC:String = "flixel-ux/ux/button.png";
 	public static inline var DEFAULT_FOCUS_FRAME_FPS:Int = 6;
-	public static var DEFAULT_FOCUS_FRAME_GRAPHIC:FlxUX9Slice =
-		new FlxUX9Slice("flixel-ux/highlight_frame_9s_anim.png", 40, 40, 14, 17, 15, 18);
+	public static var DEFAULT_FOCUS_FRAME_GRAPHIC:FlxUX9Slice = new FlxUX9Slice("flixel-ux/highlight_frame_9s_anim.png", 40, 40, 14, 17, 15, 18);
 	public static inline var DEFAULT_FOCUS_NEXT_TO_GRAPHIC:String = "flixel-ux/highlight_next_to.png";
 	public static inline var DEFAULT_FOCUS_OVERLAY_GRAPHIC:String = "flixel-ux/highlight_on.png";
-	public static var DEFAULT_BUTTON_GRAPHIC:FlxUX9Slice =
-		new FlxUX9Slice(DEFAULT_BUTTON_FRAMES_GRAPHIC, 16, 16, 3, 7, 3, 7);
+	public static var DEFAULT_BUTTON_GRAPHIC:FlxUX9Slice = new FlxUX9Slice(DEFAULT_BUTTON_FRAMES_GRAPHIC, 16, 16, 3, 7, 3, 7);
 
 	/**
 	 * Default button skin graphic input.
@@ -53,6 +51,7 @@ class FlxUXCore
 
 	/** If set, button skins are treated as animated and will update per-state using this FPS. */
 	public static var buttonSkinFps:Int = DEFAULT_BUTTON_SKIN_FPS;
+
 	public static inline var DEFAULT_BUTTON_USE_ANIM:Bool = false;
 	public static var buttonUseAnim:Bool = DEFAULT_BUTTON_USE_ANIM;
 	public static var DEFAULT_BUTTON_ANIM_UP:Array<Int> = [0, 1];
@@ -67,32 +66,43 @@ class FlxUXCore
 
 	/** Sound played when the pointer moves over a button (or it becomes highlighted). Null = no sound. */
 	public static var buttonSoundOver:Null<FlxSoundAsset> = null;
+
 	/** Sound played when a button is pressed down. Null = no sound. */
 	public static var buttonSoundDown:Null<FlxSoundAsset> = null;
+
 	/** Sound played when a button click/activation completes (mouse up inside / click). Null = no sound. */
 	public static var buttonSoundClick:Null<FlxSoundAsset> = null;
 
 	/** Default label font (asset id). Null uses the default font. */
 	public static var buttonLabelFont:Null<String> = null;
+
 	/** Default label size. */
 	public static var buttonLabelSize:Int = 14;
+
 	/** Default label color. */
 	public static var buttonLabelColor:flixel.util.FlxColor = 0xFF666666;
+
 	/** Default label color when highlighted/hovered. Null => fall back to buttonLabelColor. */
 	public static var buttonLabelColorHover:Null<flixel.util.FlxColor> = 0xFF333333;
+
 	/** Default label color when pressed. Null => fall back to buttonLabelColorHover, then buttonLabelColor. */
 	public static var buttonLabelColorDown:Null<flixel.util.FlxColor> = 0xFF333333;
+
 	/** Default label color when disabled. Null => fall back to buttonLabelColor. */
 	public static var buttonLabelColorDisabled:Null<flixel.util.FlxColor> = 0xFF777777;
+
 	/** Default label color when a FlxUXButton is locked (forced DISABLED). Null => fall back to buttonLabelColorDisabled. */
 	public static var buttonLabelColorLocked:Null<flixel.util.FlxColor> = 0xFF111111;
+
 	/** Default label alignment (recommended CENTER for buttons). */
 	public static var buttonLabelAlign:FlxTextAlign = CENTER;
+
 	/** Optional factory for creating custom label sprites (e.g. FlxBitmapText). Null uses FlxText. */
 	public static var buttonLabelFactory:Null<FlxUXLabelFactory> = null;
 
 	/** Current focus highlight mode (defaults to FRAME). */
 	public static var focusMode:FlxUXFocusMode = FlxUXFocusMode.FRAME;
+
 	/** Frames per second for animated focus frame (when focusFrameGraphic is a spritesheet 9-slice). */
 	public static var focusFrameFps:Int = DEFAULT_FOCUS_FRAME_FPS;
 
@@ -105,21 +115,28 @@ class FlxUXCore
 
 	/** Focus next-to graphic input. */
 	public static var focusNextToGraphic:Null<FlxUXGraphicInput> = null;
+
 	/** If true, also show next-to graphic on right side. */
 	public static var focusNextToMirrored:Bool = false;
+
 	/** Optional right-side graphic input for mirrored next-to. If null, uses focusNextToGraphic (optionally flipped). */
 	public static var focusNextToGraphicRight:Null<FlxUXGraphicInput> = null;
+
 	/** If true, flips the right-side next-to graphic horizontally. */
 	public static var focusNextToFlipRight:Bool = true;
+
 	/** Gap between button and next-to graphic (pixels). */
 	public static var focusNextToGap:Float = 6;
+
 	/** Y offset applied to next-to sprites (pixels). */
 	public static var focusNextToOffsetY:Float = 0;
 
 	/** Focus overlay (on-top) graphic input. */
 	public static var focusOverlayGraphic:Null<FlxUXGraphicInput> = null;
+
 	/** Overlay placement: x = buttonRight + offsetX, y = buttonBottom + offsetY (defaults give half-hang). */
 	public static var focusOverlayOffsetX:Float = -8;
+
 	public static var focusOverlayOffsetY:Float = -8;
 
 	/**
@@ -169,6 +186,7 @@ class FlxUXCore
 
 	/** If true, FlxUXGroup layout helpers will snap button positions to whole pixels. */
 	public static var snapUiToPixels:Bool = true;
+
 	/** Hardware cursor graphic input (optional). Accepts: String, FlxGraphic, FlxSprite, BitmapData. */
 	public static var mouseCursorGraphic:FlxUXGraphicInput = DEFAULT_MOUSE_GRAPHIC;
 
@@ -240,7 +258,8 @@ class FlxUXCore
 	 */
 	public static function loadThemeFromAsset(assetId:String):Void
 	{
-		if (assetId == null) return;
+		if (assetId == null)
+			return;
 		var json = Assets.getText(assetId);
 		theme = FlxUXTheme.fromJson(json);
 	}
@@ -286,6 +305,7 @@ class FlxUXCore
 	 * Set these before calling `init()`, or call `rebindInputs()` to apply changes at runtime.
 	 */
 	public static var keyboardArrows:Bool = true;
+
 	public static var keyboardWASD:Bool = true;
 
 	/**
@@ -294,6 +314,7 @@ class FlxUXCore
 	 * Set these before calling `init()`, or call `rebindInputs()` to apply changes at runtime.
 	 */
 	public static var gamepadDpad:Bool = true;
+
 	public static var gamepadLeftStick:Bool = true;
 	public static var gamepadRightStick:Bool = false;
 
@@ -307,6 +328,7 @@ class FlxUXCore
 
 	/** Current global input mode (POINTER or NAV). Updated automatically each frame. */
 	public static var mode:FlxUXCore.FlxUXInputMode = FlxUXCore.FlxUXInputMode.POINTER;
+
 	/** Current navigation style. */
 	public static var navStyle:FlxUXNavStyle = FlxUXNavStyle.LINEAR;
 
@@ -314,11 +336,14 @@ class FlxUXCore
 	 * Global theme values used by FlxUX widgets.
 	 */
 	public static var theme(get, set):FlxUXTheme;
+
 	private static var currentTheme:FlxUXTheme = new FlxUXTheme();
+
 	private static function get_theme():FlxUXTheme
 	{
 		return currentTheme;
 	}
+
 	private static function set_theme(value:FlxUXTheme):FlxUXTheme
 	{
 		currentTheme = (value != null) ? value : new FlxUXTheme();
@@ -381,10 +406,12 @@ class FlxUXCore
 	 */
 	public static function refreshLiveUi():Void
 	{
-		if (groups == null) return;
+		if (groups == null)
+			return;
 		for (g in groups)
 		{
-			if (g == null) continue;
+			if (g == null)
+				continue;
 			g.refreshTheme();
 		}
 	}
@@ -395,12 +422,15 @@ class FlxUXCore
 	 * Created by `init()` and rebuilt by `rebindInputs()`.
 	 */
 	public static var actions:FlxUXActions;
+
 	/** Mouse/cursor helper used by FlxUX. Created by `init()`. */
 	public static var mouse:FlxUXMouse;
 
 	private static var groups:Array<FlxUXGroup> = [];
+
 	/** Currently focused button for NAV mode, or `null` if nothing is focused. */
 	public static var focused:FlxUXButton = null;
+
 	private static var navConfirmHeld:Bool = false;
 	private static var pointerPreferred:Bool = false;
 
@@ -419,23 +449,18 @@ class FlxUXCore
 	 */
 	public static function init():Void
 	{
-		if (initialized) return;
-		initialized = true;
+		if (initialized)
+			return;
 		if (flixel.FlxG.inputs == null)
 			return;
+		initialized = true;
 
 		if (pixelArtDefaults)
 		{
 			FlxSprite.defaultAntialiasing = false;
 		}
 
-		actions = new FlxUXActions(
-			keyboardArrows,
-			keyboardWASD,
-			gamepadDpad,
-			gamepadLeftStick,
-			gamepadRightStick,
-			gamepadFaceStyle);
+		actions = new FlxUXActions(keyboardArrows, keyboardWASD, gamepadDpad, gamepadLeftStick, gamepadRightStick, gamepadFaceStyle);
 
 		mouse = new FlxUXMouse();
 		mouse.init();
@@ -453,16 +478,12 @@ class FlxUXCore
 	 */
 	public static function rebindInputs():Void
 	{
-		if (!initialized) init();
-		if (actions == null) return;
+		if (!initialized)
+			init();
+		if (actions == null)
+			return;
 
-		actions.rebind(
-			keyboardArrows,
-			keyboardWASD,
-			gamepadDpad,
-			gamepadLeftStick,
-			gamepadRightStick,
-			gamepadFaceStyle);
+		actions.rebind(keyboardArrows, keyboardWASD, gamepadDpad, gamepadLeftStick, gamepadRightStick, gamepadFaceStyle);
 	}
 
 	/**
@@ -520,7 +541,8 @@ class FlxUXCore
 	 */
 	public static function addGroup(group:FlxUXGroup, ?order:Int):Void
 	{
-		if (!initialized) init();
+		if (!initialized)
+			init();
 		insertDense(groups, group, order);
 	}
 
@@ -552,7 +574,8 @@ class FlxUXCore
 	public static function setGroupOrder(group:FlxUXGroup, order:Int):Void
 	{
 		var i = groups.indexOf(group);
-		if (i < 0) return;
+		if (i < 0)
+			return;
 		groups.splice(i, 1);
 		insertDense(groups, group, order);
 	}
@@ -566,16 +589,20 @@ class FlxUXCore
 		}
 
 		var i:Int = index;
-		if (i < 0) i = 0;
-		if (i > arr.length) i = arr.length;
+		if (i < 0)
+			i = 0;
+		if (i > arr.length)
+			i = arr.length;
 		arr.insert(i, item);
 	}
 
 	@:allow(flixel.ux.FlxUXPlugin)
 	private static function internalUpdate(elapsed:Float):Void
 	{
-		if (!initialized) init();
-		if (actions == null) return;
+		if (!initialized)
+			init();
+		if (actions == null)
+			return;
 
 		var stateKey = stateTickKey();
 		var changedLayer = (stateKey != lastStateKey);
@@ -616,8 +643,8 @@ class FlxUXCore
 			mode = FlxUXCore.FlxUXInputMode.POINTER;
 			pointerPreferred = mouseInput;
 		}
-		else if (actions.up.triggered || actions.down.triggered || actions.left.triggered || actions.right.triggered
-			|| actions.confirm.triggered || actions.cancel.triggered)
+		else if (actions.up.triggered || actions.down.triggered || actions.left.triggered || actions.right.triggered || actions.confirm.triggered
+			|| actions.cancel.triggered)
 		{
 			var hadNoFocus = (focused == null);
 			var navWasTriggered = (actions.up.triggered || actions.down.triggered || actions.left.triggered || actions.right.triggered);
@@ -640,7 +667,8 @@ class FlxUXCore
 		}
 		else
 		{
-			if (mouse != null) mouse.enabled = false;
+			if (mouse != null)
+				mouse.enabled = false;
 			FlxG.mouse.visible = false;
 		}
 		#end
@@ -663,7 +691,8 @@ class FlxUXCore
 			if (shouldProcessNav)
 			{
 				var confirmHeldNow = actions.confirmDown;
-				if (focused != null) focused.setNavPressed(confirmHeldNow);
+				if (focused != null)
+					focused.setNavPressed(confirmHeldNow);
 				navConfirmHeld = confirmHeldNow;
 
 				if (effectiveNavStyle() == FlxUXNavStyle.LINEAR)
@@ -677,10 +706,14 @@ class FlxUXCore
 				{
 					var dirX = 0;
 					var dirY = 0;
-					if (actions.left.triggered) dirX = -1;
-					else if (actions.right.triggered) dirX = 1;
-					else if (actions.up.triggered) dirY = -1;
-					else if (actions.down.triggered) dirY = 1;
+					if (actions.left.triggered)
+						dirX = -1;
+					else if (actions.right.triggered)
+						dirX = 1;
+					else if (actions.up.triggered)
+						dirY = -1;
+					else if (actions.down.triggered)
+						dirY = 1;
 
 					if (dirX != 0 || dirY != 0)
 						focusSpatial(navTargets, dirX, dirY);
@@ -691,7 +724,8 @@ class FlxUXCore
 
 				if (actions.confirmReleased)
 				{
-					if (focused != null) focused.setNavPressed(false);
+					if (focused != null)
+						focused.setNavPressed(false);
 					activateFocused();
 				}
 
@@ -715,13 +749,17 @@ class FlxUXCore
 
 	private static function focusSpatial(list:Array<FlxUXButton>, dirX:Int, dirY:Int):Void
 	{
-		if (focused == null) return;
-		if (list == null || list.length == 0) return;
+		if (focused == null)
+			return;
+		if (list == null || list.length == 0)
+			return;
 
 		if (effectiveNavStyle() != FlxUXNavStyle.SPATIAL)
 		{
-			if (dirX > 0 || dirY > 0) focusNext(list);
-			else focusPrev(list);
+			if (dirX > 0 || dirY > 0)
+				focusNext(list);
+			else
+				focusPrev(list);
 			return;
 		}
 
@@ -735,10 +773,14 @@ class FlxUXCore
 			var dx = cx - origin.x;
 			var dy = cy - origin.y;
 
-			if (dirX < 0 && dx >= 0) return Math.POSITIVE_INFINITY;
-			if (dirX > 0 && dx <= 0) return Math.POSITIVE_INFINITY;
-			if (dirY < 0 && dy >= 0) return Math.POSITIVE_INFINITY;
-			if (dirY > 0 && dy <= 0) return Math.POSITIVE_INFINITY;
+			if (dirX < 0 && dx >= 0)
+				return Math.POSITIVE_INFINITY;
+			if (dirX > 0 && dx <= 0)
+				return Math.POSITIVE_INFINITY;
+			if (dirY < 0 && dy >= 0)
+				return Math.POSITIVE_INFINITY;
+			if (dirY > 0 && dy <= 0)
+				return Math.POSITIVE_INFINITY;
 
 			var primary = (dirX != 0) ? Math.abs(dx) : Math.abs(dy);
 			var secondary = (dirX != 0) ? Math.abs(dy) : Math.abs(dx);
@@ -749,8 +791,10 @@ class FlxUXCore
 		var bestScore = Math.POSITIVE_INFINITY;
 		for (b in list)
 		{
-			if (b == null || b == focused) continue;
-			if (focusedGroup != null && b.getUXGroup() != focusedGroup) continue;
+			if (b == null || b == focused)
+				continue;
+			if (focusedGroup != null && b.getUXGroup() != focusedGroup)
+				continue;
 			var s = scoreCandidate(b);
 			if (s < bestScore)
 			{
@@ -766,10 +810,13 @@ class FlxUXCore
 
 			for (g in groups)
 			{
-				if (g == null || !g.active || !g.capturesNav || !g.uxActive) continue;
-				if (focusedGroup != null && g == focusedGroup) continue;
+				if (g == null || !g.active || !g.capturesNav || !g.uxActive)
+					continue;
+				if (focusedGroup != null && g == focusedGroup)
+					continue;
 				var elig = g.getEligibleButtonsOrdered();
-				if (elig == null || elig.length == 0) continue;
+				if (elig == null || elig.length == 0)
+					continue;
 
 				var gx0 = g.boundsX;
 				var gy0 = g.boundsY;
@@ -778,10 +825,14 @@ class FlxUXCore
 				var gcx = (gx0 + gx1) * 0.5;
 				var gcy = (gy0 + gy1) * 0.5;
 
-				if (dirX < 0 && gx1 > origin.x) continue;
-				if (dirX > 0 && gx0 < origin.x) continue;
-				if (dirY < 0 && gy1 > origin.y) continue;
-				if (dirY > 0 && gy0 < origin.y) continue;
+				if (dirX < 0 && gx1 > origin.x)
+					continue;
+				if (dirX > 0 && gx0 < origin.x)
+					continue;
+				if (dirY < 0 && gy1 > origin.y)
+					continue;
+				if (dirY > 0 && gy0 < origin.y)
+					continue;
 
 				var dx = gcx - origin.x;
 				var dy = gcy - origin.y;
@@ -801,7 +852,8 @@ class FlxUXCore
 				var elig = bestGroup.getEligibleButtonsOrdered();
 				for (b in elig)
 				{
-					if (b == null) continue;
+					if (b == null)
+						continue;
 					var s = scoreCandidate(b);
 					if (s < bestScore)
 					{
@@ -815,7 +867,8 @@ class FlxUXCore
 				bestScore = Math.POSITIVE_INFINITY;
 				for (b in list)
 				{
-					if (b == null || b == focused) continue;
+					if (b == null || b == focused)
+						continue;
 					var s = scoreCandidate(b);
 					if (s < bestScore)
 					{
@@ -827,7 +880,8 @@ class FlxUXCore
 		}
 
 		origin.put();
-		if (best != null) setFocused(best);
+		if (best != null)
+			setFocused(best);
 	}
 
 	/**
@@ -841,7 +895,8 @@ class FlxUXCore
 		{
 			for (g in groups)
 			{
-				if (g == null || !g.active || !g.capturesNav) continue;
+				if (g == null || !g.active || !g.capturesNav)
+					continue;
 				var elig = g.getEligibleButtonsOrdered();
 				if (elig.indexOf(focused) >= 0)
 				{
@@ -881,7 +936,8 @@ class FlxUXCore
 
 	private static function focusNext(list:Array<FlxUXButton>):Void
 	{
-		if (list == null || list.length == 0) return;
+		if (list == null || list.length == 0)
+			return;
 		if (focused == null)
 		{
 			setFocused(list[0]);
@@ -900,7 +956,8 @@ class FlxUXCore
 
 	private static function focusPrev(list:Array<FlxUXButton>):Void
 	{
-		if (list == null || list.length == 0) return;
+		if (list == null || list.length == 0)
+			return;
 		if (focused == null)
 		{
 			setFocused(list[0]);
@@ -915,7 +972,8 @@ class FlxUXCore
 		}
 
 		var prevIndex = idx - 1;
-		if (prevIndex < 0) prevIndex = list.length - 1;
+		if (prevIndex < 0)
+			prevIndex = list.length - 1;
 
 		setFocused(list[prevIndex]);
 	}
@@ -948,12 +1006,14 @@ class FlxUXCore
 		if (prev != null)
 		{
 			var gPrev = prev.getUXGroup();
-			if (gPrev != null) gPrev.updateFocusGraphics();
+			if (gPrev != null)
+				gPrev.updateFocusGraphics();
 		}
 		if (focused != null)
 		{
 			var gNow = focused.getUXGroup();
-			if (gNow != null) gNow.updateFocusGraphics();
+			if (gNow != null)
+				gNow.updateFocusGraphics();
 		}
 	}
 
@@ -965,14 +1025,19 @@ class FlxUXCore
 		var out:Array<FlxUXButton> = [];
 		for (g in groups)
 		{
-			if (g == null) continue;
-			if (!g.exists || !g.alive || !g.visible || !g.active) continue;
-			if (!g.uxActive || !g.capturesNav) continue;
+			if (g == null)
+				continue;
+			if (!g.exists || !g.alive || !g.visible || !g.active)
+				continue;
+			if (!g.uxActive || !g.capturesNav)
+				continue;
 			var buttons = g.getEligibleButtonsOrdered();
 			for (b in buttons)
 			{
-				if (b == null) continue;
-				if (!navButtonsUpdatedThisFrame.exists(b)) continue;
+				if (b == null)
+					continue;
+				if (!navButtonsUpdatedThisFrame.exists(b))
+					continue;
 				out.push(b);
 			}
 		}
@@ -983,7 +1048,8 @@ class FlxUXCore
 	@:allow(flixel.ux.FlxUXButton)
 	private static function markNavButtonUpdatedThisFrame(b:FlxUXButton):Void
 	{
-		if (b == null) return;
+		if (b == null)
+			return;
 		navButtonsUpdatedThisFrame.set(b, true);
 	}
 
@@ -1003,7 +1069,8 @@ class FlxUXCore
 
 		for (touch in FlxG.touches.list)
 		{
-			if (touch == null) continue;
+			if (touch == null)
+				continue;
 
 			if (touch.justPressed || touch.pressed)
 				return true;
@@ -1039,12 +1106,16 @@ enum FlxUXFocusMode
 {
 	/** 9-slice focus frame around the focused widget. */
 	FRAME;
+
 	/** A sprite drawn next to the focused widget (optionally mirrored). */
 	NEXT_TO;
+
 	/** A sprite drawn over the focused widget (typically bottom-right half-hang). */
 	OVERLAY;
+
 	/** Pointer hover only: no NAV focus visuals (still allows pointer clicks). */
 	HOVER_ONLY;
+
 	/** Dim non-focused widgets (future; no group-level sprite). */
 	DIM_UNFOCUSED;
 }
@@ -1059,6 +1130,7 @@ enum FlxUXInputMode
 {
 	/** Pointer-centric UX (mouse/touch). */
 	POINTER;
+
 	/** Navigation-centric UX (keyboard/gamepad). */
 	NAV;
 }
@@ -1068,6 +1140,7 @@ enum FlxUXGamepadFaceStyle
 {
 	/** Nintendo-style: right-face confirm, bottom-face cancel. */
 	NINTENDO;
+
 	/** PlayStation-style: bottom-face confirm, right-face cancel. */
 	PSX;
 }
@@ -1085,6 +1158,7 @@ enum FlxUXNavStyle
 {
 	/** Linear ordering navigation (next/previous). */
 	LINEAR;
+
 	/** Spatial navigation (direction-based nearest neighbor). */
 	SPATIAL;
 }
@@ -1098,8 +1172,10 @@ enum FlxUXNavCapturePolicy
 {
 	/** Default: only process NAV when there is at least one eligible NAV target. */
 	AUTO;
+
 	/** Always process NAV when FlxUXCore.navEnabled is true. */
 	ALWAYS;
+
 	/** Never process NAV (mouse/touch-only UX). */
 	NEVER;
 }

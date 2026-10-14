@@ -1,0 +1,13 @@
+{
+	"name": "FlxUX Haxe",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"remoteUser": "vscode",
+	"postCreateCommand": "haxelib dev flixel-ux \"${containerWorkspaceFolder}\"",
+	"customizations": {
+		"vscode": {
+			"extensions": ["nadako.vshaxe"]
+		}
+	}
+}

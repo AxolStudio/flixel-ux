@@ -5,16 +5,13 @@ import flixel.input.actions.FlxAction.FlxActionAnalog;
 import flixel.input.actions.FlxAction.FlxActionDigital;
 import flixel.input.actions.FlxActionManager;
 import flixel.input.FlxInput.FlxInputState;
-
 #if !FLX_NO_MOUSE
 import flixel.input.actions.FlxActionInputAnalog.FlxAnalogState;
 import flixel.input.mouse.FlxMouseButton.FlxMouseButtonID;
 #end
-
 #if !FLX_NO_KEYBOARD
 import flixel.input.keyboard.FlxKey;
 #end
-
 #if !FLX_NO_GAMEPAD
 import flixel.input.gamepad.FlxGamepadInputID;
 #end
@@ -26,12 +23,14 @@ class FlxUXActions
 
 	/** Digital navigation actions (intended for NAV focus traversal). */
 	public var up:FlxActionDigital;
+
 	public var down:FlxActionDigital;
 	public var left:FlxActionDigital;
 	public var right:FlxActionDigital;
 
 	/** Digital activation actions. */
 	public var confirm:FlxActionDigital;
+
 	public var confirmHeld:FlxActionDigital;
 	public var confirmUp:FlxActionDigital;
 	public var cancel:FlxActionDigital;
@@ -42,18 +41,22 @@ class FlxUXActions
 	 * Used to detect mouse movement and pointer presses to switch into POINTER mode.
 	 */
 	public var moveMouse:FlxActionAnalog;
+
 	public var pointerPress:FlxActionDigital;
 	public var pointerPressHeld:FlxActionDigital;
 
 	/** Whether confirm is currently held (computed from action triggers). */
 	public var confirmDown(default, null):Bool = false;
+
 	/** True for one frame when confirm is released (button-up edge). */
 	public var confirmReleased(default, null):Bool = false;
+
 	/** Whether pointer press is currently held (mouse/touch), if applicable. */
 	public var pointerPressDown(default, null):Bool = false;
 
 	/** Default ctor values used by `rebind()` to rebuild identically later. */
 	public var keyboardArrows:Bool;
+
 	public var keyboardWASD:Bool;
 	public var gamepadDpad:Bool;
 	public var gamepadLeftStick:Bool;
@@ -65,13 +68,8 @@ class FlxUXActions
 	 *
 	 * You typically won't construct this directly; `FlxUXCore.init()` does it.
 	 */
-	public function new(
-		?keyboardArrows:Bool = true,
-		?keyboardWASD:Bool = true,
-		?gamepadDpad:Bool = true,
-		?gamepadLeftStick:Bool = true,
-		?gamepadRightStick:Bool = false,
-		?gamepadFaceStyle:FlxUXCore.FlxUXGamepadFaceStyle = FlxUXCore.FlxUXGamepadFaceStyle.NINTENDO)
+	public function new(?keyboardArrows:Bool = true, ?keyboardWASD:Bool = true, ?gamepadDpad:Bool = true, ?gamepadLeftStick:Bool = true,
+			?gamepadRightStick:Bool = false, ?gamepadFaceStyle:FlxUXCore.FlxUXGamepadFaceStyle = FlxUXCore.FlxUXGamepadFaceStyle.NINTENDO)
 	{
 		this.keyboardArrows = keyboardArrows;
 		this.keyboardWASD = keyboardWASD;
@@ -104,13 +102,8 @@ class FlxUXActions
 	 *
 	 * Destroys any previous manager and installs a new one into `FlxG.inputs`.
 	 */
-	public function rebind(
-		?keyboardArrows:Bool = true,
-		?keyboardWASD:Bool = true,
-		?gamepadDpad:Bool = true,
-		?gamepadLeftStick:Bool = true,
-		?gamepadRightStick:Bool = false,
-		?gamepadFaceStyle:FlxUXCore.FlxUXGamepadFaceStyle = FlxUXCore.FlxUXGamepadFaceStyle.NINTENDO):Void
+	public function rebind(?keyboardArrows:Bool = true, ?keyboardWASD:Bool = true, ?gamepadDpad:Bool = true, ?gamepadLeftStick:Bool = true,
+			?gamepadRightStick:Bool = false, ?gamepadFaceStyle:FlxUXCore.FlxUXGamepadFaceStyle = FlxUXCore.FlxUXGamepadFaceStyle.NINTENDO):Void
 	{
 		this.keyboardArrows = keyboardArrows;
 		this.keyboardWASD = keyboardWASD;
@@ -136,7 +129,19 @@ class FlxUXActions
 		pointerPress = new FlxActionDigital();
 		pointerPressHeld = new FlxActionDigital();
 
-		manager.addActions([up, down, left, right, confirm, confirmHeld, confirmUp, cancel, moveMouse, pointerPress, pointerPressHeld]);
+		manager.addActions([
+			up,
+			down,
+			left,
+			right,
+			confirm,
+			confirmHeld,
+			confirmUp,
+			cancel,
+			moveMouse,
+			pointerPress,
+			pointerPressHeld
+		]);
 
 		#if !FLX_NO_KEYBOARD
 		if (keyboardArrows)
