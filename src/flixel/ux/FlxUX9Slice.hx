@@ -21,35 +21,54 @@ class FlxUX9Slice
 
 	/** Optional frame size if source is a spritesheet. */
 	public var frameWidth:Int;
+
 	public var frameHeight:Int;
 
 	/** 9-slice borders. */
 	public var left:Int;
+
 	public var top:Int;
 	public var right:Int;
 	public var bottom:Int;
 
 	/** Source frame width if this slice comes from a spritesheet (0 uses source width). */
 	public var effectiveFrameWidth(get, never):Int;
+
 	private function get_effectiveFrameWidth():Int
 	{
-		if (frameWidth > 0) return frameWidth;
+		if (frameWidth > 0)
+			return frameWidth;
 		var src = resolveBitmapData(source);
 		return (src != null) ? src.width : 0;
 	}
 
 	/** Source frame height if this slice comes from a spritesheet (0 uses source height). */
 	public var effectiveFrameHeight(get, never):Int;
+
 	private function get_effectiveFrameHeight():Int
 	{
-		if (frameHeight > 0) return frameHeight;
+		if (frameHeight > 0)
+			return frameHeight;
 		var src = resolveBitmapData(source);
 		return (src != null) ? src.height : 0;
 	}
 
 	/** The slice borders clamped to the current effective frame size. */
-	public var clamped(get, never):{ left:Int, top:Int, right:Int, bottom:Int };
-	private function get_clamped():{ left:Int, top:Int, right:Int, bottom:Int }
+	public var clamped(get, never):
+		{
+			left:Int,
+			top:Int,
+			right:Int,
+			bottom:Int
+		};
+
+	private function get_clamped():
+		{
+			left:Int,
+			top:Int,
+			right:Int,
+			bottom:Int
+		}
 	{
 		var fw = effectiveFrameWidth;
 		var fh = effectiveFrameHeight;
@@ -57,10 +76,14 @@ class FlxUX9Slice
 		var t = top;
 		var r = right;
 		var b = bottom;
-		if (l < 0) l = 0;
-		if (t < 0) t = 0;
-		if (r < 0) r = 0;
-		if (b < 0) b = 0;
+		if (l < 0)
+			l = 0;
+		if (t < 0)
+			t = 0;
+		if (r < 0)
+			r = 0;
+		if (b < 0)
+			b = 0;
 		if (fw > 0)
 		{
 			l = Std.int(Math.min(l, fw));
@@ -71,7 +94,12 @@ class FlxUX9Slice
 			t = Std.int(Math.min(t, fh));
 			b = Std.int(Math.min(b, fh - t));
 		}
-		return { left: l, top: t, right: r, bottom: b };
+		return {
+			left: l,
+			top: t,
+			right: r,
+			bottom: b
+		};
 	}
 
 	/** Mutates slice borders. Returns `this` for chaining. */
@@ -109,6 +137,7 @@ class FlxUX9Slice
 	{
 		return makeKey(this, targetW, targetH, frameIndex);
 	}
+
 	private static var cache:Map<String, FlxGraphic> = new Map();
 	private static var cacheBySource:Map<String, Array<String>> = new Map();
 
@@ -127,10 +156,12 @@ class FlxUX9Slice
 			return;
 		var keys = cacheBySource.get(sk);
 		cacheBySource.remove(sk);
-		if (keys == null) return;
+		if (keys == null)
+			return;
 		for (k in keys)
 		{
-			if (k == null) continue;
+			if (k == null)
+				continue;
 			cache.remove(k);
 		}
 	}
@@ -150,9 +181,12 @@ class FlxUX9Slice
 	 */
 	public static function get(nine:FlxUX9Slice, targetW:Int, targetH:Int, ?frameIndex:Int = 0):FlxGraphic
 	{
-		if (nine == null) return null;
-		if (targetW < 1) targetW = 1;
-		if (targetH < 1) targetH = 1;
+		if (nine == null)
+			return null;
+		if (targetW < 1)
+			targetW = 1;
+		if (targetH < 1)
+			targetH = 1;
 
 		var key:String = makeKey(nine, targetW, targetH, frameIndex);
 		if (cache.exists(key))
@@ -164,7 +198,8 @@ class FlxUX9Slice
 		}
 
 		var src:BitmapData = resolveBitmapData(nine.source);
-		if (src == null) return null;
+		if (src == null)
+			return null;
 
 		var frameW:Int = (nine.frameWidth > 0) ? nine.frameWidth : src.width;
 		var frameH:Int = (nine.frameHeight > 0) ? nine.frameHeight : src.height;
@@ -181,18 +216,23 @@ class FlxUX9Slice
 		if (!cacheBySource.exists(srcKey))
 			cacheBySource.set(srcKey, []);
 		var keys = cacheBySource.get(srcKey);
-		if (keys.indexOf(key) < 0) keys.push(key);
+		if (keys.indexOf(key) < 0)
+			keys.push(key);
 		return gfx;
 	}
 
 	/** Returns true if a cached render exists and is still valid. */
 	public static function has(nine:FlxUX9Slice, targetW:Int, targetH:Int, ?frameIndex:Int = 0):Bool
 	{
-		if (nine == null) return false;
-		if (targetW < 1) targetW = 1;
-		if (targetH < 1) targetH = 1;
+		if (nine == null)
+			return false;
+		if (targetW < 1)
+			targetW = 1;
+		if (targetH < 1)
+			targetH = 1;
 		var key = makeKey(nine, targetW, targetH, frameIndex);
-		if (!cache.exists(key)) return false;
+		if (!cache.exists(key))
+			return false;
 		var g = cache.get(key);
 		return (g != null && g.bitmap != null);
 	}
@@ -202,8 +242,10 @@ class FlxUX9Slice
 	 */
 	public static function toGraphic(input:FlxUXGraphicInput):FlxGraphic
 	{
-		if (input == null) return null;
-		if (Std.isOfType(input, FlxGraphic)) return cast input;
+		if (input == null)
+			return null;
+		if (Std.isOfType(input, FlxGraphic))
+			return cast input;
 		if (Std.isOfType(input, FlxSprite))
 		{
 			var s:FlxSprite = cast input;
@@ -234,13 +276,33 @@ class FlxUX9Slice
 		var t:Int = nine.top;
 		var r:Int = nine.right;
 		var b:Int = nine.bottom;
-		return 'ux9|' + assetKey + '|' + fw + 'x' + fh + '|f' + frameIndex + '|to' + w + 'x' + h + '|ns' + l + ',' + t + ',' + r + ',' + b;
+		return 'ux9|'
+			+ assetKey
+			+ '|'
+			+ fw
+			+ 'x'
+			+ fh
+			+ '|f'
+			+ frameIndex
+			+ '|to'
+			+ w
+			+ 'x'
+			+ h
+			+ '|ns'
+			+ l
+			+ ','
+			+ t
+			+ ','
+			+ r
+			+ ','
+			+ b;
 	}
 
 	/** Produces a stable identity string for cache keys. */
 	private static function stableSourceKey(source:FlxUXGraphicInput):String
 	{
-		if (source == null) return 'null';
+		if (source == null)
+			return 'null';
 		if (Std.isOfType(source, String))
 			return 'str:' + cast(source, String);
 		if (Std.isOfType(source, FlxGraphic))
@@ -262,7 +324,8 @@ class FlxUX9Slice
 			try
 			{
 				var dyn:Dynamic = bd;
-				if (Reflect.hasField(dyn, "__hashCode")) hc = ':' + Std.string(Reflect.field(dyn, "__hashCode"));
+				if (Reflect.hasField(dyn, "__hashCode"))
+					hc = ':' + Std.string(Reflect.field(dyn, "__hashCode"));
 			}
 			catch (_:Dynamic) {}
 			return 'bd:' + bd.width + 'x' + bd.height + hc;
@@ -274,7 +337,8 @@ class FlxUX9Slice
 	@:allow(flixel.ux.FlxUXGroup)
 	private static function resolveBitmapData(source:FlxUXGraphicInput):BitmapData
 	{
-		if (source == null) return null;
+		if (source == null)
+			return null;
 		if (Std.isOfType(source, BitmapData))
 			return cast source;
 		if (Std.isOfType(source, FlxGraphic))
@@ -297,19 +361,28 @@ class FlxUX9Slice
 
 	private static function frameRect(src:BitmapData, frameW:Int, frameH:Int, frameIndex:Int):Rectangle
 	{
-		if (frameW <= 0) frameW = src.width;
-		if (frameH <= 0) frameH = src.height;
-		if (frameW > src.width) frameW = src.width;
-		if (frameH > src.height) frameH = src.height;
+		if (frameW <= 0)
+			frameW = src.width;
+		if (frameH <= 0)
+			frameH = src.height;
+		if (frameW > src.width)
+			frameW = src.width;
+		if (frameH > src.height)
+			frameH = src.height;
 		var cols:Int = Std.int(src.width / frameW);
-		if (cols < 1) cols = 1;
+		if (cols < 1)
+			cols = 1;
 		var rows:Int = Std.int(src.height / frameH);
-		if (rows < 1) rows = 1;
+		if (rows < 1)
+			rows = 1;
 		var total:Int = cols * rows;
-		if (total < 1) total = 1;
+		if (total < 1)
+			total = 1;
 		var fi:Int = frameIndex;
-		if (fi < 0) fi = 0;
-		if (fi >= total) fi = total - 1;
+		if (fi < 0)
+			fi = 0;
+		if (fi >= total)
+			fi = total - 1;
 		var x:Int = (fi % cols) * frameW;
 		var y:Int = Std.int(fi / cols) * frameH;
 		return new Rectangle(x, y, frameW, frameH);
@@ -317,10 +390,14 @@ class FlxUX9Slice
 
 	private static function drawNineSlice(out:BitmapData, src:BitmapData, srcRect:Rectangle, left:Int, top:Int, right:Int, bottom:Int):Void
 	{
-		if (left < 0) left = 0;
-		if (top < 0) top = 0;
-		if (right < 0) right = 0;
-		if (bottom < 0) bottom = 0;
+		if (left < 0)
+			left = 0;
+		if (top < 0)
+			top = 0;
+		if (right < 0)
+			right = 0;
+		if (bottom < 0)
+			bottom = 0;
 
 		var sw:Int = Std.int(srcRect.width);
 		var sh:Int = Std.int(srcRect.height);
@@ -339,7 +416,8 @@ class FlxUX9Slice
 
 		function blitScaled(sx:Int, sy:Int, sW:Int, sH:Int, dx:Int, dy:Int, dW:Int, dH:Int):Void
 		{
-			if (sW <= 0 || sH <= 0 || dW <= 0 || dH <= 0) return;
+			if (sW <= 0 || sH <= 0 || dW <= 0 || dH <= 0)
+				return;
 			var rect:Rectangle = new Rectangle(srcRect.x + sx, srcRect.y + sy, sW, sH);
 			if (sW == dW && sH == dH)
 			{
@@ -383,9 +461,9 @@ class FlxUX9Slice
 	}
 
 	/** Creates a 9-slice from explicit borders. */
-	public static inline function borders(source:FlxUXGraphicInput, left:Int, top:Int, right:Int, bottom:Int, ?frameWidth:Int = 0, ?frameHeight:Int = 0):FlxUX9Slice
+	public static inline function borders(source:FlxUXGraphicInput, left:Int, top:Int, right:Int, bottom:Int, ?frameWidth:Int = 0,
+			?frameHeight:Int = 0):FlxUX9Slice
 	{
 		return new FlxUX9Slice(source, frameWidth, frameHeight, left, top, right, bottom);
 	}
 }
-

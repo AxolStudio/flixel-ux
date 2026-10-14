@@ -13,6 +13,6 @@
 		"tryCatch": "next"
 	},
 	"indentation":{
-		"trailingWhitespace": true
+		"trailingWhitespace": false
 	}
 }

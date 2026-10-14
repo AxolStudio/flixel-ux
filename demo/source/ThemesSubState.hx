@@ -70,7 +70,8 @@ class ThemesSubState extends FlxSubState
 		// This group follows FlxUXCore.theme, so we don't set group.theme here.
 		globalGroup.buttonUseAnim = null;
 		globalGroup.buttonSkinFps = 0;
-		for (b in globalGroup.getEligibleButtonsOrdered()) b.resize(colW - 32, 38);
+		for (b in globalGroup.getEligibleButtonsOrdered())
+			b.resize(colW - 32, 38);
 		globalGroup.stack(10);
 
 		var boxGroup = DemoUi.makeBox(startX + colW + gap, startY, colW, bottomH, "Set THIS group only");
@@ -86,7 +87,8 @@ class ThemesSubState extends FlxSubState
 		// This column is about group theming, so we keep button skins static for consistency.
 		groupOnly.buttonUseAnim = null;
 		groupOnly.buttonSkinFps = 0;
-		for (b in groupOnly.getEligibleButtonsOrdered()) b.resize(colW - 32, 38);
+		for (b in groupOnly.getEligibleButtonsOrdered())
+			b.resize(colW - 32, 38);
 		groupOnly.stack(10);
 
 		var boxManual = DemoUi.makeBox(startX + (colW + gap) * 2, startY, colW, bottomH, "No theme (manual overrides)");
@@ -247,24 +249,21 @@ class ThemesSubState extends FlxSubState
 			+ '"pixelArtDefaults":true,'
 			+ '"snapUiToPixels":true,'
 			+ '"buttonUseAnim":false,'
-			+ '"buttonSkinFps":0,'
-			// Button skin (9-slice)
+			+ '"buttonSkinFps":0,' // Button skin (9-slice)
 			+ '"buttonGraphic":{'
-				+ '"source":"assets/ux/button_red.png",'
-				+ '"frameWidth":16,"frameHeight":16,'
-				+ '"left":3,"top":7,"right":3,"bottom":7'
-			+ '},'
-			// Focus visuals
+			+ '"source":"assets/ux/button_red.png",'
+			+ '"frameWidth":16,"frameHeight":16,'
+			+ '"left":3,"top":7,"right":3,"bottom":7'
+			+ '},' // Focus visuals
 			+ '"focusMode":"FRAME",'
 			+ '"focusFrameFps":6,'
 			+ '"focusFrameGraphic":{'
-				+ '"source":"assets/ux/highlight_frame_9s_anim_red.png",'
-				+ '"frameWidth":40,"frameHeight":40,'
-				+ '"left":14,"top":17,"right":15,"bottom":18'
+			+ '"source":"assets/ux/highlight_frame_9s_anim_red.png",'
+			+ '"frameWidth":40,"frameHeight":40,'
+			+ '"left":14,"top":17,"right":15,"bottom":18'
 			+ '},'
 			+ '"focusNextToGraphic":"assets/ux/highlight_next_to_red.png",'
-			+ '"focusOverlayGraphic":"assets/ux/highlight_on_red.png",'
-			// Label styling
+			+ '"focusOverlayGraphic":"assets/ux/highlight_on_red.png",' // Label styling
 			+ '"buttonLabelSize":14,'
 			+ '"buttonLabelColor":"#FFEFF2",'
 			+ '"buttonLabelColorHover":"#FFFFFF",'

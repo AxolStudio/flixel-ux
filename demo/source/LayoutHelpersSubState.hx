@@ -23,8 +23,8 @@ class LayoutHelpersSubState extends FlxSubState
 		DemoUi.addBackButton(this);
 		add(DemoUi.makeHeader(
 			"Layout helpers",
-			"These helpers place buttons based on their current sizes: stack (vertical), spread (horizontal), grid (cells).")
-		);
+			"These helpers place buttons based on their current sizes: stack (vertical), spread (horizontal), grid (cells)."
+		));
 
 		var padX = 12;
 		var topY = 120;

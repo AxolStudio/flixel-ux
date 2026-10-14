@@ -35,22 +35,20 @@ class PlayState extends FlxState
 		menu.addButton("Advanced examples", () -> openSubState(new AdvancedExamplesSubState()));
 
 		#if sys
-			// ONLY if we are on a Sys target (windows, hashlink, etc) do we add a "Quit" button.
-			menu.addButton("Quit", () -> Sys.exit(0));
+		// ONLY if we are on a Sys target (windows, hashlink, etc) do we add a "Quit" button.
+		menu.addButton("Quit", () -> Sys.exit(0));
 		#end
-		
+
 		// Make all buttons the same size based on the largest label.
 		menu.matchSize();
-			
+
 		// Arrange in a 2-column grid.
 		// With 5 buttons, the final row has 1 button, and we center-align that last row.
 		menu.grid(2, 18, 14, FlxUXGridLastRowAlign.CENTER);
-		
+
 		// Center the whole group based on its button bounds.
-		menu.alignCenter(); 
+		menu.alignCenter();
 
 		super.create();
-
 	}
 }
-

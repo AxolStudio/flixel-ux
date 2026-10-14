@@ -34,7 +34,10 @@ class DemoUi
 		return t;
 	}
 
-	public static function makeBox(x:Float, y:Float, w:Float, h:Float, label:String):{ border:FlxSprite, label:FlxText }
+	public static function makeBox(x:Float, y:Float, w:Float, h:Float, label:String):{
+		border:FlxSprite,
+		label:FlxText
+	}
 	{
 		// Demo-only helper: light-weight box border + label.
 		var border = new FlxSprite(x, y).makeGraphic(Std.int(w), Std.int(h), 0x00000000);
@@ -49,7 +52,10 @@ class DemoUi
 		t.setFormat(null, 14, LABEL_COLOR, LEFT);
 		t.scrollFactor.set();
 
-		return { border: border, label: t };
+		return {
+			border: border,
+			label: t
+		};
 	}
 
 	public static function addBackButton(state:flixel.FlxSubState, label:String = "Back"):FlxUXButton
