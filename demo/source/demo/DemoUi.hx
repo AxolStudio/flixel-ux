@@ -65,6 +65,7 @@ class DemoUi
 		state.add(g);
 
 		var b = g.addButton(label, () -> state.close());
+		g.onCancel = () -> state.close();
 		b.resize(BACK_BUTTON_W, BACK_BUTTON_H);
 		g.x = FlxG.width - SCREEN_MARGIN - b.width;
 		g.y = HEADER_TOP;

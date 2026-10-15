@@ -195,7 +195,7 @@ In practice, a button can be focused if:
 
 This matches how Flixel “modal” UI works: when you open a `subState`, the underlying state typically stops updating, so those hidden buttons automatically become non-navigable.
 
-If you intentionally keep underlying UI updating (for example, by customizing substate behavior), those buttons will remain navigable too — FlxUX simply follows whatever Flixel is updating.
+Groups also belong to the state/substate where they were created. Only the current deepest state receives input, even if underlying UI intentionally keeps updating. Within that state, an eligible modal group can further restrict input.
 
 ## Styling
 
@@ -247,7 +247,10 @@ Animations are also supported (sprite sheets + named sequences), but for most me
 ```haxe
 FlxUXCore.buttonLabelColor = 0xFFFFFFFF;
 FlxUXCore.buttonLabelColorLocked = 0xFF777777;
+FlxUXCore.buttonLabelSize = 18;
 ```
+
+Label size and color follow the same core → group → button override order as other button styling. When using a custom label factory, apply label styling and keyboard cues in the custom renderer.
 
 ### Override per menu (group)
 
@@ -310,3 +313,127 @@ FlxUXCore.theme = FlxUXTheme.fromJson(themeJson);
 ```
 
 You can also pass the JSON string directly to the constructor: `new FlxUXTheme(themeJson)`. `FlxUXTheme.fromObject()` remains available when you prefer the factory-method style. See `FlxUXTheme` for the full list of supported settings.
+
+## Keyboard and dialog actions
+
+Tab and Shift+Tab traverse eligible buttons in group/button registration order, once each before wrapping. This order is independent of spatial navigation. `tabStop = false` excludes a button only from Tab traversal; it remains available to arrows, pointer input, and shortcuts. Existing `setGroupOrder()` and `setButtonOrder()` methods customize traversal order.
+
+```haxe
+var menu = new FlxUXGroup();
+add(menu);
+var print = menu.addButton("Print", printDocument);
+print.accessKey = "p";      // Alt+P, with an underlined P.
+print.hotkey = "Ctrl+P";    // Separate command shortcut/caption.
+var accept = menu.addButton("Accept", acceptChanges);
+var cancel = menu.addButton("Cancel", cancelChanges);
+menu.defaultButton = accept;
+menu.cancelButton = cancel;
+```
+
+Shortcuts and access keys default to `null`; no application commands are assigned automatically. Modifiers match exactly, so Ctrl+S does not also trigger WASD navigation. If active shortcuts conflict, the first eligible button in registration order takes precedence.
+
+Enter activates the focused button, or the active group's default button when no button is focused. Space activates only the focused button. Confirm activation completes on release and stays attached to the original pressed button. Escape activates the active group's eligible cancel button, falling back to `onCancel`. Default/cancel references must point to buttons in their own group; both default to `null`.
+
+Groups belong to the state/substate in which they are created. Only the current, deepest state receives input, even when underlying states keep updating. Within a state, `group.modal = true` gives the last registered eligible modal group exclusive input. Closing a substate or releasing a modal group restores the previous eligible focus. Ordinary arrow/gamepad navigation remains available, and held directions repeat after a configurable delay.
+
+### Keyboard availability and customization
+
+`FlxUXCore.keyboardEnabled = false`, `FlxG.keys.enabled = false`, and the `FLX_NO_KEYBOARD` define disable FlxUX keyboard input. Shortcut captions and mnemonic underlines disappear automatically without resizing buttons; gamepad and pointer behavior remain available. Keyboard cues can also be hidden globally or per button with `showKeyboardCues = false`. The default-button marker is independent of keyboard cues and can be disabled with `button.showDefaultIndicator = false` or recolored with `defaultIndicatorColor`.
+
+| Setting | Default |
+| --- | --- |
+| `keyboardTab` | `true` |
+| `keyboardHomeEnd` | `true` |
+| `paneNavigation` (F6 / Shift+F6) | `false` |
+| `shortcutsEnabled`, `showKeyboardCues` | `true` |
+| `navRepeatDelay`, `navRepeatInterval` | `0.4`, `0.09` seconds; interval <= 0 disables repeat |
+| `captureShortcuts` (HTML5 assigned shortcuts) | `true` |
+
+Home/End select the first/last eligible button in the focused group. Optional F6 traversal moves between eligible groups. Override keyboard bindings before initialization, or call `rebindInputs()` afterward:
+
+```haxe
+FlxUXCore.keyboardBindings.set("tabNext", ["TAB", "E"]);
+FlxUXCore.keyboardBindings.set("tabPrevious", ["SHIFT+TAB", "Q"]);
+FlxUXCore.keyboardBindings.set("first", []); // Disable this binding.
+FlxUXCore.rebindInputs();
+```
+
+Binding names: `up`, `down`, `left`, `right`, `tabNext`, `tabPrevious`, `first`, `last`, `pageUp`, `pageDown`, `paneNext`, `panePrevious`, `confirm`, `accept`, and `cancel`. `confirm` defaults to Enter/Space and gamepad confirm; `accept` defaults to Enter and permits default-button activation. To remove Enter entirely, override both `confirm` and `accept`. Key names use `FlxKey` names, with optional Ctrl/Shift/Alt/Meta modifiers. Existing arrow/WASD/gamepad binding flags are preserved.
+
+On HTML5, only assigned, eligible shortcuts are prevented from invoking their browser defaults; set `captureShortcuts = false` to leave those defaults alone. Browser/OS-reserved shortcuts are not guaranteed. Flixel separately owns its `FlxG.keys.preventDefaultKeys` list, including Tab by default: applications embedding the game in a keyboard-navigable page should customize that list to allow focus to leave the game. These controls do not provide a DOM/screen-reader accessibility tree.
+
+## Scrolling
+
+`FlxUXScrollPanel` clips arbitrary Flixel group/sprite content in an owned camera. `FlxUXGroup` children retain navigation, and focusing a child automatically reveals it.
+
+```haxe
+var panel = new flixel.ux.FlxUXScrollPanel(24, 80, 360, 240);
+add(panel);
+var inventory = new FlxUXGroup();
+for (index in 0...30)
+	inventory.addButton("Item " + index, () -> {});
+inventory.stack(8);
+panel.addContent(inventory);
+panel.horizontalEnabled = true; // Vertical is enabled by default.
+panel.refresh();
+```
+
+Content coordinates are local to the panel's camera, not screen coordinates. Panels use screen-space x/y and an unrotated, zoom-1 viewport; put them directly in the state UI, rather than inside transformed camera/group hierarchies. Nested/overlapping panels and virtualized lists are not supported. Child controls continue updating while their panel is active, including offscreen content.
+
+- Bounds are measured automatically from visible, existing content. Use `setContentSize(width, height, originX, originY)` for explicit bounds and `useAutomaticContentBounds()` to restore measurement.
+- Bars appear only on enabled axes with overflow. Set `autoHideScrollbars = false` to keep enabled bars visible. Values clamp when content or viewport dimensions change.
+- Arrow buttons step and repeat; track clicks page; the proportional thumb can be dragged with the mouse. Mouse-disabled builds retain keyboard/gamepad navigation and automatic reveal.
+- The wheel scrolls vertically; Shift+wheel scrolls horizontally when enabled. Customize `wheelStep`, or disable `wheelEnabled`.
+- With a child focused, Page Up/Down and Home/End scroll the panel without changing focus. Disable `keyboardScrolling` or override the shared bindings to change this behavior.
+- `scrollX`, `scrollY`, `scrollTo()`, `ensureVisible()`, `focusPadding`, and `onScroll` provide programmatic control.
+- Customize `verticalBar` / `horizontalBar`: `thickness`, `showButtons`, `step`, `minThumbSize`, repeat timing, `trackColor`, `thumbColor`, and arrow button skins. Call `refresh()` after layout changes.
+- Customize each scrollbar's `trackGraphic`, `thumbGraphic`, `buttonGraphic`, and `arrowGraphic`. Track/thumb/button graphics accept asset IDs or `FlxUX9Slice` values; use 9-slices when the art needs fixed pixel borders at different sizes. Arrow graphics are a four-frame horizontal spritesheet ordered up, down, left, right; set `scrollBarArrowFrameSize` in the theme to match its square frames. Set `trackColor` or `thumbColor` to tint or override the theme colors.
+- FlxUX includes pixel-art defaults for the track, thumb, and four arrow icons. Supply your own asset IDs to match your game's UI style.
+- Theme fields include `scrollBarTrackGraphic`, `scrollBarThumbGraphic`, `scrollBarButtonGraphic`, `scrollBarArrowGraphic`, `scrollBarArrowFrameSize`, `scrollBarTrackColor`, `scrollBarThumbColor`, `scrollBarThickness`, `scrollBarStep`, `scrollBarMinThumbSize`, and `scrollBarShowButtons`. Scrollzone fields include `scrollPanelBackgroundGraphic`, `scrollPanelBackgroundColor`, `scrollPanelBorderGraphic`, `scrollPanelBorderColor`, `scrollPanelBorderThickness`, and `scrollPanelFocusPadding`. Graphics accept an asset ID string or a 9-slice object.
+- Set theme-wide graphics/options in code or JSON. Per-instance values override the theme:
+
+```haxe
+FlxUXCore.theme = FlxUXTheme.fromJson(Assets.getText("themes/ui.json"));
+
+panel.backgroundColor = 0xFF172027;
+panel.verticalBar.trackColor = 0xFF28343B;
+panel.verticalBar.thumbGraphic = "assets/ui/inventory_thumb.png";
+panel.verticalBar.increaseButton.setButtonSkin("assets/ui/scroll_button.png");
+```
+
+```json
+{
+	"scrollBarTrackGraphic": {
+		"source": "assets/ui/scroll_track.png",
+		"frameWidth": 8,
+		"frameHeight": 8,
+		"left": 3,
+		"top": 3,
+		"right": 3,
+		"bottom": 3
+	},
+	"scrollBarThumbGraphic": "assets/ui/scroll_thumb.png",
+	"scrollBarButtonGraphic": "assets/ui/scroll_button.png",
+	"scrollBarArrowGraphic": "assets/ui/scroll_arrows.png",
+	"scrollBarArrowFrameSize": 8,
+	"scrollBarThickness": 20,
+	"scrollBarTrackColor": "#1C242A",
+	"scrollBarThumbColor": "#FFFFFF",
+	"scrollPanelBackgroundColor": "#14191E",
+	"scrollPanelBackgroundGraphic": "assets/ui/inventory_background.png",
+	"scrollPanelBorderColor": "#77838C",
+	"scrollPanelBorderGraphic": {
+		"source": "assets/ui/inventory_border.png",
+		"left": 4,
+		"top": 4,
+		"right": 4,
+		"bottom": 4
+	},
+	"scrollPanelBorderThickness": 1,
+	"scrollPanelFocusPadding": 8
+}
+```
+
+- Add/remove content with `addContent()` / `removeContent()` so removed children regain their previous cameras/scroll factors. The panel owns its remaining content and viewport camera; destroying it releases both.
+
+`FlxUXScrollBar` can also be used independently. Construct it with x/y, bar length, and vertical orientation; call `setRange(contentSize, viewportSize)`, then use `value`, `maximum`, and `onChange`. `value` ranges from zero to `maximum`.

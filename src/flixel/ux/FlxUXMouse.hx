@@ -47,6 +47,7 @@ class FlxUXMouse
 	 */
 	public function init():Void
 	{
+		#if !FLX_NO_MOUSE
 		if (!overrideHardwareCursor)
 			return;
 
@@ -68,6 +69,7 @@ class FlxUXMouse
 		lastRenderedState = -1;
 
 		reloadCursorScale();
+		#end
 	}
 
 	/**
@@ -75,6 +77,7 @@ class FlxUXMouse
 	 */
 	public function reloadCursorScale():Void
 	{
+		#if !FLX_NO_MOUSE
 		if (!overrideHardwareCursor || !loaded || FlxG.stage == null)
 			return;
 
@@ -83,6 +86,7 @@ class FlxUXMouse
 		FlxG.mouse.load(null, mScale, 0, 0);
 		FlxG.mouse.cursor.smoothing = false;
 		FlxG.mouse.cursor.pixelSnapping = PixelSnapping.ALWAYS;
+		#end
 	}
 
 	/**
@@ -92,6 +96,7 @@ class FlxUXMouse
 	 */
 	public function update(elapsed:Float, pressed:Bool):Void
 	{
+		#if !FLX_NO_MOUSE
 		if (!enabled || !overrideHardwareCursor || !loaded || !FlxG.mouse.visible)
 			return;
 
@@ -151,6 +156,7 @@ class FlxUXMouse
 		lastRenderedState = state;
 		lastRenderedFrame = frameIndex;
 		applyHardwareCursorFrame(frameIndex);
+		#end
 	}
 
 	private function loadCursorInput(input:FlxUXGraphicInput):Void
@@ -218,6 +224,7 @@ class FlxUXMouse
 
 	private function applyHardwareCursorFrame(frameIndex:Int):Void
 	{
+		#if !FLX_NO_MOUSE
 		if (cursorFrames == null || cursorFrames.length == 0)
 			return;
 		var i = frameIndex;
@@ -229,6 +236,7 @@ class FlxUXMouse
 		FlxG.mouse.load(cursorFrames[i], mScale, 0, 0);
 		FlxG.mouse.cursor.smoothing = false;
 		FlxG.mouse.cursor.pixelSnapping = PixelSnapping.ALWAYS;
+		#end
 	}
 
 	private function detectSpriteSheet(bd:BitmapData):{frameWidth:Int, frameHeight:Int}

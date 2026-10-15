@@ -53,6 +53,46 @@ class FlxUXButton extends FlxBitmapTextButton
 
 	/** Optional activation callback invoked when this button is activated via POINTER or NAV. */
 	public var action:Void->Void;
+	public var tabStop:Bool = true;
+	public var scrollPanel:Null<FlxUXScrollPanel> = null;
+	public var hotkey(default, set):Null<String> = null;
+	public var accessKey(default, set):Null<String> = null;
+	public var showKeyboardCues:Bool = true;
+	public var showDefaultIndicator:Bool = true;
+	public var defaultIndicatorColor:Null<FlxColor> = null;
+	public var keyboardCuesVisible(default, null):Bool = false;
+	private var hotkeyInput:FlxUXShortcut;
+	private var accessKeyInput:FlxUXShortcut;
+	private var shortcutLabel:FlxBitmapText;
+	private var mnemonicUnderline:FlxSprite;
+	private var defaultIndicator:FlxSprite;
+	private var defaultIndicatorWidth:Int = -1;
+	private var defaultIndicatorHeight:Int = -1;
+
+	private function set_hotkey(value:Null<String>):Null<String>
+	{
+		hotkey = value;
+		hotkeyInput = value == null ? null : new FlxUXShortcut(value);
+		if (shortcutLabel != null) shortcutLabel.destroy();
+		shortcutLabel = null;
+		if (hotkeyInput != null && hotkeyInput.valid)
+		{
+			shortcutLabel = new FlxBitmapText();
+			shortcutLabel.text = value;
+			shortcutLabel.scale.set(2, 2);
+			shortcutLabel.autoSize = true;
+			shortcutLabel.updateHitbox();
+		}
+		if (constructed && autoSizeToLabel) autosize();
+		return value;
+	}
+
+	private function set_accessKey(value:Null<String>):Null<String>
+	{
+		accessKey = value;
+		accessKeyInput = value == null || value.length != 1 ? null : new FlxUXShortcut("ALT+" + value);
+		return value;
+	}
 
 	/** Whether this button is currently focused for NAV purposes. */
 	public var uxFocused(default, null):Bool = false;
@@ -367,8 +407,8 @@ class FlxUXButton extends FlxBitmapTextButton
 			labelH = Math.max(1, t.textField.textHeight + 4);
 		}
 
-		var w = Std.int(Math.ceil(labelW + marginX * 2));
-		var h = Std.int(Math.ceil(labelH + marginY * 2));
+		var w = Std.int(Math.ceil(labelW + marginX * 2 + (shortcutLabel == null ? 0 : shortcutLabel.width + 12)));
+		var h = Std.int(Math.ceil(labelH + marginY * 2 + (shortcutLabel == null ? 0 : shortcutLabel.height + 4)));
 		if (w < 1)
 			w = 1;
 		if (h < 1)
@@ -432,9 +472,10 @@ class FlxUXButton extends FlxBitmapTextButton
 		if (Std.isOfType(this.label, FlxBitmapText))
 		{
 			var text:FlxBitmapText = cast this.label;
-			text.alignment = CENTER;
+			text.alignment = buttonLabelAlign != null ? buttonLabelAlign
+				: uxGroup != null && uxGroup.buttonLabelAlign != null ? uxGroup.buttonLabelAlign : FlxUXCore.buttonLabelAlign;
 			text.autoSize = false;
-			text.fieldWidth = Std.int(width);
+			text.fieldWidth = Std.int(width / text.scale.x);
 			text.updateHitbox();
 		}
 		this.label.x = x + (width - this.label.width) * 0.5;
@@ -458,7 +499,24 @@ class FlxUXButton extends FlxBitmapTextButton
 				text.y = y + height * 0.5 - (top + bottom) * text.scale.y * 0.5;
 			}
 		}
+		if (shortcutLabel != null && height >= label.height + shortcutLabel.height + 8)
+			label.y -= (shortcutLabel.height + 4) * 0.5;
 	}
+
+	override function updateLabelPosition():Void
+	{
+		if (!constructed)
+		{
+			super.updateLabelPosition();
+			return;
+		}
+		centerLabel();
+		if (status == FlxButtonState.PRESSED && label != null)
+			label.y += pressedLabelOffsetY;
+	}
+
+	/** Pixel offset applied to the centered label while the button is pressed. */
+	public var pressedLabelOffsetY:Float = 1;
 
 	/** Applies label options (font/size/color/align and optional label factory) using precedence: button -> group -> core. */
 	public function applyLabelOptions():Void
@@ -544,7 +602,12 @@ class FlxUXButton extends FlxBitmapTextButton
 		}
 		else if (Std.isOfType(this.label, FlxBitmapText))
 		{
-			this.label.color = colorNormal;
+			var bitmapText:FlxBitmapText = cast this.label;
+			var textScale = Math.max(1, Math.round(size / bitmapText.font.lineHeight));
+			bitmapText.scale.set(textScale, textScale);
+			bitmapText.alignment = align;
+			bitmapText.color = colorNormal;
+			bitmapText.updateHitbox();
 		}
 		else
 		{
@@ -991,11 +1054,17 @@ class FlxUXButton extends FlxBitmapTextButton
 
 		status = uxPressed ? FlxButtonState.PRESSED : FlxButtonState.NORMAL;
 		updateFrameFromStatus();
+		updateLabelPosition();
 	}
 
 	/** Suppresses stale pointer hover while keyboard/gamepad navigation is active. */
 	override function updateButton():Void
 	{
+		if (!FlxUXCore.active || !FlxUXCore.ready || uxGroup != null && !FlxUXCore.isGroupInputEligible(uxGroup, false))
+		{
+			status = _locked ? FlxButtonState.DISABLED : FlxButtonState.NORMAL;
+			return;
+		}
 		var actions:FlxUXActions = FlxUXCore.actions;
 		if (FlxUXCore.mode == flixel.ux.FlxUXCore.FlxUXInputMode.NAV
 			&& actions != null
@@ -1006,6 +1075,41 @@ class FlxUXButton extends FlxBitmapTextButton
 			return;
 		}
 		super.updateButton();
+	}
+
+	override function checkInput(pointer:flixel.input.FlxPointer, input:flixel.input.IFlxInput, justPressedPosition:flixel.math.FlxPoint,
+		camera:flixel.FlxCamera):Bool
+	{
+		#if !FLX_NO_MOUSE
+		if (Std.isOfType(pointer, flixel.input.mouse.FlxMouse) && !FlxG.mouse.enabled) return false;
+		#end
+		if (scrollPanel != null && !scrollPanel.containsPointer(pointer)) return false;
+		return super.checkInput(pointer, input, justPressedPosition, camera);
+	}
+
+	override function onUpHandler():Void
+	{
+		var allowed = FlxUXCore.active && FlxUXCore.ready && !_locked
+			&& (uxGroup == null || FlxUXCore.isGroupInputEligible(uxGroup, false));
+		#if !FLX_NO_MOUSE
+		if (!Std.isOfType(currentInput, flixel.input.FlxPointer)) allowed = allowed && FlxG.mouse.enabled;
+		#end
+		if (scrollPanel != null)
+		{
+			if (Std.isOfType(currentInput, flixel.input.FlxPointer))
+				allowed = allowed && scrollPanel.containsPointer(cast currentInput);
+			#if !FLX_NO_MOUSE
+			else allowed = allowed && FlxG.mouse.enabled && scrollPanel.containsPointer(FlxG.mouse);
+			#end
+		}
+		if (!allowed)
+		{
+			status = FlxButtonState.NORMAL;
+			input.release();
+			currentInput = null;
+			return;
+		}
+		super.onUpHandler();
 	}
 
 	override public function update(elapsed:Float):Void
@@ -1068,7 +1172,7 @@ class FlxUXButton extends FlxBitmapTextButton
 
 		updateFrameFromStatus();
 		applyLabelStateColor();
-		centerLabel();
+		updateLabelPosition();
 	}
 
 	/**
@@ -1077,6 +1181,110 @@ class FlxUXButton extends FlxBitmapTextButton
 	public inline function isUXEligible():Bool
 	{
 		return exists && alive && visible && active && !_locked;
+	}
+
+	public function shortcutTriggered():Bool
+	{
+		return hotkeyInput != null && hotkeyInput.check(flixel.input.FlxInput.FlxInputState.JUST_PRESSED)
+			|| accessKeyInput != null && accessKeyInput.check(flixel.input.FlxInput.FlxInputState.JUST_PRESSED);
+	}
+
+	private function updateKeyboardCues():Void
+	{
+		keyboardCuesVisible = showKeyboardCues && FlxUXCore.showKeyboardCues && FlxUXCore.shortcutsEnabled && FlxUXCore.isKeyboardEnabled();
+		if (shortcutLabel != null)
+		{
+			shortcutLabel.visible = keyboardCuesVisible && width >= shortcutLabel.width + marginX * 2
+				&& height >= label.height + shortcutLabel.height + 8;
+			shortcutLabel.color = label.color;
+			shortcutLabel.alpha = alpha;
+			shortcutLabel.x = x + width - marginX - shortcutLabel.width;
+			shortcutLabel.y = y + height - shortcutLabel.height - 3;
+			shortcutLabel.cameras = cameras;
+			shortcutLabel.scrollFactor.copyFrom(scrollFactor);
+		}
+		if (mnemonicUnderline == null) mnemonicUnderline = new FlxSprite().makeGraphic(1, 1, FlxColor.WHITE);
+		mnemonicUnderline.visible = false;
+		if (keyboardCuesVisible && accessKeyInput != null && accessKeyInput.valid && label != null)
+		{
+			var index = baseLabelText.toLowerCase().indexOf(accessKey.toLowerCase());
+			if (index >= 0 && Std.isOfType(label, FlxBitmapText))
+			{
+				var bitmapText:FlxBitmapText = cast label;
+				var total = 0.0;
+				var before = 0.0;
+				var letterWidth = 0.0;
+				for (position in 0...baseLabelText.length)
+				{
+					var frame = bitmapText.font.getCharFrame(baseLabelText.charCodeAt(position));
+					var advance = frame == null ? bitmapText.font.spaceWidth : frame.sourceSize.x;
+					if (position < index) before += advance + bitmapText.letterSpacing;
+					if (position == index) letterWidth = advance;
+					total += advance + bitmapText.letterSpacing;
+				}
+				total -= bitmapText.letterSpacing;
+				mnemonicUnderline.scale.set(Math.max(1, letterWidth * label.scale.x), 1);
+				mnemonicUnderline.updateHitbox();
+				var textLeft = switch (bitmapText.alignment)
+				{
+					case LEFT: label.x;
+					case RIGHT: label.x + label.width - total * label.scale.x;
+					default: x + (width - total * label.scale.x) * 0.5;
+				};
+				mnemonicUnderline.x = textLeft + before * label.scale.x;
+				mnemonicUnderline.y = label.y + bitmapText.font.lineHeight * label.scale.y - 1;
+				mnemonicUnderline.color = label.color;
+				mnemonicUnderline.alpha = alpha;
+				mnemonicUnderline.cameras = cameras;
+				mnemonicUnderline.scrollFactor.copyFrom(scrollFactor);
+				mnemonicUnderline.visible = true;
+			}
+		}
+		if (defaultIndicator == null) defaultIndicator = new FlxSprite();
+		defaultIndicator.visible = showDefaultIndicator && uxGroup != null && uxGroup.defaultButton == this && isUXEligible();
+		var indicatorWidth = Std.int(Math.max(1, width - 4));
+		var indicatorHeight = Std.int(Math.max(1, height - 4));
+		if (defaultIndicatorWidth != indicatorWidth || defaultIndicatorHeight != indicatorHeight)
+		{
+			defaultIndicatorWidth = indicatorWidth;
+			defaultIndicatorHeight = indicatorHeight;
+			defaultIndicator.makeGraphic(indicatorWidth, indicatorHeight, 0x00000000, true);
+			var pixels = defaultIndicator.pixels;
+			pixels.fillRect(new openfl.geom.Rectangle(0, 0, indicatorWidth, 1), FlxColor.WHITE);
+			pixels.fillRect(new openfl.geom.Rectangle(0, indicatorHeight - 1, indicatorWidth, 1), FlxColor.WHITE);
+			pixels.fillRect(new openfl.geom.Rectangle(0, 0, 1, indicatorHeight), FlxColor.WHITE);
+			pixels.fillRect(new openfl.geom.Rectangle(indicatorWidth - 1, 0, 1, indicatorHeight), FlxColor.WHITE);
+			defaultIndicator.dirty = true;
+		}
+		defaultIndicator.setPosition(x + 2, y + 2);
+		defaultIndicator.color = defaultIndicatorColor == null ? effectiveNormalLabelColor() : defaultIndicatorColor;
+		defaultIndicator.alpha = alpha;
+		defaultIndicator.cameras = cameras;
+		defaultIndicator.scrollFactor.copyFrom(scrollFactor);
+	}
+
+	private function effectiveNormalLabelColor():FlxColor
+	{
+		if (buttonLabelColor != null) return buttonLabelColor;
+		if (uxGroup != null && uxGroup.buttonLabelColor != null) return uxGroup.buttonLabelColor;
+		return FlxUXCore.buttonLabelColor;
+	}
+
+	override public function draw():Void
+	{
+		super.draw();
+		updateKeyboardCues();
+		if (shortcutLabel != null && shortcutLabel.visible) shortcutLabel.draw();
+		if (mnemonicUnderline.visible) mnemonicUnderline.draw();
+		if (defaultIndicator.visible) defaultIndicator.draw();
+	}
+
+	override public function destroy():Void
+	{
+		if (shortcutLabel != null) shortcutLabel.destroy();
+		if (mnemonicUnderline != null) mnemonicUnderline.destroy();
+		if (defaultIndicator != null) defaultIndicator.destroy();
+		super.destroy();
 	}
 
 	/**

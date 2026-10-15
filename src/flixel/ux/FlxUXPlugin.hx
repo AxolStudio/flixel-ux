@@ -13,6 +13,7 @@ class FlxUXPlugin extends FlxBasic
 	{
 		super();
 		visible = false;
+		flixel.FlxG.signals.postUpdate.add(postUpdate);
 	}
 
 	override public function update(elapsed:Float):Void
@@ -20,6 +21,18 @@ class FlxUXPlugin extends FlxBasic
 		if (!exists || !active)
 			return;
 		super.update(elapsed);
-		FlxUXCore.internalUpdate(elapsed);
+	}
+
+	private function postUpdate():Void
+	{
+		if (exists && active)
+			FlxUXCore.internalUpdate(flixel.FlxG.elapsed);
+		FlxUXCore.clearNavButtonsUpdatedThisFrame();
+	}
+
+	override public function destroy():Void
+	{
+		flixel.FlxG.signals.postUpdate.remove(postUpdate);
+		super.destroy();
 	}
 }

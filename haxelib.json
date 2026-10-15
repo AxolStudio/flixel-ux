@@ -11,7 +11,7 @@
     "buttons"
   ],
   "description": "A library providing UX utilities for HaxeFlixel.",
-  "version": "0.2.0-beta",
+  "version": "0.3.0-beta",
   "classPath": "src/",
   "contributors": [
     "AxolStudio",
@@ -20,5 +20,5 @@
   "dependencies": {
     "flixel": "6.1.2"
   },
-  "releasenote": "0.2.0-beta: adds themes, navigation modes, layout helpers, and expanded focus and skin options."
+  "releasenote": "0.3.0-beta: adds Tab traversal, scoped keyboard shortcuts and access keys, default/cancel buttons, readable labels, scrollbars, scroll panels, and expanded demos and tests."
 }

@@ -4,5 +4,6 @@
 	<source path="." />
 	<source path="../src" />
 	<haxelib name="flixel" />
+	<haxelib name="flixel-ux" />
 	<haxedef name="FLX_NO_HEALTH" />
 </project>

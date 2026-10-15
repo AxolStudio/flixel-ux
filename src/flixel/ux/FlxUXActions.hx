@@ -27,9 +27,21 @@ class FlxUXActions
 	public var down:FlxActionDigital;
 	public var left:FlxActionDigital;
 	public var right:FlxActionDigital;
+	public var tabNext:FlxActionDigital;
+	public var tabPrevious:FlxActionDigital;
+	public var first:FlxActionDigital;
+	public var last:FlxActionDigital;
+	public var pageUp:FlxActionDigital;
+	public var pageDown:FlxActionDigital;
+	public var paneNext:FlxActionDigital;
+	public var panePrevious:FlxActionDigital;
+	public var directionHeld:Array<FlxActionDigital>;
 
 	/** Digital activation actions. */
 	public var confirm:FlxActionDigital;
+	public var accept:FlxActionDigital;
+	public var acceptHeld:FlxActionDigital;
+	public var acceptUp:FlxActionDigital;
 
 	public var confirmHeld:FlxActionDigital;
 	public var confirmUp:FlxActionDigital;
@@ -50,6 +62,7 @@ class FlxUXActions
 
 	/** True for one frame when confirm is released (button-up edge). */
 	public var confirmReleased(default, null):Bool = false;
+	public var gamepadConfirmTriggered(default, null):Bool = false;
 
 	/** Whether pointer press is currently held (mouse/touch), if applicable. */
 	public var pointerPressDown(default, null):Bool = false;
@@ -120,7 +133,19 @@ class FlxUXActions
 		down = new FlxActionDigital();
 		left = new FlxActionDigital();
 		right = new FlxActionDigital();
+		tabNext = new FlxActionDigital();
+		tabPrevious = new FlxActionDigital();
+		first = new FlxActionDigital();
+		last = new FlxActionDigital();
+		pageUp = new FlxActionDigital();
+		pageDown = new FlxActionDigital();
+		paneNext = new FlxActionDigital();
+		panePrevious = new FlxActionDigital();
+		directionHeld = [new FlxActionDigital(), new FlxActionDigital(), new FlxActionDigital(), new FlxActionDigital()];
 		confirm = new FlxActionDigital();
+		accept = new FlxActionDigital();
+		acceptHeld = new FlxActionDigital();
+		acceptUp = new FlxActionDigital();
 		confirmHeld = new FlxActionDigital();
 		confirmUp = new FlxActionDigital();
 		cancel = new FlxActionDigital();
@@ -130,6 +155,10 @@ class FlxUXActions
 		pointerPressHeld = new FlxActionDigital();
 
 		manager.addActions([
+			pageUp, pageDown,
+			accept, acceptHeld, acceptUp,
+			tabNext, tabPrevious, first, last, paneNext, panePrevious,
+			directionHeld[0], directionHeld[1], directionHeld[2], directionHeld[3],
 			up,
 			down,
 			left,
@@ -144,29 +173,33 @@ class FlxUXActions
 		]);
 
 		#if !FLX_NO_KEYBOARD
-		if (keyboardArrows)
+		var names = ["up", "down", "left", "right"];
+		var arrowKeys = ["UP", "DOWN", "LEFT", "RIGHT"];
+		var wasdKeys = ["W", "S", "A", "D"];
+		var directions = [up, down, left, right];
+		for (index in 0...4)
 		{
-			up.addKey(FlxKey.UP, FlxInputState.JUST_PRESSED);
-			down.addKey(FlxKey.DOWN, FlxInputState.JUST_PRESSED);
-			left.addKey(FlxKey.LEFT, FlxInputState.JUST_PRESSED);
-			right.addKey(FlxKey.RIGHT, FlxInputState.JUST_PRESSED);
+			var defaults:Array<String> = [];
+			if (keyboardArrows) defaults.push(arrowKeys[index]);
+			if (keyboardWASD) defaults.push(wasdKeys[index]);
+			bindKeyboard(directions[index], names[index], defaults, JUST_PRESSED);
+			bindKeyboard(directionHeld[index], names[index], defaults, PRESSED);
 		}
-
-		if (keyboardWASD)
-		{
-			up.addKey(FlxKey.W, FlxInputState.JUST_PRESSED);
-			down.addKey(FlxKey.S, FlxInputState.JUST_PRESSED);
-			left.addKey(FlxKey.A, FlxInputState.JUST_PRESSED);
-			right.addKey(FlxKey.D, FlxInputState.JUST_PRESSED);
-		}
-
-		confirm.addKey(FlxKey.ENTER, FlxInputState.JUST_PRESSED);
-		confirm.addKey(FlxKey.SPACE, FlxInputState.JUST_PRESSED);
-		confirmHeld.addKey(FlxKey.ENTER, FlxInputState.PRESSED);
-		confirmHeld.addKey(FlxKey.SPACE, FlxInputState.PRESSED);
-		confirmUp.addKey(FlxKey.ENTER, FlxInputState.JUST_RELEASED);
-		confirmUp.addKey(FlxKey.SPACE, FlxInputState.JUST_RELEASED);
-		cancel.addKey(FlxKey.ESCAPE, FlxInputState.JUST_PRESSED);
+		bindKeyboard(tabNext, "tabNext", ["TAB"], JUST_PRESSED);
+		bindKeyboard(tabPrevious, "tabPrevious", ["SHIFT+TAB"], JUST_PRESSED);
+		bindKeyboard(first, "first", ["HOME"], JUST_PRESSED);
+		bindKeyboard(last, "last", ["END"], JUST_PRESSED);
+		bindKeyboard(pageUp, "pageUp", ["PAGEUP"], JUST_PRESSED);
+		bindKeyboard(pageDown, "pageDown", ["PAGEDOWN"], JUST_PRESSED);
+		bindKeyboard(paneNext, "paneNext", ["F6"], JUST_PRESSED);
+		bindKeyboard(panePrevious, "panePrevious", ["SHIFT+F6"], JUST_PRESSED);
+		bindKeyboard(confirm, "confirm", ["ENTER", "SPACE"], JUST_PRESSED);
+		bindKeyboard(accept, "accept", ["ENTER"], JUST_PRESSED);
+		bindKeyboard(acceptHeld, "accept", ["ENTER"], PRESSED);
+		bindKeyboard(acceptUp, "accept", ["ENTER"], JUST_RELEASED);
+		bindKeyboard(confirmHeld, "confirm", ["ENTER", "SPACE"], PRESSED);
+		bindKeyboard(confirmUp, "confirm", ["ENTER", "SPACE"], JUST_RELEASED);
+		bindKeyboard(cancel, "cancel", ["ESCAPE"], JUST_PRESSED);
 		#else
 		#end
 
@@ -212,6 +245,20 @@ class FlxUXActions
 		#else
 		#end
 
+		#if !FLX_NO_GAMEPAD
+		var heldIDs = [FlxGamepadInputID.DPAD_UP, FlxGamepadInputID.DPAD_DOWN, FlxGamepadInputID.DPAD_LEFT, FlxGamepadInputID.DPAD_RIGHT];
+		var stickIDs = [FlxGamepadInputID.LEFT_STICK_DIGITAL_UP, FlxGamepadInputID.LEFT_STICK_DIGITAL_DOWN,
+			FlxGamepadInputID.LEFT_STICK_DIGITAL_LEFT, FlxGamepadInputID.LEFT_STICK_DIGITAL_RIGHT];
+		var rightIDs = [FlxGamepadInputID.RIGHT_STICK_DIGITAL_UP, FlxGamepadInputID.RIGHT_STICK_DIGITAL_DOWN,
+			FlxGamepadInputID.RIGHT_STICK_DIGITAL_LEFT, FlxGamepadInputID.RIGHT_STICK_DIGITAL_RIGHT];
+		for (index in 0...4)
+		{
+			if (gamepadDpad) directionHeld[index].addGamepad(heldIDs[index], PRESSED);
+			if (gamepadLeftStick) directionHeld[index].addGamepad(stickIDs[index], PRESSED);
+			if (gamepadRightStick) directionHeld[index].addGamepad(rightIDs[index], PRESSED);
+		}
+		#end
+
 		#if !FLX_NO_MOUSE
 		pointerPress.addMouse(FlxMouseButtonID.LEFT, FlxInputState.JUST_PRESSED);
 		pointerPressHeld.addMouse(FlxMouseButtonID.LEFT, FlxInputState.PRESSED);
@@ -224,11 +271,23 @@ class FlxUXActions
 		pointerPressDown = false;
 	}
 
+	private function bindKeyboard(action:FlxActionDigital, name:String, defaults:Array<String>, state:FlxInputState):Void
+	{
+		var bindings = FlxUXCore.keyboardBindings.exists(name) ? FlxUXCore.keyboardBindings.get(name) : defaults;
+		if (bindings != null)
+			for (binding in bindings)
+				action.add(new FlxUXKeyboardInput(binding, state));
+	}
+
 	/** Updates derived state like "held" and "released" from Flixel's per-frame triggers. */
 	public function update():Void
 	{
-		confirmDown = (confirmHeld != null) ? confirmHeld.triggered : false;
-		confirmReleased = (confirmUp != null) ? confirmUp.triggered : false;
+		gamepadConfirmTriggered = false;
+		for (input in confirm.inputs)
+			if (input.device == flixel.input.actions.FlxActionInput.FlxInputDevice.GAMEPAD && input.check(confirm))
+				gamepadConfirmTriggered = true;
+		confirmDown = confirmHeld != null && confirmHeld.triggered || acceptHeld != null && acceptHeld.triggered;
+		confirmReleased = confirmUp != null && confirmUp.triggered || acceptUp != null && acceptUp.triggered;
 		pointerPressDown = (pointerPressHeld != null) ? pointerPressHeld.triggered : false;
 	}
 }

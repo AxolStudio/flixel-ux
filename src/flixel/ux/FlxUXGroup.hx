@@ -152,6 +152,11 @@ class FlxUXGroup extends FlxGroup
 	 * - Pause menu / modal: capturesNav = true
 	 */
 	public var capturesNav:Bool = true;
+	public var defaultButton:Null<FlxUXButton> = null;
+	public var cancelButton:Null<FlxUXButton> = null;
+	public var modal:Bool = false;
+	public var ownerState(default, null):flixel.FlxState;
+	public var scrollPanel:Null<FlxUXScrollPanel> = null;
 
 	/**
 	 * Optional callback invoked when NAV cancel is pressed while focus is within this group.
@@ -346,6 +351,7 @@ class FlxUXGroup extends FlxGroup
 		FlxUXCore.init();
 
 		super(maxSize);
+		ownerState = FlxUXCore.currentState();
 		FlxUXCore.addGroup(this);
 		buttons = new FlxTypedGroup<FlxUXButton>();
 		sprites = new FlxTypedGroup<FlxSprite>();
@@ -388,6 +394,15 @@ class FlxUXGroup extends FlxGroup
 	 */
 	public function addUXButton(button:FlxUXButton, ?order:Int):FlxUXButton
 	{
+		if (button == null)
+			return null;
+		if (containsButton(button))
+		{
+			if (order != null) setButtonOrder(button, order);
+			return button;
+		}
+		if (button.getUXGroup() != null && button.getUXGroup() != this)
+			button.getUXGroup().removeButton(button);
 		if (button != null)
 		{
 			button.uxGroup = this;
@@ -464,6 +479,10 @@ class FlxUXGroup extends FlxGroup
 			if (buttons != null)
 				buttons.remove(button, true);
 			untrackButton(button);
+			if (FlxUXCore.focused == button) FlxUXCore.setFocused(null);
+			button.uxGroup = null;
+			if (defaultButton == button) defaultButton = null;
+			if (cancelButton == button) cancelButton = null;
 			return true;
 		}
 		return false;

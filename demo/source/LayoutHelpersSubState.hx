@@ -37,7 +37,7 @@ class LayoutHelpersSubState extends FlxSubState
 		add(stackBox.label);
 		var gStack = new FlxUXGroup();
 		// Keep styling simple in layout demos so you can focus on placement.
-		gStack.buttonLabelColor = 0xFF666666;
+		gStack.buttonLabelColor = 0xFF222222;
 		gStack.buttonLabelColorHover = 0xFF333333;
 		gStack.buttonLabelColorDown = 0xFF333333;
 		add(gStack);
@@ -61,7 +61,7 @@ class LayoutHelpersSubState extends FlxSubState
 		add(spreadBox.label);
 		{
 			var gSpread = new FlxUXGroup();
-			gSpread.buttonLabelColor = 0xFF666666;
+			gSpread.buttonLabelColor = 0xFF222222;
 			gSpread.buttonLabelColorHover = 0xFF333333;
 			gSpread.buttonLabelColorDown = 0xFF333333;
 			add(gSpread);
@@ -83,7 +83,7 @@ class LayoutHelpersSubState extends FlxSubState
 		add(gridBox.label);
 		{
 			var gGrid = new FlxUXGroup();
-			gGrid.buttonLabelColor = 0xFF666666;
+			gGrid.buttonLabelColor = 0xFF222222;
 			gGrid.buttonLabelColorHover = 0xFF333333;
 			gGrid.buttonLabelColorDown = 0xFF333333;
 			add(gGrid);

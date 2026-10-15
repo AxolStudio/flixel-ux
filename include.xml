@@ -7,5 +7,8 @@
 		<assets path="assets/ux/highlight_on.png" rename="flixel-ux/highlight_on.png" embed="true" />
 		<assets path="assets/ux/mouse_cursor.png" rename="flixel-ux/mouse_cursor.png" embed="true" />
 		<assets path="assets/ux/button.png" rename="flixel-ux/ux/button.png" embed="true" />
+		<assets path="assets/ux/scroll_track.png" rename="flixel-ux/scroll_track.png" embed="true" />
+		<assets path="assets/ux/scroll_thumb.png" rename="flixel-ux/scroll_thumb.png" embed="true" />
+		<assets path="assets/ux/scroll_arrows.png" rename="flixel-ux/scroll_arrows.png" embed="true" />
     </section>
 </project>

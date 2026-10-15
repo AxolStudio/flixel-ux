@@ -61,7 +61,7 @@ class FocusModesSubState extends FlxSubState
 			// this menu uses its own focusMode instead of whatever FlxUXCore.focusMode is.
 			g.focusMode = labels[i].mode;
 			// Use simple label colors so the highlight graphics are the star of the show.
-			g.buttonLabelColor = 0xFF666666;
+			g.buttonLabelColor = 0xFF222222;
 			g.buttonLabelColorHover = 0xFF333333;
 			g.buttonLabelColorDown = 0xFF333333;
 			if (labels[i].mode == FlxUXFocusMode.NEXT_TO)

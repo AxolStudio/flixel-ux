@@ -30,7 +30,7 @@ class FlxUXTheme
 
 	public var buttonLabelFont:Null<String> = null;
 	public var buttonLabelSize:Int = 14;
-	public var buttonLabelColor:FlxColor = 0xFF666666;
+	public var buttonLabelColor:FlxColor = 0xFF222222;
 	public var buttonLabelColorHover:Null<FlxColor> = 0xFF333333;
 	public var buttonLabelColorDown:Null<FlxColor> = 0xFF333333;
 	public var buttonLabelColorDisabled:Null<FlxColor> = 0xFF777777;
@@ -55,6 +55,24 @@ class FlxUXTheme
 
 	public var highlightPadX:Float = 12;
 	public var highlightPadY:Float = 12;
+
+	public var scrollBarTrackGraphic:FlxUXGraphicInput = FlxUXCore.DEFAULT_SCROLL_TRACK_GRAPHIC;
+	public var scrollBarThumbGraphic:FlxUXGraphicInput = FlxUXCore.DEFAULT_SCROLL_THUMB_GRAPHIC;
+	public var scrollBarButtonGraphic:Null<FlxUXGraphicInput> = null;
+	public var scrollBarArrowGraphic:Null<String> = FlxUXCore.DEFAULT_SCROLL_ARROW_GRAPHIC;
+	public var scrollBarArrowFrameSize:Int = 8;
+	public var scrollBarTrackColor:FlxColor = FlxColor.WHITE;
+	public var scrollBarThumbColor:FlxColor = FlxColor.WHITE;
+	public var scrollBarThickness:Float = 20;
+	public var scrollBarStep:Float = 24;
+	public var scrollBarMinThumbSize:Float = 20;
+	public var scrollBarShowButtons:Bool = true;
+	public var scrollPanelBackgroundGraphic:Null<FlxUXGraphicInput> = null;
+	public var scrollPanelBackgroundColor:FlxColor = 0xFF14191E;
+	public var scrollPanelBorderGraphic:Null<FlxUXGraphicInput> = null;
+	public var scrollPanelBorderColor:FlxColor = 0xFF77838C;
+	public var scrollPanelBorderThickness:Float = 1;
+	public var scrollPanelFocusPadding:Float = 8;
 
 	/** Creates a theme from an optional settings object or JSON string. */
 	public function new(?data:Dynamic)
@@ -104,6 +122,23 @@ class FlxUXTheme
 		focusOverlayOffsetY = source.focusOverlayOffsetY;
 		highlightPadX = source.highlightPadX;
 		highlightPadY = source.highlightPadY;
+		scrollBarTrackGraphic = source.scrollBarTrackGraphic;
+		scrollBarThumbGraphic = source.scrollBarThumbGraphic;
+		scrollBarButtonGraphic = source.scrollBarButtonGraphic;
+		scrollBarArrowGraphic = source.scrollBarArrowGraphic;
+		scrollBarArrowFrameSize = source.scrollBarArrowFrameSize;
+		scrollBarTrackColor = source.scrollBarTrackColor;
+		scrollBarThumbColor = source.scrollBarThumbColor;
+		scrollBarThickness = source.scrollBarThickness;
+		scrollBarStep = source.scrollBarStep;
+		scrollBarMinThumbSize = source.scrollBarMinThumbSize;
+		scrollBarShowButtons = source.scrollBarShowButtons;
+		scrollPanelBackgroundGraphic = source.scrollPanelBackgroundGraphic;
+		scrollPanelBackgroundColor = source.scrollPanelBackgroundColor;
+		scrollPanelBorderGraphic = source.scrollPanelBorderGraphic;
+		scrollPanelBorderColor = source.scrollPanelBorderColor;
+		scrollPanelBorderThickness = source.scrollPanelBorderThickness;
+		scrollPanelFocusPadding = source.scrollPanelFocusPadding;
 	}
 
 	/**
@@ -378,6 +413,60 @@ class FlxUXTheme
 			t.highlightPadX = asFloat(map.get("highlightPadX"), t.highlightPadX);
 		if (map.exists("highlightPadY"))
 			t.highlightPadY = asFloat(map.get("highlightPadY"), t.highlightPadY);
+
+		if (map.exists("scrollBarTrackGraphic"))
+		{
+			var graphic = asNineSlice(map.get("scrollBarTrackGraphic"));
+			if (graphic != null) t.scrollBarTrackGraphic = cast graphic;
+		}
+		if (map.exists("scrollBarThumbGraphic"))
+		{
+			var graphic = asNineSlice(map.get("scrollBarThumbGraphic"));
+			if (graphic != null) t.scrollBarThumbGraphic = cast graphic;
+		}
+		if (map.exists("scrollBarButtonGraphic"))
+		{
+			var graphic = asNineSlice(map.get("scrollBarButtonGraphic"));
+			t.scrollBarButtonGraphic = cast graphic;
+		}
+		if (map.exists("scrollBarArrowGraphic"))
+			t.scrollBarArrowGraphic = asString(map.get("scrollBarArrowGraphic"), t.scrollBarArrowGraphic);
+		if (map.exists("scrollBarArrowFrameSize"))
+			t.scrollBarArrowFrameSize = asInt(map.get("scrollBarArrowFrameSize"), t.scrollBarArrowFrameSize);
+		if (map.exists("scrollBarTrackColor"))
+		{
+			var color:Dynamic = map.get("scrollBarTrackColor");
+			if (Std.isOfType(color, Int)) t.scrollBarTrackColor = cast color;
+			else if (Std.isOfType(color, String)) t.scrollBarTrackColor = parseColorString(cast color);
+		}
+		if (map.exists("scrollBarThumbColor"))
+		{
+			var color:Dynamic = map.get("scrollBarThumbColor");
+			if (Std.isOfType(color, Int)) t.scrollBarThumbColor = cast color;
+			else if (Std.isOfType(color, String)) t.scrollBarThumbColor = parseColorString(cast color);
+		}
+		if (map.exists("scrollBarThickness")) t.scrollBarThickness = asFloat(map.get("scrollBarThickness"), t.scrollBarThickness);
+		if (map.exists("scrollBarStep")) t.scrollBarStep = asFloat(map.get("scrollBarStep"), t.scrollBarStep);
+		if (map.exists("scrollBarMinThumbSize")) t.scrollBarMinThumbSize = asFloat(map.get("scrollBarMinThumbSize"), t.scrollBarMinThumbSize);
+		if (map.exists("scrollBarShowButtons")) t.scrollBarShowButtons = asBool(map.get("scrollBarShowButtons"), t.scrollBarShowButtons);
+		if (map.exists("scrollPanelBackgroundGraphic"))
+			t.scrollPanelBackgroundGraphic = cast asNineSlice(map.get("scrollPanelBackgroundGraphic"));
+		if (map.exists("scrollPanelBackgroundColor"))
+		{
+			var color:Dynamic = map.get("scrollPanelBackgroundColor");
+			if (Std.isOfType(color, Int)) t.scrollPanelBackgroundColor = cast color;
+			else if (Std.isOfType(color, String)) t.scrollPanelBackgroundColor = parseColorString(cast color);
+		}
+		if (map.exists("scrollPanelBorderGraphic"))
+			t.scrollPanelBorderGraphic = cast asNineSlice(map.get("scrollPanelBorderGraphic"));
+		if (map.exists("scrollPanelBorderColor"))
+		{
+			var color:Dynamic = map.get("scrollPanelBorderColor");
+			if (Std.isOfType(color, Int)) t.scrollPanelBorderColor = cast color;
+			else if (Std.isOfType(color, String)) t.scrollPanelBorderColor = parseColorString(cast color);
+		}
+		if (map.exists("scrollPanelBorderThickness")) t.scrollPanelBorderThickness = asFloat(map.get("scrollPanelBorderThickness"), t.scrollPanelBorderThickness);
+		if (map.exists("scrollPanelFocusPadding")) t.scrollPanelFocusPadding = asFloat(map.get("scrollPanelFocusPadding"), t.scrollPanelFocusPadding);
 
 		return t;
 	}
