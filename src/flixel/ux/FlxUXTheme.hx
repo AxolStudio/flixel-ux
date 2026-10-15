@@ -417,12 +417,14 @@ class FlxUXTheme
 		if (map.exists("scrollBarTrackGraphic"))
 		{
 			var graphic = asNineSlice(map.get("scrollBarTrackGraphic"));
-			if (graphic != null) t.scrollBarTrackGraphic = cast graphic;
+			if (graphic != null)
+				t.scrollBarTrackGraphic = cast graphic;
 		}
 		if (map.exists("scrollBarThumbGraphic"))
 		{
 			var graphic = asNineSlice(map.get("scrollBarThumbGraphic"));
-			if (graphic != null) t.scrollBarThumbGraphic = cast graphic;
+			if (graphic != null)
+				t.scrollBarThumbGraphic = cast graphic;
 		}
 		if (map.exists("scrollBarButtonGraphic"))
 		{
@@ -436,37 +438,51 @@ class FlxUXTheme
 		if (map.exists("scrollBarTrackColor"))
 		{
 			var color:Dynamic = map.get("scrollBarTrackColor");
-			if (Std.isOfType(color, Int)) t.scrollBarTrackColor = cast color;
-			else if (Std.isOfType(color, String)) t.scrollBarTrackColor = parseColorString(cast color);
+			if (Std.isOfType(color, Int))
+				t.scrollBarTrackColor = cast color;
+			else if (Std.isOfType(color, String))
+				t.scrollBarTrackColor = parseColorString(cast color);
 		}
 		if (map.exists("scrollBarThumbColor"))
 		{
 			var color:Dynamic = map.get("scrollBarThumbColor");
-			if (Std.isOfType(color, Int)) t.scrollBarThumbColor = cast color;
-			else if (Std.isOfType(color, String)) t.scrollBarThumbColor = parseColorString(cast color);
+			if (Std.isOfType(color, Int))
+				t.scrollBarThumbColor = cast color;
+			else if (Std.isOfType(color, String))
+				t.scrollBarThumbColor = parseColorString(cast color);
 		}
-		if (map.exists("scrollBarThickness")) t.scrollBarThickness = asFloat(map.get("scrollBarThickness"), t.scrollBarThickness);
-		if (map.exists("scrollBarStep")) t.scrollBarStep = asFloat(map.get("scrollBarStep"), t.scrollBarStep);
-		if (map.exists("scrollBarMinThumbSize")) t.scrollBarMinThumbSize = asFloat(map.get("scrollBarMinThumbSize"), t.scrollBarMinThumbSize);
-		if (map.exists("scrollBarShowButtons")) t.scrollBarShowButtons = asBool(map.get("scrollBarShowButtons"), t.scrollBarShowButtons);
+		if (map.exists("scrollBarThickness"))
+			t.scrollBarThickness = asFloat(map.get("scrollBarThickness"), t.scrollBarThickness);
+		if (map.exists("scrollBarStep"))
+			t.scrollBarStep = asFloat(map.get("scrollBarStep"), t.scrollBarStep);
+		if (map.exists("scrollBarMinThumbSize"))
+			t.scrollBarMinThumbSize = asFloat(map.get("scrollBarMinThumbSize"), t.scrollBarMinThumbSize);
+		if (map.exists("scrollBarShowButtons"))
+			t.scrollBarShowButtons = asBool(map.get("scrollBarShowButtons"), t.scrollBarShowButtons);
 		if (map.exists("scrollPanelBackgroundGraphic"))
 			t.scrollPanelBackgroundGraphic = cast asNineSlice(map.get("scrollPanelBackgroundGraphic"));
 		if (map.exists("scrollPanelBackgroundColor"))
 		{
 			var color:Dynamic = map.get("scrollPanelBackgroundColor");
-			if (Std.isOfType(color, Int)) t.scrollPanelBackgroundColor = cast color;
-			else if (Std.isOfType(color, String)) t.scrollPanelBackgroundColor = parseColorString(cast color);
+			if (Std.isOfType(color, Int))
+				t.scrollPanelBackgroundColor = cast color;
+			else if (Std.isOfType(color, String))
+				t.scrollPanelBackgroundColor = parseColorString(cast color);
 		}
 		if (map.exists("scrollPanelBorderGraphic"))
 			t.scrollPanelBorderGraphic = cast asNineSlice(map.get("scrollPanelBorderGraphic"));
 		if (map.exists("scrollPanelBorderColor"))
 		{
 			var color:Dynamic = map.get("scrollPanelBorderColor");
-			if (Std.isOfType(color, Int)) t.scrollPanelBorderColor = cast color;
-			else if (Std.isOfType(color, String)) t.scrollPanelBorderColor = parseColorString(cast color);
+			if (Std.isOfType(color, Int))
+				t.scrollPanelBorderColor = cast color;
+			else if (Std.isOfType(color, String))
+				t.scrollPanelBorderColor = parseColorString(cast color);
 		}
-		if (map.exists("scrollPanelBorderThickness")) t.scrollPanelBorderThickness = asFloat(map.get("scrollPanelBorderThickness"), t.scrollPanelBorderThickness);
-		if (map.exists("scrollPanelFocusPadding")) t.scrollPanelFocusPadding = asFloat(map.get("scrollPanelFocusPadding"), t.scrollPanelFocusPadding);
+		if (map.exists("scrollPanelBorderThickness"))
+			t.scrollPanelBorderThickness = asFloat(map.get("scrollPanelBorderThickness"), t.scrollPanelBorderThickness);
+		if (map.exists("scrollPanelFocusPadding"))
+			t.scrollPanelFocusPadding = asFloat(map.get("scrollPanelFocusPadding"), t.scrollPanelFocusPadding);
 
 		return t;
 	}

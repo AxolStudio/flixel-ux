@@ -34,6 +34,7 @@ class FlxUXScrollBar extends FlxGroup
 	public var decreaseButton(default, null):FlxUXButton;
 	public var increaseButton(default, null):FlxUXButton;
 	public var thumb(default, null):FlxSprite;
+
 	private var decreaseIcon:FlxSprite;
 	private var increaseIcon:FlxSprite;
 	private var track:FlxSprite;
@@ -86,11 +87,16 @@ class FlxUXScrollBar extends FlxGroup
 
 	public function applyTheme(theme:FlxUXTheme):Void
 	{
-		if (theme == null) return;
-		if (lastAppliedTheme == null || thickness == lastAppliedTheme.scrollBarThickness) thickness = theme.scrollBarThickness;
-		if (lastAppliedTheme == null || step == lastAppliedTheme.scrollBarStep) step = theme.scrollBarStep;
-		if (lastAppliedTheme == null || minThumbSize == lastAppliedTheme.scrollBarMinThumbSize) minThumbSize = theme.scrollBarMinThumbSize;
-		if (lastAppliedTheme == null || showButtons == lastAppliedTheme.scrollBarShowButtons) showButtons = theme.scrollBarShowButtons;
+		if (theme == null)
+			return;
+		if (lastAppliedTheme == null || thickness == lastAppliedTheme.scrollBarThickness)
+			thickness = theme.scrollBarThickness;
+		if (lastAppliedTheme == null || step == lastAppliedTheme.scrollBarStep)
+			step = theme.scrollBarStep;
+		if (lastAppliedTheme == null || minThumbSize == lastAppliedTheme.scrollBarMinThumbSize)
+			minThumbSize = theme.scrollBarMinThumbSize;
+		if (lastAppliedTheme == null || showButtons == lastAppliedTheme.scrollBarShowButtons)
+			showButtons = theme.scrollBarShowButtons;
 		lastAppliedTheme = theme;
 		refresh();
 	}
@@ -102,12 +108,16 @@ class FlxUXScrollBar extends FlxGroup
 
 	private function set_value(next:Float):Float
 	{
-		if (!Math.isFinite(next)) next = 0;
+		if (!Math.isFinite(next))
+			next = 0;
 		next = Math.max(0, Math.min(maximum, next));
-		if (next == value) return value;
+		if (next == value)
+			return value;
 		value = next;
-		if (thumb != null) refresh();
-		if (onChange != null) onChange(value);
+		if (thumb != null)
+			refresh();
+		if (onChange != null)
+			onChange(value);
 		return value;
 	}
 
@@ -121,8 +131,10 @@ class FlxUXScrollBar extends FlxGroup
 
 	public static function calculateThumbLength(trackLength:Float, viewport:Float, content:Float, minimum:Float):Float
 	{
-		if (trackLength <= 0) return 0;
-		if (content <= viewport || content <= 0) return trackLength;
+		if (trackLength <= 0)
+			return 0;
+		if (content <= viewport || content <= 0)
+			return trackLength;
 		return Math.min(trackLength, Math.max(minimum, trackLength * Math.max(0, viewport) / content));
 	}
 
@@ -138,9 +150,8 @@ class FlxUXScrollBar extends FlxGroup
 		var actualThumbGraphic = thumbGraphic != null ? thumbGraphic : activeTheme.scrollBarThumbGraphic;
 		var actualButtonGraphic = buttonGraphic != null ? buttonGraphic : activeTheme.scrollBarButtonGraphic;
 		var actualArrowGraphic = arrowGraphic != null ? arrowGraphic : activeTheme.scrollBarArrowGraphic;
-		updateGraphic(track, actualTrackGraphic, Std.int(Math.ceil(vertical ? thickness : trackLength)), Std.int(Math.ceil(vertical ? trackLength : thickness)),
-			actualTrackGraphic != lastTrackGraphic || Std.int(Math.ceil(vertical ? thickness : trackLength)) != lastTrackWidth
-			|| Std.int(Math.ceil(vertical ? trackLength : thickness)) != lastTrackHeight);
+		updateGraphic(track, actualTrackGraphic, Std.int(Math.ceil(vertical ? thickness : trackLength)),
+			Std.int(Math.ceil(vertical ? trackLength : thickness)), actualTrackGraphic != lastTrackGraphic || Std.int(Math.ceil(vertical ? thickness : trackLength)) != lastTrackWidth || Std.int(Math.ceil(vertical ? trackLength : thickness)) != lastTrackHeight);
 		lastTrackGraphic = actualTrackGraphic;
 		lastTrackWidth = Std.int(Math.ceil(vertical ? thickness : trackLength));
 		lastTrackHeight = Std.int(Math.ceil(vertical ? trackLength : thickness));
@@ -148,8 +159,8 @@ class FlxUXScrollBar extends FlxGroup
 		thumb.setPosition(track.x + (vertical ? 0 : thumbOffset), track.y + (vertical ? thumbOffset : 0));
 		var thumbWidth = Std.int(Math.ceil(vertical ? thickness : thumbLength));
 		var thumbHeight = Std.int(Math.ceil(vertical ? thumbLength : thickness));
-		updateGraphic(thumb, actualThumbGraphic, thumbWidth, thumbHeight,
-			actualThumbGraphic != lastThumbGraphic || thumbWidth != lastThumbWidth || thumbHeight != lastThumbHeight);
+		updateGraphic(thumb, actualThumbGraphic, thumbWidth,
+			thumbHeight, actualThumbGraphic != lastThumbGraphic || thumbWidth != lastThumbWidth || thumbHeight != lastThumbHeight);
 		lastThumbGraphic = actualThumbGraphic;
 		lastThumbWidth = thumbWidth;
 		lastThumbHeight = thumbHeight;
@@ -158,12 +169,16 @@ class FlxUXScrollBar extends FlxGroup
 		for (button in [decreaseButton, increaseButton])
 		{
 			button.visible = showButtons;
-			if (button.width != thickness || button.height != thickness) button.resize(Std.int(thickness), Std.int(thickness));
+			if (button.width != thickness || button.height != thickness)
+				button.resize(Std.int(thickness), Std.int(thickness));
 		}
 		if (actualButtonGraphic != lastButtonGraphic)
 		{
 			for (button in [decreaseButton, increaseButton])
-				if (actualButtonGraphic == null) button.resetButtonSkin(); else button.setButtonSkin(actualButtonGraphic);
+				if (actualButtonGraphic == null)
+					button.resetButtonSkin();
+				else
+					button.setButtonSkin(actualButtonGraphic);
 			lastButtonGraphic = actualButtonGraphic;
 		}
 		decreaseButton.setPosition(x, y);
@@ -179,7 +194,8 @@ class FlxUXScrollBar extends FlxGroup
 		height = Std.int(Math.max(1, height));
 		if (input == null)
 		{
-			if (changed || sprite.graphic == null) sprite.makeGraphic(1, 1, FlxColor.WHITE);
+			if (changed || sprite.graphic == null)
+				sprite.makeGraphic(1, 1, FlxColor.WHITE);
 			sprite.scale.set(width, height);
 			sprite.updateHitbox();
 			return;
@@ -188,7 +204,7 @@ class FlxUXScrollBar extends FlxGroup
 		{
 			sprite.scale.set(1, 1);
 			if (Std.isOfType(input, FlxUX9Slice))
-				sprite.loadGraphic((cast input:FlxUX9Slice).render(width, height));
+				sprite.loadGraphic((cast input : FlxUX9Slice).render(width, height));
 			else
 				sprite.loadGraphic(FlxUX9Slice.toGraphic(input));
 		}
@@ -209,10 +225,12 @@ class FlxUXScrollBar extends FlxGroup
 			{
 				if (graphic != null && frameSize > 0)
 					icon.loadGraphic(FlxUX9Slice.toGraphic(graphic), true, frameSize, frameSize);
-				else icon.visible = false;
+				else
+					icon.visible = false;
 			}
 		}
-		if (graphic == null) return;
+		if (graphic == null)
+			return;
 		decreaseIcon.visible = showButtons;
 		increaseIcon.visible = showButtons;
 		decreaseIcon.animation.frameIndex = vertical ? 0 : 2;
@@ -220,7 +238,10 @@ class FlxUXScrollBar extends FlxGroup
 		var size = Std.int(Math.min(frameSize, buttonSize - 8));
 		var iconX = (button:FlxUXButton) -> button.x + (button.width - size) * 0.5;
 		var iconY = (button:FlxUXButton) -> button.y + (button.height - size) * 0.5;
-		for (pair in [{icon: decreaseIcon, button: decreaseButton}, {icon: increaseIcon, button: increaseButton}])
+		for (pair in [
+			{icon: decreaseIcon, button: decreaseButton},
+			{icon: increaseIcon, button: increaseButton}
+		])
 		{
 			pair.icon.setGraphicSize(size, size);
 			pair.icon.updateHitbox();
@@ -264,7 +285,8 @@ class FlxUXScrollBar extends FlxGroup
 				dragging = true;
 				dragOffset = position - thumbStart;
 			}
-			else if (track.overlapsPoint(pointer)) value += (position < thumbStart ? -1 : 1) * viewportSize;
+			else if (track.overlapsPoint(pointer))
+				value += (position < thumbStart ? -1 : 1) * viewportSize;
 		}
 		if (dragging && FlxG.mouse.pressed && trackLength > thumbLength)
 			value = (position - start - dragOffset) / (trackLength - thumbLength) * maximum;
@@ -273,8 +295,12 @@ class FlxUXScrollBar extends FlxGroup
 			dragging = false;
 			heldDirection = 0;
 		}
-		if (heldDirection != 0 && repeatInterval > 0 && (decreaseButton.uxPressed || increaseButton.uxPressed
-			|| decreaseButton.status == flixel.ui.FlxButton.FlxButtonState.PRESSED || increaseButton.status == flixel.ui.FlxButton.FlxButtonState.PRESSED))
+		if (heldDirection != 0
+			&& repeatInterval > 0
+			&& (decreaseButton.uxPressed
+				|| increaseButton.uxPressed
+				|| decreaseButton.status == flixel.ui.FlxButton.FlxButtonState.PRESSED
+				|| increaseButton.status == flixel.ui.FlxButton.FlxButtonState.PRESSED))
 		{
 			repeatTime -= elapsed;
 			if (repeatTime <= 0)

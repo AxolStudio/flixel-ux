@@ -34,14 +34,20 @@ class FlxUXShortcut
 				key = FlxKey.fromString(part);
 				valid = key != FlxKey.NONE && key != FlxKey.ANY;
 			}
-			else switch (part)
-			{
-				case "CTRL", "CONTROL": ctrl = true;
-				case "SHIFT": shift = true;
-				case "ALT": alt = true;
-				case "META", "CMD", "COMMAND": meta = true;
-				default: return;
-			}
+			else
+				switch (part)
+				{
+					case "CTRL", "CONTROL":
+						ctrl = true;
+					case "SHIFT":
+						shift = true;
+					case "ALT":
+						alt = true;
+					case "META", "CMD", "COMMAND":
+						meta = true;
+					default:
+						return;
+				}
 		}
 	}
 
@@ -55,8 +61,8 @@ class FlxUXShortcut
 		#if !FLX_NO_KEYBOARD
 		if (!valid || FlxG.keys == null || !FlxG.keys.enabled)
 			return false;
-		return matchesModifiers(FlxG.keys.pressed.CONTROL, FlxG.keys.pressed.SHIFT, FlxG.keys.pressed.ALT,
-			FlxG.keys.pressed.WINDOWS) && FlxG.keys.checkStatus(key, state);
+		return matchesModifiers(FlxG.keys.pressed.CONTROL, FlxG.keys.pressed.SHIFT, FlxG.keys.pressed.ALT, FlxG.keys.pressed.WINDOWS)
+			&& FlxG.keys.checkStatus(key, state);
 		#else
 		return false;
 		#end

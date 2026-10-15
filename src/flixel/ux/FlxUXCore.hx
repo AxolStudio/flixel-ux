@@ -320,6 +320,7 @@ class FlxUXCore
 	public static var keyboardBindings:Map<String, Array<String>> = new Map();
 	public static var navRepeatDelay:Float = 0.4;
 	public static var navRepeatInterval:Float = 0.09;
+
 	public static function isKeyboardEnabled():Bool
 	{
 		#if !FLX_NO_KEYBOARD
@@ -445,7 +446,8 @@ class FlxUXCore
 		}
 		if (scrollPanels != null)
 			for (panel in scrollPanels)
-				if (panel != null) panel.refreshTheme();
+				if (panel != null)
+					panel.refreshTheme();
 	}
 
 	private static var scrollPanels:Array<FlxUXScrollPanel> = [];
@@ -453,13 +455,15 @@ class FlxUXCore
 	@:allow(flixel.ux.FlxUXScrollPanel)
 	private static function addScrollPanel(panel:FlxUXScrollPanel):Void
 	{
-		if (panel != null && scrollPanels.indexOf(panel) < 0) scrollPanels.push(panel);
+		if (panel != null && scrollPanels.indexOf(panel) < 0)
+			scrollPanels.push(panel);
 	}
 
 	@:allow(flixel.ux.FlxUXScrollPanel)
 	private static function removeScrollPanel(panel:FlxUXScrollPanel):Void
 	{
-		if (panel != null) scrollPanels.remove(panel);
+		if (panel != null)
+			scrollPanels.remove(panel);
 	}
 
 	/**
@@ -531,19 +535,31 @@ class FlxUXCore
 	#if html5
 	private static function captureBrowserShortcut(event:js.html.KeyboardEvent):Void
 	{
-		if (!captureShortcuts || !active || !ready || !navEnabled || !shortcutsEnabled || !isKeyboardEnabled()
-			|| navCapturePolicy == FlxUXNavCapturePolicy.NEVER) return;
+		if (!captureShortcuts
+			|| !active
+			|| !ready
+			|| !navEnabled
+			|| !shortcutsEnabled
+			|| !isKeyboardEnabled()
+			|| navCapturePolicy == FlxUXNavCapturePolicy.NEVER)
+			return;
 		var target:js.html.Element = cast event.target;
-		if (target != null && (target.tagName == "INPUT" || target.tagName == "TEXTAREA" || target.tagName == "SELECT"
-			|| target.getAttribute("contenteditable") == "true")) return;
+		if (target != null
+			&& (target.tagName == "INPUT"
+				|| target.tagName == "TEXTAREA"
+				|| target.tagName == "SELECT"
+				|| target.getAttribute("contenteditable") == "true"))
+			return;
 		for (group in groups)
 			if (isGroupInputEligible(group))
 				for (button in group.getEligibleButtonsOrdered())
 					for (binding in [button.hotkey, button.accessKey == null ? null : "ALT+" + button.accessKey])
 					{
 						var shortcut = new FlxUXShortcut(binding);
-						if (shortcut.valid && shortcut.key == event.keyCode
-							&& shortcut.matchesModifiers(event.ctrlKey, event.shiftKey, event.altKey, event.metaKey)) event.preventDefault();
+						if (shortcut.valid
+							&& shortcut.key == event.keyCode
+							&& shortcut.matchesModifiers(event.ctrlKey, event.shiftKey, event.altKey, event.metaKey))
+							event.preventDefault();
 					}
 	}
 	#end
@@ -710,7 +726,9 @@ class FlxUXCore
 				ancestors.push(ancestor);
 				ancestor = ancestor.subState;
 			}
-			for (state in savedFocus.keys()) if (ancestors.indexOf(state) < 0) savedFocus.remove(state);
+			for (state in savedFocus.keys())
+				if (ancestors.indexOf(state) < 0)
+					savedFocus.remove(state);
 		}
 		if (pendingAutoReady)
 		{
@@ -732,7 +750,8 @@ class FlxUXCore
 			pointerPreferred = mouseInput;
 		}
 		#if FLX_NO_MOUSE
-		if (mouse != null) mouse.enabled = false;
+		if (mouse != null)
+			mouse.enabled = false;
 		#else
 		if (cursorEnabled && mouse != null && FlxG.mouse.enabled)
 		{
@@ -754,14 +773,19 @@ class FlxUXCore
 		var modal = modalGroup();
 		if (modal != lastModal)
 		{
-			if (lastModal == null) focusBeforeModal = focused;
-			else if (focused != null) modalFocus.set(lastModal, focused);
+			if (lastModal == null)
+				focusBeforeModal = focused;
+			else if (focused != null)
+				modalFocus.set(lastModal, focused);
 			var previous = modal == null ? focusBeforeModal : modalFocus.get(modal);
 			lastModal = modal;
-			if (previous != null && targets.indexOf(previous) >= 0) setFocused(previous);
+			if (previous != null && targets.indexOf(previous) >= 0)
+				setFocused(previous);
 		}
-		if (focused != null && targets.indexOf(focused) < 0) setFocused(null);
-		if (targets.length == 0 && navCapturePolicy == FlxUXNavCapturePolicy.AUTO) return;
+		if (focused != null && targets.indexOf(focused) < 0)
+			setFocused(null);
+		if (targets.length == 0 && navCapturePolicy == FlxUXNavCapturePolicy.AUTO)
+			return;
 		if (pressedButton != null && (targets.indexOf(pressedButton) < 0 || pressedButton != focused && focused != null))
 		{
 			pressedButton.setNavPressed(false);
@@ -772,9 +796,11 @@ class FlxUXCore
 			for (button in targets)
 				if (button.shortcutTriggered())
 				{
-					if (shortcutButton == null) shortcutButton = button;
+					if (shortcutButton == null)
+						shortcutButton = button;
 					#if debug
-					else trace("FlxUX: duplicate active shortcut; first registered button wins.");
+					else
+						trace("FlxUX: duplicate active shortcut; first registered button wins.");
 					#end
 				}
 		if (shortcutButton != null)
@@ -797,7 +823,8 @@ class FlxUXCore
 		var last = keyboardHomeEnd && actions.last.triggered;
 		var nextPane = paneNavigation && actions.paneNext.triggered;
 		var previousPane = paneNavigation && actions.panePrevious.triggered;
-		if (direction >= 0 || tabForward || tabBackward || first || last || nextPane || previousPane || actions.confirm.triggered || actions.accept.triggered || actions.cancel.triggered)
+		if (direction >= 0 || tabForward || tabBackward || first || last || nextPane || previousPane || actions.confirm.triggered
+			|| actions.accept.triggered || actions.cancel.triggered)
 			enterNavMode();
 		if (tabForward || tabBackward)
 		{
@@ -812,21 +839,28 @@ class FlxUXCore
 		if (first || last)
 		{
 			var menuTargets = focused == null ? targets : [for (button in targets) if (button.getUXGroup() == focused.getUXGroup()) button];
-			if (menuTargets.length > 0) setFocused(menuTargets[last ? menuTargets.length - 1 : 0]);
+			if (menuTargets.length > 0)
+				setFocused(menuTargets[last ? menuTargets.length - 1 : 0]);
 			return;
 		}
 		if (direction >= 0)
 		{
-			if (focused == null) tryFocusFirstEligible();
+			if (focused == null)
+				tryFocusFirstEligible();
 			else if (effectiveNavStyle() == FlxUXNavStyle.LINEAR)
 			{
-				if (direction == 1 || direction == 3) focusNext(targets); else focusPrev(targets);
+				if (direction == 1 || direction == 3)
+					focusNext(targets);
+				else
+					focusPrev(targets);
 			}
-			else focusSpatial(targets, direction == 2 ? -1 : direction == 3 ? 1 : 0, direction == 0 ? -1 : direction == 1 ? 1 : 0);
+			else
+				focusSpatial(targets, direction == 2 ? -1 : direction == 3 ? 1 : 0, direction == 0 ? -1 : direction == 1 ? 1 : 0);
 		}
 		if (actions.cancel.triggered)
 		{
-			if (pressedButton != null) pressedButton.setNavPressed(false);
+			if (pressedButton != null)
+				pressedButton.setNavPressed(false);
 			pressedButton = null;
 			cancel();
 			return;
@@ -837,18 +871,22 @@ class FlxUXCore
 			if (pressedButton == null && (actions.accept.triggered || actions.gamepadConfirmTriggered))
 			{
 				var group = activeGroup();
-				if (group != null && targets.indexOf(group.defaultButton) >= 0) pressedButton = group.defaultButton;
-				else if (actions.gamepadConfirmTriggered && tryFocusFirstEligible()) pressedButton = focused;
+				if (group != null && targets.indexOf(group.defaultButton) >= 0)
+					pressedButton = group.defaultButton;
+				else if (actions.gamepadConfirmTriggered && tryFocusFirstEligible())
+					pressedButton = focused;
 			}
 		}
 		navConfirmHeld = actions.confirmDown;
-		if (pressedButton != null) pressedButton.setNavPressed(navConfirmHeld);
+		if (pressedButton != null)
+			pressedButton.setNavPressed(navConfirmHeld);
 		if (actions.confirmReleased && pressedButton != null)
 		{
 			var button = pressedButton;
 			pressedButton = null;
 			button.setNavPressed(false);
-			if (targets.indexOf(button) >= 0) button.activate();
+			if (targets.indexOf(button) >= 0)
+				button.activate();
 		}
 	}
 
@@ -860,7 +898,12 @@ class FlxUXCore
 
 	private static function navigationDirection(elapsed:Float):Int
 	{
-		var presses = [actions.up.triggered, actions.down.triggered, actions.left.triggered, actions.right.triggered];
+		var presses = [
+			actions.up.triggered,
+			actions.down.triggered,
+			actions.left.triggered,
+			actions.right.triggered
+		];
 		for (index in 0...4)
 			if (presses[index])
 			{
@@ -868,15 +911,18 @@ class FlxUXCore
 				repeatTime = navRepeatDelay;
 				return index;
 			}
-		if (repeatDirection < 0) return -1;
+		if (repeatDirection < 0)
+			return -1;
 		if (!actions.directionHeld[repeatDirection].triggered)
 		{
 			repeatDirection = -1;
 			return -1;
 		}
-		if (navRepeatInterval <= 0) return -1;
+		if (navRepeatInterval <= 0)
+			return -1;
 		repeatTime -= elapsed;
-		if (repeatTime > 0) return -1;
+		if (repeatTime > 0)
+			return -1;
 		repeatTime = navRepeatInterval;
 		return repeatDirection;
 	}
@@ -884,9 +930,11 @@ class FlxUXCore
 	public static function traverseTab(reverse:Bool = false):Void
 	{
 		var targets = getFlattenedEligibleNavButtons();
-		if (targets.length == 0) return;
+		if (targets.length == 0)
+			return;
 		var index = targets.indexOf(focused);
-		if (index < 0) index = reverse ? 0 : -1;
+		if (index < 0)
+			index = reverse ? 0 : -1;
 		for (offset in 1...targets.length + 1)
 		{
 			var candidate = targets[(index + (reverse ? -offset : offset) + targets.length * 2) % targets.length];
@@ -902,8 +950,10 @@ class FlxUXCore
 	{
 		var panes:Array<FlxUXGroup> = [];
 		for (button in getFlattenedEligibleNavButtons())
-			if (panes.indexOf(button.getUXGroup()) < 0) panes.push(button.getUXGroup());
-		if (panes.length == 0) return;
+			if (panes.indexOf(button.getUXGroup()) < 0)
+				panes.push(button.getUXGroup());
+		if (panes.length == 0)
+			return;
 		var index = focused == null ? (reverse ? 0 : -1) : panes.indexOf(focused.getUXGroup());
 		index = (index + (reverse ? panes.length - 1 : 1) + panes.length) % panes.length;
 		setFocused(panes[index].getEligibleButtonsOrdered()[0]);
@@ -911,21 +961,27 @@ class FlxUXCore
 
 	public static function activeGroup():FlxUXGroup
 	{
-		if (focused != null && isGroupInputEligible(focused.getUXGroup())) return focused.getUXGroup();
+		if (focused != null && isGroupInputEligible(focused.getUXGroup()))
+			return focused.getUXGroup();
 		for (group in groups)
-			if (isGroupInputEligible(group) && (group.defaultButton != null || group.cancelButton != null)) return group;
+			if (isGroupInputEligible(group) && (group.defaultButton != null || group.cancelButton != null))
+				return group;
 		for (group in groups)
-			if (isGroupInputEligible(group) && group.onCancel != null) return group;
+			if (isGroupInputEligible(group) && group.onCancel != null)
+				return group;
 		for (group in groups)
-			if (isGroupInputEligible(group)) return group;
+			if (isGroupInputEligible(group))
+				return group;
 		return null;
 	}
 
 	public static function isGroupInputEligible(group:FlxUXGroup, requireNav:Bool = true):Bool
 	{
 		if (group == null || !group.exists || !group.alive || !group.visible || !group.active || !group.uxActive || requireNav && !group.capturesNav
-			|| group.ownerState != currentState()) return false;
-		if (group.scrollPanel != null && (!group.scrollPanel.exists || !group.scrollPanel.visible || !group.scrollPanel.active)) return false;
+			|| group.ownerState != currentState())
+			return false;
+		if (group.scrollPanel != null && (!group.scrollPanel.exists || !group.scrollPanel.visible || !group.scrollPanel.active))
+			return false;
 		var modal = modalGroup();
 		return modal == null || modal == group;
 	}
@@ -936,8 +992,15 @@ class FlxUXCore
 		while (index-- > 0)
 		{
 			var candidate = groups[index];
-			if (candidate != null && candidate.modal && candidate.ownerState == currentState() && candidate.exists && candidate.alive
-				&& candidate.visible && candidate.active && candidate.uxActive && candidate.capturesNav)
+			if (candidate != null
+				&& candidate.modal
+				&& candidate.ownerState == currentState()
+				&& candidate.exists
+				&& candidate.alive
+				&& candidate.visible
+				&& candidate.active
+				&& candidate.uxActive
+				&& candidate.capturesNav)
 				return candidate;
 		}
 		return null;
@@ -1118,10 +1181,12 @@ class FlxUXCore
 	public static function cancel():Void
 	{
 		var group = activeGroup();
-		if (group == null) return;
+		if (group == null)
+			return;
 		if (group.cancelButton != null && group.containsButton(group.cancelButton) && group.cancelButton.isUXEligible())
 			group.cancelButton.activate();
-		else if (group.onCancel != null) group.onCancel();
+		else if (group.onCancel != null)
+			group.onCancel();
 	}
 
 	/**
@@ -1217,8 +1282,10 @@ class FlxUXCore
 		{
 			focused.setFocused(true);
 			focused.setNavPressed(false);
-			if (focused.getUXGroup() != null) savedFocus.set(focused.getUXGroup().ownerState, focused);
-			if (focused.scrollPanel != null) focused.scrollPanel.ensureVisible(focused);
+			if (focused.getUXGroup() != null)
+				savedFocus.set(focused.getUXGroup().ownerState, focused);
+			if (focused.scrollPanel != null)
+				focused.scrollPanel.ensureVisible(focused);
 		}
 
 		if (prev != null)
@@ -1252,7 +1319,8 @@ class FlxUXCore
 					continue;
 				if (!navButtonsUpdatedThisFrame.exists(b))
 					continue;
-				if (out.indexOf(b) < 0) out.push(b);
+				if (out.indexOf(b) < 0)
+					out.push(b);
 			}
 		}
 

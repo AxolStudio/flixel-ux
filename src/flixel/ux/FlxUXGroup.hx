@@ -152,6 +152,7 @@ class FlxUXGroup extends FlxGroup
 	 * - Pause menu / modal: capturesNav = true
 	 */
 	public var capturesNav:Bool = true;
+
 	public var defaultButton:Null<FlxUXButton> = null;
 	public var cancelButton:Null<FlxUXButton> = null;
 	public var modal:Bool = false;
@@ -398,7 +399,8 @@ class FlxUXGroup extends FlxGroup
 			return null;
 		if (containsButton(button))
 		{
-			if (order != null) setButtonOrder(button, order);
+			if (order != null)
+				setButtonOrder(button, order);
 			return button;
 		}
 		if (button.getUXGroup() != null && button.getUXGroup() != this)
@@ -479,10 +481,13 @@ class FlxUXGroup extends FlxGroup
 			if (buttons != null)
 				buttons.remove(button, true);
 			untrackButton(button);
-			if (FlxUXCore.focused == button) FlxUXCore.setFocused(null);
+			if (FlxUXCore.focused == button)
+				FlxUXCore.setFocused(null);
 			button.uxGroup = null;
-			if (defaultButton == button) defaultButton = null;
-			if (cancelButton == button) cancelButton = null;
+			if (defaultButton == button)
+				defaultButton = null;
+			if (cancelButton == button)
+				cancelButton = null;
 			return true;
 		}
 		return false;

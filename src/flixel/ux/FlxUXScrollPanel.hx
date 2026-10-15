@@ -45,6 +45,7 @@ class FlxUXScrollPanel extends FlxGroup
 	public var scrollY(get, set):Float;
 	public var contentBounds(default, null):FlxRect = new FlxRect();
 	public var ownerState(default, null):flixel.FlxState;
+
 	private var explicitBounds:Bool = false;
 	private var lastAppliedTheme:FlxUXTheme;
 	private var lastBackgroundGraphic:Null<FlxUXGraphicInput>;
@@ -91,7 +92,8 @@ class FlxUXScrollPanel extends FlxGroup
 
 	public function applyTheme(theme:FlxUXTheme):Void
 	{
-		if (theme == null) return;
+		if (theme == null)
+			return;
 		if (lastAppliedTheme == null || focusPadding == lastAppliedTheme.scrollPanelFocusPadding)
 			focusPadding = theme.scrollPanelFocusPadding;
 		if (lastAppliedTheme == null || borderThickness == lastAppliedTheme.scrollPanelBorderThickness)
@@ -138,25 +140,32 @@ class FlxUXScrollPanel extends FlxGroup
 
 	private function attach(item:FlxBasic):Void
 	{
-		if (item == null) return;
-		if (!previousCameras.exists(item)) previousCameras.set(item, item.cameras);
+		if (item == null)
+			return;
+		if (!previousCameras.exists(item))
+			previousCameras.set(item, item.cameras);
 		item.cameras = [viewportCamera];
 		if (Std.isOfType(item, FlxObject))
 		{
 			var object:FlxObject = cast item;
-			if (!previousScroll.exists(object)) previousScroll.set(object, FlxPoint.get(object.scrollFactor.x, object.scrollFactor.y));
+			if (!previousScroll.exists(object))
+				previousScroll.set(object, FlxPoint.get(object.scrollFactor.x, object.scrollFactor.y));
 			object.scrollFactor.set(1, 1);
 		}
-		if (Std.isOfType(item, FlxUXGroup)) (cast item:FlxUXGroup).scrollPanel = this;
-		if (Std.isOfType(item, FlxUXButton)) (cast item:FlxUXButton).scrollPanel = this;
+		if (Std.isOfType(item, FlxUXGroup))
+			(cast item : FlxUXGroup).scrollPanel = this;
+		if (Std.isOfType(item, FlxUXButton))
+			(cast item : FlxUXButton).scrollPanel = this;
 		var group = FlxTypedGroup.resolveGroup(item);
 		if (group != null)
-			for (child in group.members) attach(child);
+			for (child in group.members)
+				attach(child);
 	}
 
 	private function detach(item:FlxBasic):Void
 	{
-		if (item == null) return;
+		if (item == null)
+			return;
 		if (previousCameras.exists(item))
 		{
 			item.cameras = previousCameras.get(item);
@@ -173,25 +182,30 @@ class FlxUXScrollPanel extends FlxGroup
 				previousScroll.remove(object);
 			}
 		}
-		if (Std.isOfType(item, FlxUXGroup)) (cast item:FlxUXGroup).scrollPanel = null;
-		if (Std.isOfType(item, FlxUXButton)) (cast item:FlxUXButton).scrollPanel = null;
+		if (Std.isOfType(item, FlxUXGroup))
+			(cast item : FlxUXGroup).scrollPanel = null;
+		if (Std.isOfType(item, FlxUXButton))
+			(cast item : FlxUXButton).scrollPanel = null;
 		var group = FlxTypedGroup.resolveGroup(item);
 		if (group != null)
-			for (child in group.members) detach(child);
+			for (child in group.members)
+				detach(child);
 	}
 
 	private function measure(item:FlxBasic):Void
 	{
-		if (item == null || !item.exists || !item.visible) return;
+		if (item == null || !item.exists || !item.visible)
+			return;
 		if (Std.isOfType(item, FlxUXGroup))
 		{
-			measure((cast item:FlxUXGroup).buttons);
+			measure((cast item : FlxUXGroup).buttons);
 			return;
 		}
 		var group = FlxTypedGroup.resolveGroup(item);
 		if (group != null)
 		{
-			for (child in group.members) measure(child);
+			for (child in group.members)
+				measure(child);
 		}
 		else if (Std.isOfType(item, FlxObject))
 		{
@@ -230,8 +244,8 @@ class FlxUXScrollPanel extends FlxGroup
 		var actualBackgroundColor = backgroundColor == null ? theme.scrollPanelBackgroundColor : backgroundColor;
 		var actualBackgroundGraphic = backgroundGraphic != null ? backgroundGraphic : theme.scrollPanelBackgroundGraphic;
 		var actualBorderGraphic = borderGraphic != null ? borderGraphic : theme.scrollPanelBorderGraphic;
-		updatePanelGraphic(background, actualBackgroundGraphic, Std.int(viewportWidth), Std.int(viewportHeight),
-			actualBackgroundGraphic != lastBackgroundGraphic || Std.int(viewportWidth) != lastBackgroundWidth || Std.int(viewportHeight) != lastBackgroundHeight);
+		updatePanelGraphic(background, actualBackgroundGraphic, Std.int(viewportWidth),
+			Std.int(viewportHeight), actualBackgroundGraphic != lastBackgroundGraphic || Std.int(viewportWidth) != lastBackgroundWidth || Std.int(viewportHeight) != lastBackgroundHeight);
 		lastBackgroundGraphic = actualBackgroundGraphic;
 		lastBackgroundWidth = Std.int(viewportWidth);
 		lastBackgroundHeight = Std.int(viewportHeight);
@@ -240,8 +254,8 @@ class FlxUXScrollPanel extends FlxGroup
 		background.color = actualBackgroundGraphic == null ? actualBackgroundColor : FlxColor.WHITE;
 		var borderWidth = Std.int(width);
 		var borderHeight = Std.int(height);
-		updatePanelGraphic(border, actualBorderGraphic, borderWidth, borderHeight,
-			actualBorderGraphic != lastBorderGraphic || borderWidth != lastBorderWidth || borderHeight != lastBorderHeight);
+		updatePanelGraphic(border, actualBorderGraphic, borderWidth,
+			borderHeight, actualBorderGraphic != lastBorderGraphic || borderWidth != lastBorderWidth || borderHeight != lastBorderHeight);
 		lastBorderGraphic = actualBorderGraphic;
 		lastBorderWidth = borderWidth;
 		lastBorderHeight = borderHeight;
@@ -288,7 +302,8 @@ class FlxUXScrollPanel extends FlxGroup
 		sprite.visible = true;
 		if (input == null)
 		{
-			if (changed || sprite.graphic == null) sprite.makeGraphic(1, 1, FlxColor.WHITE);
+			if (changed || sprite.graphic == null)
+				sprite.makeGraphic(1, 1, FlxColor.WHITE);
 			sprite.scale.set(targetWidth, targetHeight);
 			sprite.updateHitbox();
 			return;
@@ -296,7 +311,7 @@ class FlxUXScrollPanel extends FlxGroup
 		if (changed || sprite.graphic == null)
 		{
 			if (Std.isOfType(input, FlxUX9Slice))
-				sprite.loadGraphic((cast input:FlxUX9Slice).render(targetWidth, targetHeight));
+				sprite.loadGraphic((cast input : FlxUX9Slice).render(targetWidth, targetHeight));
 			else
 				sprite.loadGraphic(FlxUX9Slice.toGraphic(input));
 		}
@@ -312,10 +327,17 @@ class FlxUXScrollPanel extends FlxGroup
 		viewportCamera.visible = visible && exists && ownerState == FlxUXCore.currentState();
 	}
 
-	private function get_scrollX():Float return horizontalBar.value;
-	private function get_scrollY():Float return verticalBar.value;
-	private function set_scrollX(value:Float):Float return horizontalBar.value = value;
-	private function set_scrollY(value:Float):Float return verticalBar.value = value;
+	private function get_scrollX():Float
+		return horizontalBar.value;
+
+	private function get_scrollY():Float
+		return verticalBar.value;
+
+	private function set_scrollX(value:Float):Float
+		return horizontalBar.value = value;
+
+	private function set_scrollY(value:Float):Float
+		return verticalBar.value = value;
 
 	private function applyScroll():Void
 	{
@@ -323,8 +345,10 @@ class FlxUXScrollPanel extends FlxGroup
 		var nextY = contentBounds.y + scrollY;
 		var changed = viewportCamera.scroll.x != nextX || viewportCamera.scroll.y != nextY;
 		viewportCamera.scroll.set(nextX, nextY);
-		if (background != null) background.setPosition(nextX, nextY);
-		if (changed && onScroll != null) onScroll();
+		if (background != null)
+			background.setPosition(nextX, nextY);
+		if (changed && onScroll != null)
+			onScroll();
 	}
 
 	public function scrollTo(x:Float, y:Float):Void
@@ -335,15 +359,18 @@ class FlxUXScrollPanel extends FlxGroup
 
 	public function ensureVisible(object:FlxObject):Void
 	{
-		if (object == null) return;
+		if (object == null)
+			return;
 		var left = viewportCamera.scroll.x;
 		var top = viewportCamera.scroll.y;
 		var nextX = scrollX;
 		var nextY = scrollY;
-		if (object.x < left + focusPadding) nextX += object.x - left - focusPadding;
+		if (object.x < left + focusPadding)
+			nextX += object.x - left - focusPadding;
 		else if (object.x + object.width > left + viewportWidth - focusPadding)
 			nextX += object.x + object.width - left - viewportWidth + focusPadding;
-		if (object.y < top + focusPadding) nextY += object.y - top - focusPadding;
+		if (object.y < top + focusPadding)
+			nextY += object.y - top - focusPadding;
 		else if (object.y + object.height > top + viewportHeight - focusPadding)
 			nextY += object.y + object.height - top - viewportHeight + focusPadding;
 		scrollTo(nextX, nextY);
@@ -351,19 +378,22 @@ class FlxUXScrollPanel extends FlxGroup
 
 	public function containsPointer(input:FlxPointer):Bool
 	{
-		if (!exists || !alive || !visible || !active || ownerState != FlxUXCore.currentState()) return false;
+		if (!exists || !alive || !visible || !active || ownerState != FlxUXCore.currentState())
+			return false;
 		input.getViewPosition(viewportCamera, pointer);
 		return pointer.x >= 0 && pointer.y >= 0 && pointer.x < viewportWidth && pointer.y < viewportHeight;
 	}
 
 	public function handleKeyboard():Bool
 	{
-		if (!keyboardScrolling || !FlxUXCore.isKeyboardEnabled()) return false;
+		if (!keyboardScrolling || !FlxUXCore.isKeyboardEnabled())
+			return false;
 		var pageUp = FlxUXCore.actions.pageUp.triggered;
 		var pageDown = FlxUXCore.actions.pageDown.triggered;
 		var home = FlxUXCore.keyboardHomeEnd && FlxUXCore.actions.first.triggered;
 		var end = FlxUXCore.keyboardHomeEnd && FlxUXCore.actions.last.triggered;
-		if (!pageUp && !pageDown && !home && !end) return false;
+		if (!pageUp && !pageDown && !home && !end)
+			return false;
 		if (verticalEnabled)
 			scrollY = home ? 0 : end ? verticalBar.maximum : scrollY + (pageUp ? -1 : 1) * viewportHeight;
 		else if (horizontalEnabled)
@@ -375,22 +405,30 @@ class FlxUXScrollPanel extends FlxGroup
 	{
 		refresh();
 		var modal = FlxUXCore.modalGroup();
-		var available = ownerState == FlxUXCore.currentState() && FlxUXCore.active && FlxUXCore.ready
+		var available = ownerState == FlxUXCore.currentState()
+			&& FlxUXCore.active
+			&& FlxUXCore.ready
 			&& (modal == null || modal.scrollPanel == this);
 		viewportCamera.visible = visible && available;
-		if (!available) return;
+		if (!available)
+			return;
 		content.update(elapsed);
-		if (verticalBar.visible) verticalBar.update(elapsed);
-		if (horizontalBar.visible) horizontalBar.update(elapsed);
+		if (verticalBar.visible)
+			verticalBar.update(elapsed);
+		if (horizontalBar.visible)
+			horizontalBar.update(elapsed);
 		#if !FLX_NO_MOUSE
 		if (wheelEnabled && FlxG.mouse.enabled && FlxG.mouse.wheel != 0 && containsPointer(FlxG.mouse))
 		{
 			var horizontal = !verticalEnabled;
 			#if !FLX_NO_KEYBOARD
-			if (FlxUXCore.isKeyboardEnabled() && FlxG.keys.pressed.SHIFT) horizontal = true;
+			if (FlxUXCore.isKeyboardEnabled() && FlxG.keys.pressed.SHIFT)
+				horizontal = true;
 			#end
-			if (horizontal && horizontalEnabled) scrollX -= FlxG.mouse.wheel * wheelStep;
-			else if (!horizontal && verticalEnabled) scrollY -= FlxG.mouse.wheel * wheelStep;
+			if (horizontal && horizontalEnabled)
+				scrollX -= FlxG.mouse.wheel * wheelStep;
+			else if (!horizontal && verticalEnabled)
+				scrollY -= FlxG.mouse.wheel * wheelStep;
 		}
 		#end
 	}
@@ -398,19 +436,22 @@ class FlxUXScrollPanel extends FlxGroup
 	override public function draw():Void
 	{
 		viewportCamera.visible = visible && exists && ownerState == FlxUXCore.currentState();
-		if (viewportCamera.visible) super.draw();
+		if (viewportCamera.visible)
+			super.draw();
 	}
 
 	override public function destroy():Void
 	{
 		onScroll = null;
 		FlxUXCore.removeScrollPanel(this);
-		for (factor in previousScroll) factor.put();
+		for (factor in previousScroll)
+			factor.put();
 		previousScroll.clear();
 		previousCameras.clear();
 		pointer.put();
 		FlxG.signals.preDraw.remove(syncCameraVisibility);
-		if (FlxG.cameras.list.indexOf(viewportCamera) >= 0) FlxG.cameras.remove(viewportCamera, true);
+		if (FlxG.cameras.list.indexOf(viewportCamera) >= 0)
+			FlxG.cameras.remove(viewportCamera, true);
 		super.destroy();
 	}
 }

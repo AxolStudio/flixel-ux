@@ -53,6 +53,7 @@ class FlxUXButton extends FlxBitmapTextButton
 
 	/** Optional activation callback invoked when this button is activated via POINTER or NAV. */
 	public var action:Void->Void;
+
 	public var tabStop:Bool = true;
 	public var scrollPanel:Null<FlxUXScrollPanel> = null;
 	public var hotkey(default, set):Null<String> = null;
@@ -61,6 +62,7 @@ class FlxUXButton extends FlxBitmapTextButton
 	public var showDefaultIndicator:Bool = true;
 	public var defaultIndicatorColor:Null<FlxColor> = null;
 	public var keyboardCuesVisible(default, null):Bool = false;
+
 	private var hotkeyInput:FlxUXShortcut;
 	private var accessKeyInput:FlxUXShortcut;
 	private var shortcutLabel:FlxBitmapText;
@@ -73,7 +75,8 @@ class FlxUXButton extends FlxBitmapTextButton
 	{
 		hotkey = value;
 		hotkeyInput = value == null ? null : new FlxUXShortcut(value);
-		if (shortcutLabel != null) shortcutLabel.destroy();
+		if (shortcutLabel != null)
+			shortcutLabel.destroy();
 		shortcutLabel = null;
 		if (hotkeyInput != null && hotkeyInput.valid)
 		{
@@ -83,7 +86,8 @@ class FlxUXButton extends FlxBitmapTextButton
 			shortcutLabel.autoSize = true;
 			shortcutLabel.updateHitbox();
 		}
-		if (constructed && autoSizeToLabel) autosize();
+		if (constructed && autoSizeToLabel)
+			autosize();
 		return value;
 	}
 
@@ -472,8 +476,8 @@ class FlxUXButton extends FlxBitmapTextButton
 		if (Std.isOfType(this.label, FlxBitmapText))
 		{
 			var text:FlxBitmapText = cast this.label;
-			text.alignment = buttonLabelAlign != null ? buttonLabelAlign
-				: uxGroup != null && uxGroup.buttonLabelAlign != null ? uxGroup.buttonLabelAlign : FlxUXCore.buttonLabelAlign;
+			text.alignment = buttonLabelAlign != null ? buttonLabelAlign : uxGroup != null
+				&& uxGroup.buttonLabelAlign != null ? uxGroup.buttonLabelAlign : FlxUXCore.buttonLabelAlign;
 			text.autoSize = false;
 			text.fieldWidth = Std.int(width / text.scale.x);
 			text.updateHitbox();
@@ -1078,28 +1082,34 @@ class FlxUXButton extends FlxBitmapTextButton
 	}
 
 	override function checkInput(pointer:flixel.input.FlxPointer, input:flixel.input.IFlxInput, justPressedPosition:flixel.math.FlxPoint,
-		camera:flixel.FlxCamera):Bool
+			camera:flixel.FlxCamera):Bool
 	{
 		#if !FLX_NO_MOUSE
-		if (Std.isOfType(pointer, flixel.input.mouse.FlxMouse) && !FlxG.mouse.enabled) return false;
+		if (Std.isOfType(pointer, flixel.input.mouse.FlxMouse) && !FlxG.mouse.enabled)
+			return false;
 		#end
-		if (scrollPanel != null && !scrollPanel.containsPointer(pointer)) return false;
+		if (scrollPanel != null && !scrollPanel.containsPointer(pointer))
+			return false;
 		return super.checkInput(pointer, input, justPressedPosition, camera);
 	}
 
 	override function onUpHandler():Void
 	{
-		var allowed = FlxUXCore.active && FlxUXCore.ready && !_locked
+		var allowed = FlxUXCore.active
+			&& FlxUXCore.ready
+			&& !_locked
 			&& (uxGroup == null || FlxUXCore.isGroupInputEligible(uxGroup, false));
 		#if !FLX_NO_MOUSE
-		if (!Std.isOfType(currentInput, flixel.input.FlxPointer)) allowed = allowed && FlxG.mouse.enabled;
+		if (!Std.isOfType(currentInput, flixel.input.FlxPointer))
+			allowed = allowed && FlxG.mouse.enabled;
 		#end
 		if (scrollPanel != null)
 		{
 			if (Std.isOfType(currentInput, flixel.input.FlxPointer))
 				allowed = allowed && scrollPanel.containsPointer(cast currentInput);
 			#if !FLX_NO_MOUSE
-			else allowed = allowed && FlxG.mouse.enabled && scrollPanel.containsPointer(FlxG.mouse);
+			else
+				allowed = allowed && FlxG.mouse.enabled && scrollPanel.containsPointer(FlxG.mouse);
 			#end
 		}
 		if (!allowed)
@@ -1185,8 +1195,10 @@ class FlxUXButton extends FlxBitmapTextButton
 
 	public function shortcutTriggered():Bool
 	{
-		return hotkeyInput != null && hotkeyInput.check(flixel.input.FlxInput.FlxInputState.JUST_PRESSED)
-			|| accessKeyInput != null && accessKeyInput.check(flixel.input.FlxInput.FlxInputState.JUST_PRESSED);
+		return hotkeyInput != null
+			&& hotkeyInput.check(flixel.input.FlxInput.FlxInputState.JUST_PRESSED)
+			|| accessKeyInput != null
+			&& accessKeyInput.check(flixel.input.FlxInput.FlxInputState.JUST_PRESSED);
 	}
 
 	private function updateKeyboardCues():Void
@@ -1194,7 +1206,8 @@ class FlxUXButton extends FlxBitmapTextButton
 		keyboardCuesVisible = showKeyboardCues && FlxUXCore.showKeyboardCues && FlxUXCore.shortcutsEnabled && FlxUXCore.isKeyboardEnabled();
 		if (shortcutLabel != null)
 		{
-			shortcutLabel.visible = keyboardCuesVisible && width >= shortcutLabel.width + marginX * 2
+			shortcutLabel.visible = keyboardCuesVisible
+				&& width >= shortcutLabel.width + marginX * 2
 				&& height >= label.height + shortcutLabel.height + 8;
 			shortcutLabel.color = label.color;
 			shortcutLabel.alpha = alpha;
@@ -1203,7 +1216,8 @@ class FlxUXButton extends FlxBitmapTextButton
 			shortcutLabel.cameras = cameras;
 			shortcutLabel.scrollFactor.copyFrom(scrollFactor);
 		}
-		if (mnemonicUnderline == null) mnemonicUnderline = new FlxSprite().makeGraphic(1, 1, FlxColor.WHITE);
+		if (mnemonicUnderline == null)
+			mnemonicUnderline = new FlxSprite().makeGraphic(1, 1, FlxColor.WHITE);
 		mnemonicUnderline.visible = false;
 		if (keyboardCuesVisible && accessKeyInput != null && accessKeyInput.valid && label != null)
 		{
@@ -1218,8 +1232,10 @@ class FlxUXButton extends FlxBitmapTextButton
 				{
 					var frame = bitmapText.font.getCharFrame(baseLabelText.charCodeAt(position));
 					var advance = frame == null ? bitmapText.font.spaceWidth : frame.sourceSize.x;
-					if (position < index) before += advance + bitmapText.letterSpacing;
-					if (position == index) letterWidth = advance;
+					if (position < index)
+						before += advance + bitmapText.letterSpacing;
+					if (position == index)
+						letterWidth = advance;
 					total += advance + bitmapText.letterSpacing;
 				}
 				total -= bitmapText.letterSpacing;
@@ -1240,7 +1256,8 @@ class FlxUXButton extends FlxBitmapTextButton
 				mnemonicUnderline.visible = true;
 			}
 		}
-		if (defaultIndicator == null) defaultIndicator = new FlxSprite();
+		if (defaultIndicator == null)
+			defaultIndicator = new FlxSprite();
 		defaultIndicator.visible = showDefaultIndicator && uxGroup != null && uxGroup.defaultButton == this && isUXEligible();
 		var indicatorWidth = Std.int(Math.max(1, width - 4));
 		var indicatorHeight = Std.int(Math.max(1, height - 4));
@@ -1265,8 +1282,10 @@ class FlxUXButton extends FlxBitmapTextButton
 
 	private function effectiveNormalLabelColor():FlxColor
 	{
-		if (buttonLabelColor != null) return buttonLabelColor;
-		if (uxGroup != null && uxGroup.buttonLabelColor != null) return uxGroup.buttonLabelColor;
+		if (buttonLabelColor != null)
+			return buttonLabelColor;
+		if (uxGroup != null && uxGroup.buttonLabelColor != null)
+			return uxGroup.buttonLabelColor;
 		return FlxUXCore.buttonLabelColor;
 	}
 
@@ -1274,16 +1293,22 @@ class FlxUXButton extends FlxBitmapTextButton
 	{
 		super.draw();
 		updateKeyboardCues();
-		if (shortcutLabel != null && shortcutLabel.visible) shortcutLabel.draw();
-		if (mnemonicUnderline.visible) mnemonicUnderline.draw();
-		if (defaultIndicator.visible) defaultIndicator.draw();
+		if (shortcutLabel != null && shortcutLabel.visible)
+			shortcutLabel.draw();
+		if (mnemonicUnderline.visible)
+			mnemonicUnderline.draw();
+		if (defaultIndicator.visible)
+			defaultIndicator.draw();
 	}
 
 	override public function destroy():Void
 	{
-		if (shortcutLabel != null) shortcutLabel.destroy();
-		if (mnemonicUnderline != null) mnemonicUnderline.destroy();
-		if (defaultIndicator != null) defaultIndicator.destroy();
+		if (shortcutLabel != null)
+			shortcutLabel.destroy();
+		if (mnemonicUnderline != null)
+			mnemonicUnderline.destroy();
+		if (defaultIndicator != null)
+			defaultIndicator.destroy();
 		super.destroy();
 	}
 

@@ -39,6 +39,7 @@ class FlxUXActions
 
 	/** Digital activation actions. */
 	public var confirm:FlxActionDigital;
+
 	public var accept:FlxActionDigital;
 	public var acceptHeld:FlxActionDigital;
 	public var acceptUp:FlxActionDigital;
@@ -62,6 +63,7 @@ class FlxUXActions
 
 	/** True for one frame when confirm is released (button-up edge). */
 	public var confirmReleased(default, null):Bool = false;
+
 	public var gamepadConfirmTriggered(default, null):Bool = false;
 
 	/** Whether pointer press is currently held (mouse/touch), if applicable. */
@@ -141,7 +143,12 @@ class FlxUXActions
 		pageDown = new FlxActionDigital();
 		paneNext = new FlxActionDigital();
 		panePrevious = new FlxActionDigital();
-		directionHeld = [new FlxActionDigital(), new FlxActionDigital(), new FlxActionDigital(), new FlxActionDigital()];
+		directionHeld = [
+			new FlxActionDigital(),
+			new FlxActionDigital(),
+			new FlxActionDigital(),
+			new FlxActionDigital()
+		];
 		confirm = new FlxActionDigital();
 		accept = new FlxActionDigital();
 		acceptHeld = new FlxActionDigital();
@@ -155,10 +162,21 @@ class FlxUXActions
 		pointerPressHeld = new FlxActionDigital();
 
 		manager.addActions([
-			pageUp, pageDown,
-			accept, acceptHeld, acceptUp,
-			tabNext, tabPrevious, first, last, paneNext, panePrevious,
-			directionHeld[0], directionHeld[1], directionHeld[2], directionHeld[3],
+			pageUp,
+			pageDown,
+			accept,
+			acceptHeld,
+			acceptUp,
+			tabNext,
+			tabPrevious,
+			first,
+			last,
+			paneNext,
+			panePrevious,
+			directionHeld[0],
+			directionHeld[1],
+			directionHeld[2],
+			directionHeld[3],
 			up,
 			down,
 			left,
@@ -180,8 +198,10 @@ class FlxUXActions
 		for (index in 0...4)
 		{
 			var defaults:Array<String> = [];
-			if (keyboardArrows) defaults.push(arrowKeys[index]);
-			if (keyboardWASD) defaults.push(wasdKeys[index]);
+			if (keyboardArrows)
+				defaults.push(arrowKeys[index]);
+			if (keyboardWASD)
+				defaults.push(wasdKeys[index]);
 			bindKeyboard(directions[index], names[index], defaults, JUST_PRESSED);
 			bindKeyboard(directionHeld[index], names[index], defaults, PRESSED);
 		}
@@ -246,16 +266,28 @@ class FlxUXActions
 		#end
 
 		#if !FLX_NO_GAMEPAD
-		var heldIDs = [FlxGamepadInputID.DPAD_UP, FlxGamepadInputID.DPAD_DOWN, FlxGamepadInputID.DPAD_LEFT, FlxGamepadInputID.DPAD_RIGHT];
-		var stickIDs = [FlxGamepadInputID.LEFT_STICK_DIGITAL_UP, FlxGamepadInputID.LEFT_STICK_DIGITAL_DOWN,
-			FlxGamepadInputID.LEFT_STICK_DIGITAL_LEFT, FlxGamepadInputID.LEFT_STICK_DIGITAL_RIGHT];
-		var rightIDs = [FlxGamepadInputID.RIGHT_STICK_DIGITAL_UP, FlxGamepadInputID.RIGHT_STICK_DIGITAL_DOWN,
-			FlxGamepadInputID.RIGHT_STICK_DIGITAL_LEFT, FlxGamepadInputID.RIGHT_STICK_DIGITAL_RIGHT];
+		var heldIDs = [
+			FlxGamepadInputID.DPAD_UP,
+			FlxGamepadInputID.DPAD_DOWN,
+			FlxGamepadInputID.DPAD_LEFT,
+			FlxGamepadInputID.DPAD_RIGHT
+		];
+		var stickIDs = [
+			  FlxGamepadInputID.LEFT_STICK_DIGITAL_UP, FlxGamepadInputID.LEFT_STICK_DIGITAL_DOWN,
+			FlxGamepadInputID.LEFT_STICK_DIGITAL_LEFT, FlxGamepadInputID.LEFT_STICK_DIGITAL_RIGHT
+		];
+		var rightIDs = [
+			  FlxGamepadInputID.RIGHT_STICK_DIGITAL_UP, FlxGamepadInputID.RIGHT_STICK_DIGITAL_DOWN,
+			FlxGamepadInputID.RIGHT_STICK_DIGITAL_LEFT, FlxGamepadInputID.RIGHT_STICK_DIGITAL_RIGHT
+		];
 		for (index in 0...4)
 		{
-			if (gamepadDpad) directionHeld[index].addGamepad(heldIDs[index], PRESSED);
-			if (gamepadLeftStick) directionHeld[index].addGamepad(stickIDs[index], PRESSED);
-			if (gamepadRightStick) directionHeld[index].addGamepad(rightIDs[index], PRESSED);
+			if (gamepadDpad)
+				directionHeld[index].addGamepad(heldIDs[index], PRESSED);
+			if (gamepadLeftStick)
+				directionHeld[index].addGamepad(stickIDs[index], PRESSED);
+			if (gamepadRightStick)
+				directionHeld[index].addGamepad(rightIDs[index], PRESSED);
 		}
 		#end
 

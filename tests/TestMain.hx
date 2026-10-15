@@ -115,7 +115,15 @@ class TestMain
 	static function testScrollThemeParsing():Void
 	{
 		var objectTheme = new FlxUXTheme({
-			scrollBarTrackGraphic: {source: "assets/ui/track.png", frameWidth: 8, frameHeight: 8, left: 2, top: 2, right: 2, bottom: 2},
+			scrollBarTrackGraphic: {
+				source: "assets/ui/track.png",
+				frameWidth: 8,
+				frameHeight: 8,
+				left: 2,
+				top: 2,
+				right: 2,
+				bottom: 2
+			},
 			scrollBarThumbColor: "#66CCDD",
 			scrollBarThickness: 18,
 			scrollPanelBackgroundGraphic: "assets/ui/panel.png",
@@ -249,35 +257,52 @@ class TestMain
 			flixel.FlxG.keys.update();
 		}
 		var enter = flixel.FlxG.keys.getKey(flixel.input.keyboard.FlxKey.ENTER);
-		enter.press(); frame();
+		enter.press();
+		frame();
 		assertEquals(0, accepted, "confirm waits for release");
-		enter.release(); frame();
+		enter.release();
+		frame();
 		assertEquals(1, accepted, "Enter activates default without focus");
 		var space = flixel.FlxG.keys.getKey(flixel.input.keyboard.FlxKey.SPACE);
-		space.press(); frame(); space.release(); frame();
+		space.press();
+		frame();
+		space.release();
+		frame();
 		assertEquals(1, accepted, "Space does not activate default without focus");
 		var control = flixel.FlxG.keys.getKey(flixel.input.keyboard.FlxKey.CONTROL);
 		var letter = flixel.FlxG.keys.getKey(flixel.input.keyboard.FlxKey.S);
-		control.press(); letter.press(); frame();
+		control.press();
+		letter.press();
+		frame();
 		assertEquals(2, accepted, "shortcut activates once");
 		assertEquals(false, FlxUXCore.actions.down.triggered, "Ctrl shortcut suppresses WASD");
-		letter.release(); control.release(); frame();
-		space.press(); frame();
+		letter.release();
+		control.release();
+		frame();
+		space.press();
+		frame();
 		FlxUXCore.setFocused(second);
-		space.release(); frame();
+		space.release();
+		frame();
 		assertEquals(0, otherClicks, "release cannot activate a different focused button");
 		FlxUXCore.keyboardEnabled = false;
-		control.press(); letter.press(); frame();
+		control.press();
+		letter.press();
+		frame();
 		assertEquals(2, accepted, "disabled keyboard blocks shortcut");
-		letter.release(); control.release(); frame();
+		letter.release();
+		control.release();
+		frame();
 		FlxUXCore.keyboardEnabled = true;
 		FlxUXCore.keyboardBindings.set("tabNext", ["N"]);
 		FlxUXCore.rebindInputs();
 		FlxUXCore.setFocused(first);
 		var next = flixel.FlxG.keys.getKey(flixel.input.keyboard.FlxKey.N);
-		next.press(); frame();
+		next.press();
+		frame();
 		assertEquals(second, FlxUXCore.focused, "Tab traversal binding can be overridden");
-		next.release(); frame();
+		next.release();
+		frame();
 		FlxUXCore.keyboardBindings.remove("tabNext");
 		FlxUXCore.rebindInputs();
 		FlxUXCore.setFocused(first);
